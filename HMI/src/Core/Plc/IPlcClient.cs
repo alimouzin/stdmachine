@@ -30,6 +30,12 @@ public interface IPlcClient
     /// <summary>Levé à chaque changement d'état, depuis un thread quelconque.</summary>
     event Action? StatusChanged;
 
+    /// <summary>Vrai si la commande est acceptée dans l'état et le mode courants (sert à activer les boutons).</summary>
+    bool CanSendCommand(SeqCommand command);
+
+    /// <summary>Vrai si la commande locale est acceptée par la station dans son état courant.</summary>
+    bool CanSendStationCommand(string stationId, SeqCommand command);
+
     /// <summary>Commande envoyée au séquenceur général. Faux si refusée dans l'état courant.</summary>
     bool SendCommand(SeqCommand command);
 

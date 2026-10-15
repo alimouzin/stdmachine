@@ -51,6 +51,8 @@ public sealed class GeneralSequencer
         return true;
     }
 
+    public bool CanApplyToStation(string stationId, SeqCommand command) => _stations[stationId].CanApply(command);
+
     /// <summary>Commande locale à une station (Abort forcé, Clear, Reset de réintégration).</summary>
     public bool ApplyToStation(string stationId, SeqCommand command)
     {

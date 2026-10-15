@@ -1,12 +1,81 @@
 ﻿<Window x:Class="Hmi.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:Hmi"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        xmlns:views="clr-namespace:Hmi.Views"
+        Title="Machine standard" Width="1280" Height="800" MinWidth="1024" MinHeight="680"
+        Background="{StaticResource BackgroundBrush}">
+    <Window.Resources>
+        <!-- Navigation latérale : grands éléments, sélection marquée par la couleur d'accent. -->
+        <Style x:Key="NavItem" TargetType="ListBoxItem">
+            <Setter Property="MinHeight" Value="72"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="Transparent" Padding="20,0">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource AccentBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
 
+    <Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="240"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <Border Background="{StaticResource NavBrush}">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Machine standard" Foreground="White" FontSize="22"
+                               FontWeight="SemiBold" Margin="20,24,20,24"/>
+                    <ListBox ItemsSource="{Binding VisiblePages}" SelectedItem="{Binding SelectedPage, Mode=TwoWay}"
+                             Background="Transparent" BorderThickness="0" ItemContainerStyle="{StaticResource NavItem}">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Title}" Foreground="White" FontSize="20"/>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <Border Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}"
+                        BorderThickness="0,0,0,1" Padding="20,10">
+                    <DockPanel LastChildFill="False">
+                        <Border DockPanel.Dock="Left" CornerRadius="8" Padding="18,8" MinWidth="180"
+                                Background="{Binding MachineState, Converter={StaticResource StateBrush}}">
+                            <TextBlock Text="{Binding MachineState, Converter={StaticResource StateLabel}}"
+                                       Foreground="White" FontSize="22" FontWeight="SemiBold" TextAlignment="Center"/>
+                        </Border>
+                        <TextBlock DockPanel.Dock="Left" Text="{Binding ModeText}" Margin="20,0,0,0"
+                                   Style="{StaticResource MutedText}"/>
+                        <Button DockPanel.Dock="Right" Content="{Binding LoginButtonText}" Command="{Binding LoginCommand}"
+                                Style="{StaticResource NeutralButton}" MinHeight="56"/>
+                        <TextBlock DockPanel.Dock="Right" Text="{Binding UserText}" Margin="0,0,16,0" FontWeight="SemiBold"/>
+                    </DockPanel>
+                </Border>
+
+                <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" Margin="20"/>
+            </Grid>
+        </Grid>
+
+        <!-- Connexion : fenêtre modale par-dessus la page -->
+        <Grid Background="#AA000000" Visibility="{Binding IsLoginOpen, Converter={StaticResource BoolToVisibility}}">
+            <views:LoginView DataContext="{Binding Login}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </Grid>
     </Grid>
 </Window>

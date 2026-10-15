@@ -47,6 +47,16 @@ public sealed class PlcSimulator : IPlcClient, ISimulationControl
         }
     }
 
+    public bool CanSendCommand(SeqCommand command)
+    {
+        lock (_lock) return _sequencer.CanApply(command);
+    }
+
+    public bool CanSendStationCommand(string stationId, SeqCommand command)
+    {
+        lock (_lock) return Machine.Stations.Any(s => s.Id == stationId) && _sequencer.CanApplyToStation(stationId, command);
+    }
+
     public bool SendCommand(SeqCommand command)
     {
         lock (_lock)
