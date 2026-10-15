@@ -41,6 +41,15 @@ public static class ActionCatalog
         _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
+    /// <summary>Suite d'actions de base d'une action de module (la prise standard du doc 02 pour "pick").</summary>
+    public static IReadOnlyList<string> ModuleActionSteps(string type, string actionId) => (type, actionId) switch
+    {
+        (RobotXyz, "goto") => new[] { "Move XY", "Move Z" },
+        (RobotXyz, "pick") => new[] { "Move XY", "Move Z", "Aspirer", "Move Z final" },
+        (RobotXyz, "place") => new[] { "Move XY", "Move Z", "Souffler", "Move Z final" },
+        _ => throw new ArgumentOutOfRangeException(nameof(actionId), $"Action de module inconnue : {type}/{actionId}"),
+    };
+
     public static bool IsKnownModuleType(string type) => type == RobotXyz;
 
     public static IReadOnlyList<ActionDef> ForModule(string type) => type switch
