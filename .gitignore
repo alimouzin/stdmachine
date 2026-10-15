@@ -1,0 +1,7 @@
+# .NET
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
