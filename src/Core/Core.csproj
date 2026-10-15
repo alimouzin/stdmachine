@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Update="machine.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

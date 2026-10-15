@@ -1,0 +1,60 @@
+{
+  "name": "Machine d'exemple",
+  "stations": [
+    {
+      "id": "entry1", "name": "Entrée", "type": "Entry",
+      "devices": [
+        { "id": "axX", "name": "Axe X", "kind": "LinearAxis" },
+        { "id": "axY", "name": "Axe Y", "kind": "LinearAxis" },
+        { "id": "axZ", "name": "Axe Z", "kind": "LinearAxis" },
+        { "id": "vac", "name": "Aspi/soufflage", "kind": "VacuumBlow" }
+      ],
+      "modules": [
+        { "id": "robot", "name": "Robot XYZ", "type": "RobotXyz", "deviceIds": ["axX", "axY", "axZ", "vac"] }
+      ]
+    },
+    {
+      "id": "work1", "name": "Travail 1", "type": "Work",
+      "devices": [
+        { "id": "cyl1", "name": "Vérin 1", "kind": "Cylinder" },
+        { "id": "cyl2", "name": "Vérin 2", "kind": "Cylinder" },
+        { "id": "axX", "name": "Axe X", "kind": "LinearAxis" },
+        { "id": "axY", "name": "Axe Y", "kind": "LinearAxis" },
+        { "id": "axZ", "name": "Axe Z", "kind": "LinearAxis" },
+        { "id": "vac", "name": "Aspi/soufflage", "kind": "VacuumBlow" }
+      ],
+      "modules": [
+        { "id": "robot", "name": "Robot XYZ", "type": "RobotXyz", "deviceIds": ["axX", "axY", "axZ", "vac"] }
+      ]
+    },
+    {
+      "id": "work2", "name": "Travail 2", "type": "Work",
+      "devices": [
+        { "id": "cyl1", "name": "Vérin 1", "kind": "Cylinder" },
+        { "id": "cyl2", "name": "Vérin 2", "kind": "Cylinder" },
+        { "id": "axX", "name": "Axe X", "kind": "LinearAxis" },
+        { "id": "axY", "name": "Axe Y", "kind": "LinearAxis" },
+        { "id": "axZ", "name": "Axe Z", "kind": "LinearAxis" },
+        { "id": "vac", "name": "Aspi/soufflage", "kind": "VacuumBlow" }
+      ],
+      "modules": [
+        { "id": "robot", "name": "Robot XYZ", "type": "RobotXyz", "deviceIds": ["axX", "axY", "axZ", "vac"] }
+      ]
+    },
+    {
+      "id": "exit1", "name": "Sortie", "type": "Exit",
+      "devices": [
+        { "id": "axX", "name": "Axe X", "kind": "LinearAxis" },
+        { "id": "axY", "name": "Axe Y", "kind": "LinearAxis" },
+        { "id": "axZ", "name": "Axe Z", "kind": "LinearAxis" },
+        { "id": "vac", "name": "Aspi/soufflage", "kind": "VacuumBlow" }
+      ],
+      "modules": [
+        { "id": "robot", "name": "Robot XYZ", "type": "RobotXyz", "deviceIds": ["axX", "axY", "axZ", "vac"] }
+      ]
+    }
+  ],
+  "groups": [
+    { "id": "work", "function": "Travail", "stationIds": ["work1", "work2"] }
+  ]
+}
