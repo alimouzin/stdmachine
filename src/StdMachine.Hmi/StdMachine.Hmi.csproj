@@ -13,8 +13,14 @@
     <Resource Include="..\..\assets\fonts\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Catalogue et projet d'exemple : lus au démarrage par le mode --simulator -->
+    <Content Include="..\..\catalog\catalog.json" Link="catalog\catalog.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\samples\MX-4.stdm.json" Link="samples\MX-4.stdm.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.2" />
     <ProjectReference Include="..\StdMachine.Core\StdMachine.Core.csproj" />
+    <ProjectReference Include="..\StdMachine.Persistence\StdMachine.Persistence.csproj" />
     <ProjectReference Include="..\StdMachine.Simulation\StdMachine.Simulation.csproj" />
   </ItemGroup>
 </Project>

@@ -16,15 +16,34 @@ public static partial class AppServices
     public static NavigationService Navigation { get; private set; } = null!;
 
     /// <summary>Services de la maquette : projet de démonstration, <see cref="DemoPlcClient"/>, instantané, session, navigation.</summary>
-    public static void Initialize(Dispatcher dispatcher, NavigationService navigation)
+    public static void Initialize(Dispatcher dispatcher, NavigationService navigation, bool simulator = false, string? scenario = null)
     {
-        Project = new ProjectService();
-        var demo = new DemoPlcClient(Project.Project);
-        Plc = demo;
-        Snapshots = new SnapshotStore(demo, dispatcher);
+        IPlcClient client;
+        if (simulator)
+        {
+            // Simulateur fidèle (phases 4 et 5) : le projet d'exemple MX-4 compilé et exécuté par SimulatedPlcClient.
+            string dir = AppDomain.CurrentDomain.BaseDirectory;
+            var catalog = StdMachine.Core.Catalog.CatalogLoader.Load(System.IO.Path.Combine(dir, "catalog", "catalog.json"));
+            string samplePath = System.IO.Path.Combine(dir, "samples", "MX-4.stdm.json");
+            Func<MachineProject> load = () => System.IO.File.Exists(samplePath)
+                ? StdMachine.Persistence.ProjectSerializer.Load(samplePath)
+                : StdMachine.Simulation.Demo.SampleProject.Build(catalog);
+            var shown = scenario == "validation-errors" ? StdMachine.Simulation.SimScenarios.ProjectFor(scenario, catalog) : load();
+            Project = new ProjectService(shown);
+            var sim = new StdMachine.Simulation.SimulatedPlcClient(scenario == "validation-errors" ? load() : shown, catalog);
+            if (scenario != null) StdMachine.Simulation.SimScenarios.Apply(sim, scenario);
+            client = sim;
+        }
+        else
+        {
+            Project = new ProjectService();
+            client = new DemoPlcClient(Project.Project);
+        }
+        Plc = client;
+        Snapshots = new SnapshotStore(client, dispatcher);
         Session = new SessionService();
         Selection = new SelectionService();
-        Commands = new PlcCommands(demo);
+        Commands = new PlcCommands(client);
         Navigation = navigation;
     }
 

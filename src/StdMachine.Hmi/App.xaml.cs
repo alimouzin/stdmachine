@@ -40,7 +40,7 @@ public partial class App : Application
         TouchSettings.RegisterGlobalHandlers();
 
         _navigation = new NavigationService();
-        AppServices.Initialize(Dispatcher, _navigation);
+        AppServices.Initialize(Dispatcher, _navigation, options.Simulator, options.Scenario);
         PageRegistry.Register(_navigation);
         _window = new MainWindow();
 
@@ -106,14 +106,15 @@ public partial class App : Application
         _logFile = Path.Combine(dir, "capture.log");
         try
         {
-            var times = options.AtSeconds.HasValue ? new[] { options.AtSeconds.Value }
+            var times = AppServices.Demo == null ? new[] { 0.0 }
+                : options.AtSeconds.HasValue ? new[] { options.AtSeconds.Value }
                 : options.ScreenshotAllDir != null ? new[] { 0.0, 30.0, 60.0, 90.0 } : new[] { 30.0 };
             foreach (var at in times)
             {
-                AppServices.Snapshots.Freeze(AppServices.Demo!.SnapshotAt(at));
+                AppServices.Snapshots.Freeze(AppServices.Demo != null ? AppServices.Demo.SnapshotAt(at) : AppServices.Plc.Snapshot);
                 if (options.ScreenshotAllDir != null)
                 {
-                    var sub = Path.Combine(dir, "demo-" + at.ToString("0"));
+                    var sub = Path.Combine(dir, AppServices.Demo != null ? "demo-" + at.ToString("0") : "sim-" + (options.Scenario ?? "idle"));
                     foreach (var page in _navigation.Pages.ToList())
                         foreach (var key in page.Keys)
                         {
@@ -160,6 +161,8 @@ public sealed class CommandLine
     public string? Do { get; private set; }
     public double? AtSeconds { get; private set; }
     public bool Windowed { get; private set; }
+    /// <summary>Exécute le projet MX-4 sur le simulateur fidèle au lieu du scénario de démonstration.</summary>
+    public bool Simulator { get; private set; }
     public bool Topmost { get; private set; }
     public string? StartPage { get; private set; }
 
@@ -197,6 +200,9 @@ public sealed class CommandLine
                     break;
                 case "--windowed":
                     o.Windowed = true;
+                    break;
+                case "--simulator":
+                    o.Simulator = true;
                     break;
                 case "--page":
                     o.StartPage = args[++i];

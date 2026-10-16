@@ -32,9 +32,11 @@ public sealed class ProjectService : ObservableObject
 {
     private IReadOnlyList<ValidationIssue> _issues = new ValidationIssue[0];
 
-    public ProjectService()
+    public ProjectService() : this(DemoProject.Build()) { }
+
+    public ProjectService(MachineProject project)
     {
-        Project = DemoProject.Build();
+        Project = project;
         Undo = new UndoService();
         Undo.Changed += (_, _) => Revalidate();
         Revalidate();
