@@ -260,4 +260,20 @@ public class ClientTests
         Assert.Equal(2, s.Forces.Entries.Count);
         Assert.Equal(PackMlState.Execute, s.Machine.State);
     }
+
+    [Fact]
+    public void Quality_page_data_is_complete_from_the_start_with_windows_of_0_and_1()
+    {
+        var c = NewClient();
+        var q = c.Snapshot.Quality;
+        Assert.Contains(q.Tracks, t => t.Scope == QualityScope.Machine);
+        Assert.Equal(6, q.Tracks.Count(t => t.Scope == QualityScope.Station));
+        Assert.Equal(6, q.Tracks.Count(t => t.Scope == QualityScope.Group));
+        Assert.Equal(6, q.Tracks.Count(t => t.Scope == QualityScope.Mover));
+        Assert.Equal(2, q.Tracks.Count(t => t.Scope == QualityScope.StationImputed));
+        c.Sim.Quality.Record(QualityScope.Mover, 1, true);
+        c.Sim.Quality.Record(QualityScope.Mover, 1, false);
+        c.Advance(10);
+        Assert.Equal("10", c.Snapshot.Quality.Tracks.First(t => t.Scope == QualityScope.Mover && t.Name == "Mover 1").Window);
+    }
 }

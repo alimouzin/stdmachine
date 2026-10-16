@@ -750,8 +750,23 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
 
     private QualityStatus BuildQuality()
     {
-        var tracks = new List<QualityTrack>();
         var q = _compiled.Machine;
+        // La page Qualité attend toutes les portées dès le démarrage, même sans résultat enregistré.
+        for (int i = 0; i < _sim.Stations.Count; i++) { _sim.Quality.Track(QualityScope.Station, i); }
+        for (int g = 1; g <= q.Groups.Count; g++) _sim.Quality.Track(QualityScope.Group, g);
+        foreach (var m in _sim.Movers) _sim.Quality.Track(QualityScope.Mover, m.Number);
+        _sim.Quality.Track(QualityScope.Machine, 0);
+        // Les stations amont d'une fonction qui impute ses rebuts ont aussi une portée « imputés ».
+        for (int g = 0; g < q.GroupImputeMask.Count; g++)
+        {
+            uint mask = q.GroupImputeMask[g];
+            if (mask == 0) continue;
+            for (int up = 0; up < q.Groups.Count; up++)
+                if ((mask & (1u << up)) != 0)
+                    for (int st = 0; st < _sim.Stations.Count; st++)
+                        if ((q.Groups[up].StationMask & (1u << st)) != 0) _sim.Quality.Track(QualityScope.StationImputed, st);
+        }
+        var tracks = new List<QualityTrack>();
         foreach (var t in _sim.Quality.Tracks)
         {
             var rule = t.Scope switch
@@ -762,8 +777,19 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
                 QualityScope.Mover => q.Quality.Mover,
                 _ => q.Quality.Machine,
             };
-            tracks.Add(new QualityTrack(t.Scope, t.Name, t.Consecutive, t.RatePercent(rule) ?? 0, t.Count, rule.Window, t.WindowText(), t.Level, t.Locked, t.Reason,
-                t.SinceMs != null ? At(t.SinceMs.Value) : (DateTime?)null, null, t.ProbationLeft));
+            // Taux imputé affiché à côté d'une station : celui de sa portée « imputés » quand elle existe.
+            double? imputed = null;
+            if (t.Scope == QualityScope.Station && _sim.Quality.Tracks.FirstOrDefault(x => x.Scope == QualityScope.StationImputed && x.Index == t.Index) is { } imp)
+                imputed = imp.RatePercent(q.Quality.StationImputed) ?? 0;
+            tracks.Add(new QualityTrack(t.Scope, t.Name, t.Consecutive, t.RatePercent(rule) ?? 0, t.Count, rule.Window, t.WindowText(rule.Window), t.Level, t.Locked, t.Reason,
+                t.SinceMs != null ? At(t.SinceMs.Value) : (DateTime?)null, imputed, t.ProbationLeft));
+        }
+        var order = _sim.Order;
+        if (order != null)
+        {
+            int total = Math.Max(1, order.Good + order.Bad);
+            tracks.Add(new QualityTrack(QualityScope.Order, "OF " + order.Number, 0, 100.0 * order.Bad / total, order.Good + order.Bad, Math.Max(1, order.Quantity), string.Empty,
+                QualityLevel.Normal, false, null, null, null));
         }
         return new QualityStatus(tracks, _sim.LoadingLocked, _sim.LoadingLockedReason);
     }
@@ -776,7 +802,7 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
 
     private OrderStatus BuildOrders()
     {
-        OrderInfo Info(SimOrder o) => new OrderInfo(o.Number, o.Reference, o.Quantity, o.Good, o.Bad, o.InProcess, o.State, At(o.StartedMs), At(o.StartedMs), null, 0);
+        OrderInfo Info(SimOrder o) => new OrderInfo(o.Number, o.Reference, o.Quantity, o.Good, o.Bad, o.InProcess, o.State, At(o.StartedMs), At(o.StartedMs), null, Math.Max(1, (int)Math.Ceiling(o.Quantity * 0.10)));
         var all = _sim.OrderHistory.Select(Info).ToList();
         var current = _sim.Order != null ? Info(_sim.Order) : null;
         if (current != null) all.Insert(0, current);

@@ -21,12 +21,12 @@ public sealed class QualityTrackState
 
     public double? RatePercent(QualityRule r) => Count >= r.MinSample && Count > 0 ? 100.0 * BadInWindow / Count : (double?)null;
 
-    /// <summary>La fenêtre en texte : un caractère par résultat, le plus récent à droite (« . » bon, « X » mauvais).</summary>
+    /// <summary>La fenêtre en texte : un caractère par résultat, le plus récent à droite (« 0 » bon, « 1 » mauvais), comme l'attend la page Qualité.</summary>
     public string WindowText(int max = 50)
     {
         int n = Math.Min(Count, max);
         var chars = new char[n];
-        for (int i = 0; i < n; i++) chars[i] = Window[(Head - n + i + 512) % 256] ? 'X' : '.';
+        for (int i = 0; i < n; i++) chars[i] = Window[(Head - n + i + 512) % 256] ? '1' : '0';
         return new string(chars);
     }
 }
