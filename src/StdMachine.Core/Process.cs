@@ -182,11 +182,24 @@ public abstract class Step
     }
 }
 
+public enum BindTarget
+{
+    Var,
+    PartData,
+    PartId,
+    Verdict,
+    PartRemoved,
+}
+
+/// <summary>Liaison d'un résultat d'action (r1..r8) à une variable de station ou à une donnée de pièce (docs/06 § 2).</summary>
+public sealed record ResultBinding(int ResultNo, BindTarget Target, Guid? Ref = null);
+
 public sealed class ActionStep : Step
 {
     public Guid ObjectId { get; set; }
     public int ActionNo { get; set; }
     public List<ValueRef> Args { get; } = new List<ValueRef>();
+    public List<ResultBinding> Bindings { get; } = new List<ResultBinding>();
     public double? TimeoutSeconds { get; set; }
     public FailPolicy Fail { get; set; } = new FailPolicy();
 
@@ -194,6 +207,7 @@ public sealed class ActionStep : Step
     {
         var c = new ActionStep { ObjectId = ObjectId, ActionNo = ActionNo, TimeoutSeconds = TimeoutSeconds, Fail = Fail };
         c.Args.AddRange(Args);
+        c.Bindings.AddRange(Bindings);
         CopyBaseTo(c);
         return c;
     }

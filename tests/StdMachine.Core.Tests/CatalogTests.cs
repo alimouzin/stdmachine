@@ -85,7 +85,7 @@ public class CatalogTests
         var c = Load();
         var robot = c.Module(101)!;
         var roles = robot.Roles.Select(r => r.Role).ToHashSet();
-        Assert.Equal(new[] { "MoveTo", "MoveAbove", "PickPart", "PlacePart", "Clear", "Home" }, robot.Functions.Select(f => f.Id).ToArray());
+        Assert.Equal(new[] { "MoveTo", "MoveAbove", "PickPart", "PlacePart", "Retract", "Reference" }, robot.Functions.Select(f => f.Id).ToArray());
         Assert.All(robot.Roles.SelectMany(r => r.Types), id => Assert.NotNull(c.Type(id)));
         foreach (var f in robot.Functions) Walk(f.Body, c, robot, roles, f.Id);
     }

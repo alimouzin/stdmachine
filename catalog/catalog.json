@@ -4904,7 +4904,7 @@
           ]
         },
         {
-          "id": "Clear",
+          "id": "Retract",
           "name": "Dégager",
           "icon": "arrow_upward",
           "params": [],
@@ -4930,7 +4930,7 @@
           ]
         },
         {
-          "id": "Home",
+          "id": "Reference",
           "name": "Référencer",
           "icon": "home",
           "params": [],
