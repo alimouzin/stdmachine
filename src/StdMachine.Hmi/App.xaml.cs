@@ -40,7 +40,7 @@ public partial class App : Application
         TouchSettings.RegisterGlobalHandlers();
 
         _navigation = new NavigationService();
-        AppServices.Initialize(Dispatcher, _navigation, options.Simulator, options.Scenario);
+        AppServices.Initialize(Dispatcher, _navigation, options.Simulator, options.Scenario, options.PlantLog);
         PageRegistry.Register(_navigation);
         _window = new MainWindow();
 
@@ -163,6 +163,8 @@ public sealed class CommandLine
     public bool Windowed { get; private set; }
     /// <summary>Exécute le projet MX-4 sur le simulateur fidèle au lieu du scénario de démonstration.</summary>
     public bool Simulator { get; private set; }
+    /// <summary>Avec --simulator : active le canal Journal de messages de la passerelle usine.</summary>
+    public bool PlantLog { get; private set; }
     public bool Topmost { get; private set; }
     public string? StartPage { get; private set; }
 
@@ -203,6 +205,9 @@ public sealed class CommandLine
                     break;
                 case "--simulator":
                     o.Simulator = true;
+                    break;
+                case "--plant-log":
+                    o.PlantLog = true;
                     break;
                 case "--page":
                     o.StartPage = args[++i];
