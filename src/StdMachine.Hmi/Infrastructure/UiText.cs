@@ -116,10 +116,10 @@ public static class UiText
 
     public static string Declared(DeclaredState s) => StdMachine.Simulation.Demo.DemoText.Declared(s);
 
-    /// <summary>« depuis 02 h 14 » : durée dans l'état.</summary>
-    public static string Since(DateTime since)
+    /// <summary>« depuis 02 h 14 » : durée dans l'état, comptée sur l'horloge de l'instantané (celle du simulateur, qui peut être accélérée).</summary>
+    public static string Since(DateTime since, DateTime now)
     {
-        var d = DateTime.Now - since;
+        var d = now - since;
         if (d < TimeSpan.Zero) d = TimeSpan.Zero;
         return DisplayFormat.Duration(d);
     }

@@ -30,11 +30,7 @@ public sealed partial class DeployViewModel : ViewModelBase
     public DeployViewModel()
     {
         BuildIssues();
-        Diffs.Add(new DiffRow("Stations", "Pressage 01 › Variables › Compteur de pièces", "Ajouté", "Variable Nombre, valeur initiale 0", Tone.Ok));
-        Diffs.Add(new DiffRow("Positions", "Pressage 01 › Dépose nid", "Modifié", "Z −18,20 (avant −17,90)", Tone.Accent));
-        Diffs.Add(new DiffRow("Process", "Pressage 02 › Sertir", "Modifié", "Étape 4 « Attendre condition » : délai 5,0 s (avant 3,0 s)", Tone.Accent));
-        Diffs.Add(new DiffRow("Recettes", "Presse › Recette n° 3", "Modifié", "Force finale maximale 5,5 kN (avant 5,2 kN)", Tone.Accent));
-        Diffs.Add(new DiffRow("Objets", "Contrôle › Palpeur Keyence GT2", "Supprimé", "Remplacé par Vision Keyence IV", Tone.Err));
+        BuildDiffs();
         BuildSteps();
         OnSnapshots((_, s) => BuildConditions(s));
         BuildConditions(AppServices.Snapshots.Current);
@@ -50,6 +46,7 @@ public sealed partial class DeployViewModel : ViewModelBase
     [ObservableProperty] private int _step;
     [ObservableProperty] private int _errorCount;
     [ObservableProperty] private int _warningCount;
+    [ObservableProperty] private bool _noIssues;
     [ObservableProperty] private bool _canNext;
     [ObservableProperty] private string _nextHint = string.Empty;
     [ObservableProperty] private bool _allConditionsOk;
@@ -58,12 +55,41 @@ public sealed partial class DeployViewModel : ViewModelBase
     [ObservableProperty] private string _resultText = string.Empty;
     [ObservableProperty] private string _deployedText = string.Empty;
 
+    /// <summary>
+    /// Différences avec la version déployée. Sur la maquette : lignes de démonstration. Avec le simulateur : comparaison réelle des empreintes
+    /// (le détail des changements viendra avec le Studio complet, phase 6).
+    /// </summary>
+    private void BuildDiffs()
+    {
+        Diffs.Clear();
+        if (AppServices.Plc is DemoPlcClient)
+        {
+            Diffs.Add(new DiffRow("Stations", "Pressage 01 › Variables › Compteur de pièces", "Ajouté", "Variable Nombre, valeur initiale 0", Tone.Ok));
+            Diffs.Add(new DiffRow("Positions", "Pressage 01 › Dépose nid", "Modifié", "Z −18,20 (avant −17,90)", Tone.Accent));
+            Diffs.Add(new DiffRow("Process", "Pressage 02 › Sertir", "Modifié", "Étape 4 « Attendre condition » : délai 5,0 s (avant 3,0 s)", Tone.Accent));
+            Diffs.Add(new DiffRow("Recettes", "Presse › Recette n° 3", "Modifié", "Force finale maximale 5,5 kN (avant 5,2 kN)", Tone.Accent));
+            Diffs.Add(new DiffRow("Objets", "Contrôle › Palpeur Keyence GT2", "Supprimé", "Remplacé par Vision Keyence IV", Tone.Err));
+            return;
+        }
+        var compiled = AppServices.Compilation.Compile(AppServices.Project.Project);
+        string deployed = AppServices.Project.DeployedHash ?? "—";
+        if (compiled?.Project == null)
+            Diffs.Add(new DiffRow("Projet", "Compilation", "Impossible", "Le projet ne se compile pas : corrigez les erreurs de validation.", Tone.Err));
+        else
+        {
+            string current = compiled.Project.Hash.Substring(0, 16).ToUpperInvariant();
+            if (current == deployed) Diffs.Add(new DiffRow("Projet", "Machine et stations", "Identique", "Aucune différence avec la version déployée (empreinte " + deployed + ").", Tone.Ok));
+            else Diffs.Add(new DiffRow("Projet", "Machine et stations", "Modifié", "Empreinte " + current + " (déployée : " + deployed + "). Le détail des changements viendra avec le Studio complet.", Tone.Accent));
+        }
+    }
+
     private void BuildIssues()
     {
         Issues.Clear();
         foreach (var i in AppServices.Project.Issues) Issues.Add(new IssueRow(i.Code, i.Message, i.Severity, i.StepId));
         ErrorCount = AppServices.Project.ErrorCount;
         WarningCount = AppServices.Project.WarningCount;
+        NoIssues = ErrorCount == 0 && WarningCount == 0;
         DeployedText = "Version déployée : " + AppServices.Project.DeployedHash + " · " + (AppServices.Project.DeployedAt?.ToString("dd.MM.yyyy HH:mm", DisplayFormat.Culture) ?? "—");
     }
 

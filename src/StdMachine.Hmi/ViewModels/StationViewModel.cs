@@ -208,7 +208,7 @@ public sealed partial class StationViewModel : ViewModelBase, INavigationAware
             chip.Blink = cs != null && cs.State == PackMlState.Aborted;
         }
         State = st.State;
-        StateSince = UiText.Since(st.StateSince);
+        StateSince = UiText.Since(st.StateSince, s.Time);
         Lights = st.Beacon.Lights;
         Blinking = st.Beacon.Blinking;
         OverridePercent = st.OverridePercent;

@@ -359,18 +359,22 @@
                 <Border Style="{StaticResource Card}">
                     <StackPanel>
                         <TextBlock Text="{Binding OrderTitle}" FontWeight="SemiBold" FontSize="16"/>
-                        <DockPanel Margin="0,10,0,6">
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding OrderPercent}" Style="{StaticResource Type.Caption}" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
-                            <TextBlock Text="{Binding OrderCountText}" Style="{StaticResource Type.Kpi}"/>
-                        </DockPanel>
-                        <c:ProgressStrip BarHeight="8" Good="{Binding OrderGood}" Bad="{Binding OrderBad}" Active="{Binding OrderActive}"/>
-                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                            <TextBlock Text="{Binding OrderGoodText}" Foreground="{StaticResource Ok.Text}" FontWeight="SemiBold" Margin="0,0,18,0"/>
-                            <TextBlock Text="{Binding OrderBadText}" Foreground="{StaticResource Err.Text}" FontWeight="SemiBold" Margin="0,0,18,0"/>
-                            <TextBlock Text="{Binding OrderActiveText}" Foreground="{StaticResource Busy.Text}" FontWeight="SemiBold"/>
+                        <TextBlock Text="Sélectionnez ou lancez un OF depuis la page OF." Style="{StaticResource Type.Caption}" Margin="0,6,0,0"
+                                   Visibility="{Binding HasOrder, Converter={x:Static infra:Conv.InvBoolToVis}}"/>
+                        <StackPanel Visibility="{Binding HasOrder, Converter={x:Static infra:Conv.BoolToVis}}">
+                            <DockPanel Margin="0,10,0,6">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding OrderPercent}" Style="{StaticResource Type.Caption}" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                                <TextBlock Text="{Binding OrderCountText}" Style="{StaticResource Type.Kpi}"/>
+                            </DockPanel>
+                            <c:ProgressStrip BarHeight="8" Good="{Binding OrderGood}" Bad="{Binding OrderBad}" Active="{Binding OrderActive}"/>
+                            <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                                <TextBlock Text="{Binding OrderGoodText}" Foreground="{StaticResource Ok.Text}" FontWeight="SemiBold" Margin="0,0,18,0"/>
+                                <TextBlock Text="{Binding OrderBadText}" Foreground="{StaticResource Err.Text}" FontWeight="SemiBold" Margin="0,0,18,0"/>
+                                <TextBlock Text="{Binding OrderActiveText}" Foreground="{StaticResource Busy.Text}" FontWeight="SemiBold"/>
+                            </StackPanel>
+                            <TextBlock Text="{Binding OrderEnd}" Style="{StaticResource Type.Caption}" Margin="0,8,0,0"/>
+                            <TextBlock Text="{Binding BudgetText}" Style="{StaticResource Type.Caption}" Margin="0,2,0,0"/>
                         </StackPanel>
-                        <TextBlock Text="{Binding OrderEnd}" Style="{StaticResource Type.Caption}" Margin="0,8,0,0"/>
-                        <TextBlock Text="{Binding BudgetText}" Style="{StaticResource Type.Caption}" Margin="0,2,0,0"/>
                     </StackPanel>
                 </Border>
 

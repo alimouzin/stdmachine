@@ -38,6 +38,9 @@ public static partial class AppServices
             var sim = new StdMachine.Simulation.SimulatedPlcClient(scenario == "validation-errors" ? load() : shown, catalog);
             if (scenario != null) StdMachine.Simulation.SimScenarios.Apply(sim, scenario);
             client = sim;
+            // La version déployée affichée est celle du simulateur, pas une valeur de démonstration.
+            var deployed = sim.GetDeployedInfoAsync(default).Result;
+            if (deployed.Hash != null && deployed.At != null) Project.MarkDeployed(deployed.Hash, deployed.At.Value);
         }
         else
         {

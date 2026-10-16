@@ -82,6 +82,7 @@ public sealed partial class QualityViewModel : ViewModelBase
     [ObservableProperty] private QualityRowViewModel? _machine;
     [ObservableProperty] private QualityRowViewModel? _order;
     [ObservableProperty] private bool _hasLocks;
+    [ObservableProperty] private bool _hasBreakdown;
     [ObservableProperty] private string _orderText = string.Empty;
 
     private QualityRowViewModel Row(QualityTrack t)
@@ -109,10 +110,13 @@ public sealed partial class QualityViewModel : ViewModelBase
         Sync(Movers, tracks.Where(t => t.Scope == QualityScope.Mover).Select(Row));
         Sync(Locks, tracks.Where(t => t.Locked).Select(Row));
         HasLocks = Locks.Count > 0;
-        if (Breakdown.Count == 0)
-        {
-            Breakdown.Add(new RejectBar("Pressage 02", 9, 1.0)); Breakdown.Add(new RejectBar("Pressage 01", 4, 0.45)); Breakdown.Add(new RejectBar("Contrôle", 1, 0.12));
-        }
+        // Rebuts par station : pièces mauvaises dans la fenêtre de chaque station (« 1 » = mauvaise), calculées sur l'instantané.
+        var bad = tracks.Where(t => t.Scope == QualityScope.Station)
+            .Select(t => (t.Name, Count: (t.Window ?? string.Empty).Count(c => c == '1')))
+            .Where(x => x.Count > 0).OrderByDescending(x => x.Count).ToList();
+        var bars = bad.Select(x => new RejectBar(x.Name, x.Count, (double)x.Count / bad[0].Count)).ToList();
+        if (!Breakdown.SequenceEqual(bars)) { Breakdown.Clear(); foreach (var b in bars) Breakdown.Add(b); }
+        HasBreakdown = bars.Count > 0;
     }
 
     [RelayCommand]

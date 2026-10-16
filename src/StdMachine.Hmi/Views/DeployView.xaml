@@ -52,6 +52,7 @@
                 <!-- 1. Validation -->
                 <DockPanel Visibility="{Binding Step, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=0}">
                     <TextBlock DockPanel.Dock="Top" Margin="20,16,20,8" Style="{StaticResource SectionTitle}"><Run Text="{Binding ErrorCount, Mode=OneWay}"/><Run Text=" erreur(s) bloquante(s) · "/><Run Text="{Binding WarningCount, Mode=OneWay}"/><Run Text=" avertissement(s)"/></TextBlock>
+                    <TextBlock DockPanel.Dock="Top" Margin="20,0,20,0" Text="Validation réussie : le projet peut être déployé." Foreground="{StaticResource Ok.Text}" FontWeight="SemiBold" Visibility="{Binding NoIssues, Converter={x:Static infra:Conv.BoolToVis}}"/>
                     <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
                         <ItemsControl ItemsSource="{Binding Issues}" Focusable="False">
                             <ItemsControl.ItemTemplate>

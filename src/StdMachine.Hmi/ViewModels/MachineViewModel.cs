@@ -201,12 +201,13 @@ public sealed partial class MachineViewModel : ViewModelBase
     [ObservableProperty] private string _orderGoodText = string.Empty, _orderBadText = string.Empty, _orderActiveText = string.Empty;
     [ObservableProperty] private string _orderEnd = string.Empty;
     [ObservableProperty] private string _budgetText = string.Empty;
+    [ObservableProperty] private bool _hasOrder;
 
     private void OnSnapshot(object? sender, PlcSnapshot s)
     {
         var m = s.Machine;
         State = m.State;
-        StateSince = UiText.Since(m.StateSince);
+        StateSince = UiText.Since(m.StateSince, s.Time);
         StopCause = m.State == PackMlState.Aborted ? (s.Alarms.FirstOrDefault(a => a.State == AlarmState.Active && a.Severity >= AlarmSeverity.StationFault)?.Text ?? m.StopCause) : null;
         DeclaredText = s.Forces.Declared != DeclaredState.None ? UiText.Declared(s.Forces.Declared) + (s.Forces.StartBlocked ? " · démarrage bloqué" : "") : null;
         Lights = m.Beacon.Lights;
@@ -227,6 +228,8 @@ public sealed partial class MachineViewModel : ViewModelBase
             Movers.FirstOrDefault(v => v.Number == mv.Number)?.Update(mv);
 
         var o = s.Orders.Current;
+        HasOrder = o != null;
+        if (o == null) OrderTitle = "Aucun OF en cours";
         if (o != null)
         {
             OrderTitle = Resources.Res.Get("Order.Short") + " " + o.Number + " · " + o.Reference;
