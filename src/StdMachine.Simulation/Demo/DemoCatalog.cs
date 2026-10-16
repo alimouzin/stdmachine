@@ -1,4 +1,5 @@
 using StdMachine.Core;
+using StdMachine.Core.Catalog;
 
 namespace StdMachine.Simulation.Demo;
 
@@ -23,7 +24,7 @@ public static class DemoCatalog
 
     private static readonly ParamDef[] None = new ParamDef[0];
 
-    public static readonly IReadOnlyList<TypeDef> Types = new List<TypeDef>
+    public static IReadOnlyList<TypeDef> Types { get; private set; } = new List<TypeDef>
     {
         new TypeDef("CartesianRobot", "Robot cartésien XYZC", "precision_manufacturing", "Modules",
             new ActionDef[0],
@@ -145,6 +146,35 @@ public static class DemoCatalog
     };
 
     public static TypeDef? Get(string code) => Types.FirstOrDefault(t => t.Code == code);
+
+    /// <summary>
+    /// Complète le catalogue allégé avec le catalogue réel (<c>catalog.json</c>) : les types absents sont ajoutés, les actions manquantes des types connus aussi.
+    /// Les icônes et durées de la maquette sont conservées ; les numéros viennent du catalogue.
+    /// </summary>
+    public static void Augment(CatalogDocument catalog)
+    {
+        var list = new List<TypeDef>(Types);
+        foreach (var t in catalog.Types)
+        {
+            var existing = list.FindIndex(x => x.Code == t.Code);
+            var actions = existing >= 0 ? list[existing].Actions.ToList() : new List<ActionDef>();
+            foreach (var a in t.Actions.Where(a => !a.ManualOnly && actions.All(x => x.No != a.No)))
+                actions.Add(new ActionDef(a.No, a.Name, a.Icon ?? t.Icon, a.Params.Select(FromCatalog).ToArray(), EstimateSeconds(a), a.Motion, a.Results.Select(r => r.Name).ToArray()));
+            actions = actions.OrderBy(x => x.No).ToList();
+            if (existing >= 0) list[existing] = list[existing] with { Actions = actions };
+            else list.Add(new TypeDef(t.Code, t.Name, t.Icon, t.Category, actions, new FunctionDef[0]));
+        }
+        Types = list;
+    }
+
+    private static ParamDef FromCatalog(CatalogActionParam p)
+    {
+        double def = p.Default.HasValue && p.Default.Value.ValueKind == System.Text.Json.JsonValueKind.Number ? p.Default.Value.GetDouble() : 0;
+        return new ParamDef { Name = p.Name, Type = p.Type, Unit = p.Unit, Default = def, Values = p.Values };
+    }
+
+    private static double EstimateSeconds(CatalogAction a)
+        => a.Immediate ? 0.0 : Math.Max(0.1, Math.Min(5.0, (a.TimeoutMs ?? 2000) / 10000.0 * 2));
 
     /// <summary>Durée estimée d'une étape, en secondes (catalogue + course), pour le pied de carte et le chronogramme.</summary>
     public static double EstimatedSeconds(Step step, StationConfig? station)

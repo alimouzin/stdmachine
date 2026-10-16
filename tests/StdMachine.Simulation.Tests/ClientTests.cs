@@ -276,4 +276,17 @@ public class ClientTests
         c.Advance(10);
         Assert.Equal("10", c.Snapshot.Quality.Tracks.First(t => t.Scope == QualityScope.Mover && t.Name == "Mover 1").Window);
     }
+
+    [Fact]
+    public void Demo_catalog_is_completed_with_the_real_catalog_keeping_icons_and_numbers()
+    {
+        DemoCatalog.Augment(Catalog());
+        Assert.NotNull(DemoCatalog.Get("Scale"));
+        Assert.NotNull(DemoCatalog.Get("Screwdriver")!.Action(2));
+        Assert.Equal("south", DemoCatalog.Get("Cylinder")!.Action(1)!.Icon);
+        Assert.Equal("Move travail", DemoCatalog.Get("Cylinder")!.Action(1)!.Name);
+        Assert.True(DemoCatalog.Get("Gripper")!.Actions.Count >= 4);
+        Assert.DoesNotContain(DemoCatalog.Get("LinearAxis")!.Actions, a => a.No == 9); // Jog : manuel seulement
+        Assert.Contains(DemoCatalog.Get("Press")!.Actions, a => a.No == 1 && a.Params.Count == 1);
+    }
 }

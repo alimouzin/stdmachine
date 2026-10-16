@@ -22,6 +22,7 @@ public static partial class AppServices
     public static void Initialize(Dispatcher dispatcher, NavigationService navigation, bool simulator = false, string? scenario = null, bool plantLog = false)
     {
         Compilation = new CompilationService(CompilationService.TryLoadCatalog());
+        if (Compilation.Catalog != null) DemoCatalog.Augment(Compilation.Catalog);
         IPlcClient client;
         if (simulator)
         {
