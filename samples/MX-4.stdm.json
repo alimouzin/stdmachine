@@ -1713,8 +1713,8 @@
                 {
                   "no": 2,
                   "name": "Seuil \u00AB buse vide \u00BB",
-                  "number": -52,
-                  "value": "-52",
+                  "number": -45,
+                  "value": "-45",
                   "unit": "kPa"
                 },
                 {
@@ -1972,6 +1972,24 @@
           ],
           "body": {
             "steps": [
+              {
+                "step": "action",
+                "objectId": "e87bb3f4-ee9b-e086-1386-53a4e759dba1",
+                "actionNo": 1,
+                "args": [
+                  {
+                    "kind": "const",
+                    "number": 1,
+                    "index": 0,
+                    "offset": 0
+                  }
+                ],
+                "fail": {
+                  "kind": "stopStation",
+                  "retries": 0
+                },
+                "id": "0ba8f0d8-87cc-88cf-ca21-9184c5ac1335"
+              },
               {
                 "step": "action",
                 "objectId": "88f7b0b4-763f-0152-1013-9961d4e35961",
@@ -2727,8 +2745,8 @@
                 {
                   "no": 2,
                   "name": "Seuil \u00AB buse vide \u00BB",
-                  "number": -52,
-                  "value": "-52",
+                  "number": -45,
+                  "value": "-45",
                   "unit": "kPa"
                 },
                 {
@@ -3084,6 +3102,17 @@
           ],
           "body": {
             "steps": [
+              {
+                "step": "action",
+                "objectId": "e9fbc476-26d4-682c-caac-cd8ff5aa9f6c",
+                "actionNo": 1,
+                "args": [],
+                "fail": {
+                  "kind": "stopStation",
+                  "retries": 0
+                },
+                "id": "90468512-dc56-d557-814a-ef25e439a654"
+              },
               {
                 "step": "action",
                 "objectId": "8134e99d-3269-44ce-ae8d-e00939bfcec0",
@@ -3805,8 +3834,8 @@
                 "actionNo": 3,
                 "args": [],
                 "fail": {
-                  "kind": "stopStation",
-                  "retries": 0
+                  "kind": "retry",
+                  "retries": 3
                 },
                 "id": "71cde7eb-8849-5fb1-3683-7be06c5431f3"
               }
@@ -4740,8 +4769,8 @@
                 {
                   "no": 2,
                   "name": "Seuil \u00AB buse vide \u00BB",
-                  "number": -52,
-                  "value": "-52",
+                  "number": -45,
+                  "value": "-45",
                   "unit": "kPa"
                 },
                 {
@@ -5097,6 +5126,17 @@
           ],
           "body": {
             "steps": [
+              {
+                "step": "action",
+                "objectId": "34f1356e-bde1-8b19-07fb-c1920be82cb2",
+                "actionNo": 1,
+                "args": [],
+                "fail": {
+                  "kind": "stopStation",
+                  "retries": 0
+                },
+                "id": "acc95d34-f2fc-a2d2-5381-0d2d56cae981"
+              },
               {
                 "step": "action",
                 "objectId": "c7e64aec-1d37-d5b3-29d6-63d17df14c5b",
@@ -5818,8 +5858,8 @@
                 "actionNo": 3,
                 "args": [],
                 "fail": {
-                  "kind": "stopStation",
-                  "retries": 0
+                  "kind": "retry",
+                  "retries": 3
                 },
                 "id": "055d021c-1428-d4f8-a5e1-acf0ad256ed9"
               }
@@ -6419,6 +6459,17 @@
           ],
           "body": {
             "steps": [
+              {
+                "step": "action",
+                "objectId": "64e222d5-4d7b-959a-e101-24ba2bb34acb",
+                "actionNo": 2,
+                "args": [],
+                "fail": {
+                  "kind": "stopStation",
+                  "retries": 0
+                },
+                "id": "175ad78f-d20b-f9a3-4aed-e34ccde9326e"
+              },
               {
                 "step": "action",
                 "objectId": "4e5c70c6-3d2a-82fa-50b4-057c0ca90570",
@@ -7397,6 +7448,17 @@
                   "retries": 0
                 },
                 "id": "675ff68f-109c-abcc-fd81-295c07244f71"
+              },
+              {
+                "step": "action",
+                "objectId": "59b20b6a-523e-613d-94cb-9c42dc56b4d8",
+                "actionNo": 1,
+                "args": [],
+                "fail": {
+                  "kind": "stopStation",
+                  "retries": 0
+                },
+                "id": "e54165c8-5e45-619c-d330-8ad6292050a3"
               }
             ]
           }

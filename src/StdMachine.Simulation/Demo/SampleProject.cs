@@ -62,6 +62,7 @@ public static class SampleProject
 
         AddPressRecipes(p);
         AddGeneratedInterlocks(p);
+        UseEveryObject(p);
         StabilizeIds(p);
         return p;
     }
@@ -75,6 +76,13 @@ public static class SampleProject
                 No = cp.No, Name = cp.Name, Number = cp.Default, Unit = cp.Unit,
                 Value = cp.Default.ToString("0.###", CultureInfo.InvariantCulture),
             });
+
+        // Défauts du catalogue (−60 / −52 kPa) trop proches pour V105 : l'exemple règle le seuil « buse vide » à −45 kPa.
+        if (type.Code == "VacuumBlow")
+        {
+            var p2 = node.Params.First(x => x.No == 2);
+            p2.Number = -45; p2.Value = "-45";
+        }
 
         node.Speeds.Clear();
         if (type.Id == 11 || type.Id == 12)
@@ -116,6 +124,33 @@ public static class SampleProject
         node.Params.Clear();
         foreach (var cp in module.Params)
             node.Params.Add(new ParamValue { No = cp.No, Name = cp.Name, Number = cp.Default, Unit = cp.Unit, Value = cp.Default.ToString("0.###", CultureInfo.InvariantCulture) });
+    }
+
+    /// <summary>
+    /// Complète les process de démonstration pour que chaque objet de l'exemple serve (V109) et que « Chercher pièce » soit refait 3 fois (V110).
+    /// </summary>
+    private static void UseEveryObject(MachineProject p)
+    {
+        void Insert(StationConfig st, string process, string key, string typeCode, int action, bool atEnd = false, params ValueRef[] args)
+        {
+            var obj = st.AllObjects().First(o => o.TypeCode == typeCode);
+            var proc = st.Processes.First(x => x.Name == process);
+            var step = new ActionStep { Id = DemoIds.Of("step/" + st.Number + "/" + process + "/" + key), ObjectId = obj.Id, ActionNo = action };
+            step.Args.AddRange(args);
+            if (atEnd) proc.Body.Steps.Add(step); else proc.Body.Steps.Insert(0, step);
+        }
+        Insert(p.Station(DemoProject.Chargement)!, "Charger", "feeder", "VibratoryFeeder", 1, false, ValueRef.Const(1));
+        foreach (int n in new[] { DemoProject.Pressage01, DemoProject.Pressage02 })
+            Insert(p.Station(n)!, "Presser pignon", "nest", "DigitalInput", 1);
+        Insert(p.Station(DemoProject.Controle)!, "Contrôler", "iv", "KeyenceIV", 2);
+        Insert(p.Station(DemoProject.Rebut)!, "Évacuer", "full", "DigitalInput", 1, true);
+
+        foreach (var st in p.Stations)
+        {
+            var visions = st.AllObjects().Where(o => o.TypeCode == "AsyrilEyePlus").Select(o => o.Id).ToHashSet();
+            foreach (var a in st.Processes.SelectMany(x => x.AllSteps()).OfType<ActionStep>().Where(a => visions.Contains(a.ObjectId) && a.ActionNo == 3))
+                a.Fail = new FailPolicy(FailKind.Retry, 3);
+        }
     }
 
     /// <summary>Les paramètres d'opération créés par la démonstration reçoivent un identifiant au hasard : on les rend déterministes pour que le fichier d'exemple soit reproductible.</summary>

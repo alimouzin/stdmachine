@@ -17,10 +17,12 @@
   </ItemGroup>
   <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
     <ProjectReference Include="..\..\src\StdMachine.Core\StdMachine.Core.csproj" />
+    <ProjectReference Include="..\..\src\StdMachine.Simulation\StdMachine.Simulation.csproj" />
   </ItemGroup>
   <ItemGroup Condition="'$(OS)' != 'Windows_NT'">
     <PackageReference Include="System.Text.Json" Version="8.0.5" />
     <Compile Include="..\..\src\StdMachine.Core\**\*.cs" Exclude="..\..\src\StdMachine.Core\obj\**;..\..\src\StdMachine.Core\bin\**" LinkBase="Core" />
+    <Compile Include="..\..\src\StdMachine.Simulation\**\*.cs" Exclude="..\..\src\StdMachine.Simulation\obj\**;..\..\src\StdMachine.Simulation\bin\**" LinkBase="Simulation" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="..\..\catalog\catalog.json" Link="catalog\catalog.json" CopyToOutputDirectory="PreserveNewest" />
