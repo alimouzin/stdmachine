@@ -106,8 +106,14 @@ public sealed class MachineSim
         _lastReceived = new double[compiled.Machine.Stations.Count + 1];
         foreach (var sd in compiled.Stations.OrderBy(s => s.Number))
             _stations.Add(new StationSim(sd, compiled, catalog, Alarms, Rng, () => NowMs, () => OverridePercent));
+        Quality = new QualityMonitor(this);
         PlaceInitialMovers();
     }
+
+    public QualityMonitor Quality { get; }
+
+    /// <summary>Cause d'arrêt imposée par une réaction (consommée à l'arrêt suivant).</summary>
+    public string? StopCauseOverride { get; set; }
 
     public double NowMs { get; private set; }
     public AlarmLog Alarms { get; } = new AlarmLog();
@@ -388,7 +394,8 @@ public sealed class MachineSim
                 break;
             case StateCommand.Stop:
                 foreach (var s in _stations) s.Command(StateCommand.Stop);
-                StopCause ??= "Arrêt demandé";
+                StopCause ??= StopCauseOverride ?? "Arrêt demandé";
+                StopCauseOverride = null;
                 break;
             case StateCommand.Abort:
                 foreach (var s in _stations) s.Command(StateCommand.Abort);
@@ -767,7 +774,11 @@ public sealed class MachineSim
             var req = new OpRequest { ReqId = (uint)NextReqId(), Group = m.TargetGroup, Operation = m.TargetOp, Mover = m.Number, Slot = m.TargetSlot, Parts = m.Slots };
             Array.Copy(m.OpParams, req.Params, 8);
             if (st.Response.Status != OpStatus.Idle) return;
-            if (st.Offer(req)) { m.RequestPosted = true; _opStart[m.Number] = NowMs; }
+            if (st.Offer(req))
+            {
+                m.RequestPosted = true; _opStart[m.Number] = NowMs;
+                foreach (var p in m.Slots) p.BadAtArrival = p.Present && VerdictIndex > 0 && p.Data[VerdictIndex] == 2;
+            }
             return;
         }
         var resp = st.Response;
@@ -777,7 +788,7 @@ public sealed class MachineSim
             case OpStatus.Done:
             case OpStatus.Failed: FinishOperation(m, st, resp); break;
             case OpStatus.Aborted:
-                foreach (var p in m.Slots.Where(p => p.Present)) if (VerdictIndex > 0) p.Data[VerdictIndex] = 2;
+                foreach (var p in m.Slots.Where(p => p.Present)) { if (VerdictIndex > 0) p.Data[VerdictIndex] = 2; p.DefectBad = true; }
                 st.AcknowledgeResponse();
                 m.StationAborted = true;
                 break;
@@ -820,6 +831,17 @@ public sealed class MachineSim
             int verdict = VerdictIndex > 0 ? (int)part.Data[VerdictIndex] : 0;
             part.Ops.Add(new PartOp(st.Number, m.TargetGroup, verdict));
             bool bad = verdict == 2;
+            // Surveillance des rebuts (docs/10 § 9) : un verdict déjà mauvais à l'arrivée ne compte pas pour cette station.
+            if (!part.BadAtArrival)
+            {
+                Quality.Record(QualityScope.Station, stationIdx, bad);
+                Quality.Record(QualityScope.Group, m.TargetGroup, bad);
+                uint impute = _c.Machine.GroupImputeMask.ElementAtOrDefault(m.TargetGroup - 1);
+                if (impute != 0)
+                    foreach (var op0 in part.Ops.Take(part.Ops.Count - 1))
+                        if ((impute & (1u << (op0.Group - 1))) != 0)
+                            Quality.Record(QualityScope.StationImputed, StationIndex(op0.Station), bad);
+            }
             bool closed = false, closedBad = false;
             // 4. Pièce retirée par l'opération (rebut interne)
             if (part.Status == PartStatus.Removed || (removed && part.Status == PartStatus.Removed))
@@ -830,6 +852,11 @@ public sealed class MachineSim
             // 3. Sortie ou rebut : clôture
             else if (group.Role == GroupRole.Exit && !failed) { closed = true; part.Status = PartStatus.Exited; PartsExited++; CloseOrderPart(part, false); }
             else if (group.Role == GroupRole.Reject) { closed = true; closedBad = true; part.Status = PartStatus.Rejected; PartsRejected++; CloseOrderPart(part, true); }
+            if (closed && !part.DefectBad)
+            {
+                Quality.Record(QualityScope.Mover, m.Number, closedBad || bad);
+                Quality.Record(QualityScope.Machine, 0, closedBad || bad);
+            }
             AddTrace(m, si, st, m.TargetGroup, m.TargetOp, part, started, verdict, resp.ErrorCode);
             OperationFinished?.Invoke(new OperationResult(stationIdx, st.Number, m.TargetGroup, m.Number, part.Id, bad, closed, closedBad, NowMs - started, resp.ErrorCode));
             if (closed) part.Clear();

@@ -174,6 +174,12 @@ public sealed class MachineData
     public List<CCondition> Conditions { get; } = new List<CCondition>();
     public List<string> Texts { get; } = new List<string>();
     public QualityConfig Quality { get; set; } = new QualityConfig();
+    /// <summary>Règle de surveillance des constatés de chaque station (surcharge ou défaut), dans l'ordre de <see cref="Stations"/>.</summary>
+    public List<QualityRule> StationRules { get; } = new List<QualityRule>();
+    /// <summary>Règle de chaque fonction (surcharge ou défaut), dans l'ordre de <see cref="Groups"/>.</summary>
+    public List<QualityRule> GroupRules { get; } = new List<QualityRule>();
+    /// <summary>Par fonction : masque des fonctions amont dont les rebuts lui sont imputés (0 = n'impute pas).</summary>
+    public List<uint> GroupImputeMask { get; } = new List<uint>();
 }
 
 public sealed record CPressSegment(PressTarget Target, double TargetValue, double SpeedPercent, double ForceMin, double ForceMax, double StrokeMin, double StrokeMax);

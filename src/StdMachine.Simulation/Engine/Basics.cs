@@ -36,13 +36,17 @@ public sealed class Part
     public int Order { get; set; }
     public PartStatus Status { get; set; }
     public bool BadHandled { get; set; }
+    /// <summary>Verdict déjà mauvais à l'arrivée dans la station courante.</summary>
+    public bool BadAtArrival { get; set; }
+    /// <summary>Mauvaise à cause d'un défaut de station (non comptée dans les taux).</summary>
+    public bool DefectBad { get; set; }
     public double[] Data { get; } = new double[MaxData];
     public List<PartOp> Ops { get; } = new List<PartOp>();
     public double CreatedMs { get; set; }
 
     public void Clear()
     {
-        Present = false; Id = string.Empty; Order = 0; Status = PartStatus.None; BadHandled = false; CreatedMs = 0;
+        Present = false; Id = string.Empty; Order = 0; Status = PartStatus.None; BadHandled = false; BadAtArrival = false; DefectBad = false; CreatedMs = 0;
         Array.Clear(Data, 0, Data.Length);
         Ops.Clear();
     }

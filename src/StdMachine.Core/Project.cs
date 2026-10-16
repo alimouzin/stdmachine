@@ -209,9 +209,20 @@ public sealed class Interlock
     public bool Generated { get; set; }
 }
 
+public enum QualityReaction
+{
+    WarnOnly,
+    StationHold,
+    MoverOut,
+    StopLoading,
+    MachineStop,
+}
+
 /// <summary>Seuils d'une portée de la surveillance des rebuts (docs/10 § 5) ; 0 désactive un seuil.</summary>
 public sealed class QualityRule
 {
+    public QualityReaction ReactionConsec { get; set; } = QualityReaction.StationHold;
+    public QualityReaction ReactionRate { get; set; } = QualityReaction.StationHold;
     public int ConsecWarn { get; set; }
     public int ConsecAction { get; set; }
     public int Window { get; set; }
@@ -231,9 +242,9 @@ public sealed class QualityConfig
 {
     public QualityRule StationObserved { get; set; } = new QualityRule { ConsecWarn = 2, ConsecAction = 3, Window = 50, MinSample = 20, RateWarnPercent = 5, RateActionPercent = 10 };
     public QualityRule StationImputed { get; set; } = new QualityRule { ConsecWarn = 3, ConsecAction = 5, Window = 50, MinSample = 20, RateWarnPercent = 5, RateActionPercent = 10 };
-    public QualityRule Function { get; set; } = new QualityRule { ConsecAction = 5, Window = 100, MinSample = 30, RateWarnPercent = 4, RateActionPercent = 8 };
-    public QualityRule Mover { get; set; } = new QualityRule { ConsecWarn = 2, ConsecAction = 3, Window = 20, MinSample = 10, RateWarnPercent = 10, RateActionPercent = 20 };
-    public QualityRule Machine { get; set; } = new QualityRule { ConsecWarn = 3, ConsecAction = 5, Window = 200, MinSample = 50, RateWarnPercent = 3, RateActionPercent = 5 };
+    public QualityRule Function { get; set; } = new QualityRule { ReactionConsec = QualityReaction.StopLoading, ReactionRate = QualityReaction.StopLoading, ConsecAction = 5, Window = 100, MinSample = 30, RateWarnPercent = 4, RateActionPercent = 8 };
+    public QualityRule Mover { get; set; } = new QualityRule { ReactionConsec = QualityReaction.MoverOut, ReactionRate = QualityReaction.MoverOut, ConsecWarn = 2, ConsecAction = 3, Window = 20, MinSample = 10, RateWarnPercent = 10, RateActionPercent = 20 };
+    public QualityRule Machine { get; set; } = new QualityRule { ReactionConsec = QualityReaction.MachineStop, ReactionRate = QualityReaction.StopLoading, ConsecWarn = 3, ConsecAction = 5, Window = 200, MinSample = 50, RateWarnPercent = 3, RateActionPercent = 5 };
     public double OrderBudgetWarnPercent { get; set; } = 80;
     public double OrderBudgetActionPercent { get; set; } = 100;
     public List<QualityRuleOverride> StationOverrides { get; } = new List<QualityRuleOverride>();

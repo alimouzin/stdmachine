@@ -104,6 +104,16 @@ public static class ProjectCompiler
             foreach (var pd in _p.Machine.PartData) m.PartData.Add(new CPartData(pd.Name, pd.Type, pd.Reserved));
             m.VerdictIndex = _p.Machine.PartData.FindIndex(x => x.Reserved && x.Name == "Verdict") + 1;
             m.Quality = _p.Machine.Quality;
+            var q = _p.Machine.Quality;
+            foreach (var st in _p.Stations.OrderBy(x => x.Number)) m.StationRules.Add(q.StationOverrides.FirstOrDefault(o => o.TargetId == st.Id)?.Rule ?? q.StationObserved);
+            foreach (var g in groups) m.GroupRules.Add(q.FunctionOverrides.FirstOrDefault(o => o.TargetId == g.Id)?.Rule ?? q.Function);
+            foreach (var g in groups)
+            {
+                uint mask = 0;
+                if (g.ImputesRejects)
+                    for (int i = 0; i < groups.Count; i++) if (groups[i].Role == GroupRole.Work && groups[i].Priority < g.Priority) mask |= 1u << i;
+                m.GroupImputeMask.Add(mask);
+            }
             foreach (var cfg in ObjectConfigs(_p.Machine.MachineObjects, out _)) m.Objects.Add(cfg);
         }
 
