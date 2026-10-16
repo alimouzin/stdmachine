@@ -62,6 +62,7 @@ public static class SampleProject
 
         AddPressRecipes(p);
         AddGeneratedInterlocks(p);
+        StabilizeIds(p);
         return p;
     }
 
@@ -115,6 +116,14 @@ public static class SampleProject
         node.Params.Clear();
         foreach (var cp in module.Params)
             node.Params.Add(new ParamValue { No = cp.No, Name = cp.Name, Number = cp.Default, Unit = cp.Unit, Value = cp.Default.ToString("0.###", CultureInfo.InvariantCulture) });
+    }
+
+    /// <summary>Les paramètres d'opération créés par la démonstration reçoivent un identifiant au hasard : on les rend déterministes pour que le fichier d'exemple soit reproductible.</summary>
+    private static void StabilizeIds(MachineProject p)
+    {
+        foreach (var g in p.Machine.Groups)
+            foreach (var op in g.Operations)
+                foreach (var prm in op.Parameters) prm.Id = DemoIds.Of("param/" + g.Name + "/" + op.Name + "/" + prm.Name);
     }
 
     private static void AddPressRecipes(MachineProject p)

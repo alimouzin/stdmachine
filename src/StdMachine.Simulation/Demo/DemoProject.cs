@@ -149,7 +149,7 @@ public static class DemoProject
             BuildPressageProcesses(s, p);
             // Fonction personnalisée d'exemple : copie de « Prendre pièce » à vitesse lente par défaut (docs/02 § 3)
             var robotNode = s.FindObject(ObjectId(num, "robot"))!;
-            var douce = DemoFunctions.CopyOf(s, robotNode, DemoCatalog.Get("CartesianRobot")!.Function("PickPart")!);
+            var douce = DemoFunctions.CopyOf(s, robotNode, DemoCatalog.Get("CartesianRobot")!.Function("PickPart")!, "fn/" + num + "/douce");
             douce.Id = DemoIds.Of("fn/" + num + "/douce");
             douce.Name = "Prendre pièce douce";
             douce.BasedOn = "Prendre pièce";

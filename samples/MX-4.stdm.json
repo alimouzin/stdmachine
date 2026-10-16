@@ -185,7 +185,7 @@
             "name": "Presser pignon",
             "parameters": [
               {
-                "id": "6a9bafdb-f5da-4925-9340-be055491da89",
+                "id": "899beb5c-9e05-ab86-a932-dee537403c80",
                 "name": "Recette de presse",
                 "type": "Recipe",
                 "default": 3
@@ -225,7 +225,7 @@
             "name": "Sertir",
             "parameters": [
               {
-                "id": "9dc2d629-3f1b-4729-b5f3-3a7963dcc854",
+                "id": "35726b23-4565-77f7-7786-ebf16b3f3443",
                 "name": "Recette de presse",
                 "type": "Recipe",
                 "default": 3
@@ -3853,13 +3853,13 @@
           "basedOn": "Prendre pi\u00E8ce",
           "params": [
             {
-              "id": "e37e3f89-67d9-4a84-87bb-fb139c04568d",
+              "id": "655ff278-c9cd-67c8-9888-6642e9efbbe8",
               "name": "Position",
               "type": "Position",
               "default": 0
             },
             {
-              "id": "af771c1d-2fb4-48a2-b3f0-6727a8e50976",
+              "id": "8f3f1092-16ca-08af-1687-ef4a83f54374",
               "name": "Approche",
               "type": "Real",
               "unit": "mm",
@@ -3868,7 +3868,7 @@
               "max": 50
             },
             {
-              "id": "0882f12c-da16-4862-bfe4-68679d172d12",
+              "id": "1c013b2c-2445-f5a2-4322-e95bc1df6c8e",
               "name": "Vitesse",
               "type": "Speed",
               "default": 1
@@ -3891,7 +3891,7 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "0882f12c-da16-4862-bfe4-68679d172d12",
+                    "ref": "1c013b2c-2445-f5a2-4322-e95bc1df6c8e",
                     "index": 0,
                     "offset": 0
                   }
@@ -3900,7 +3900,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "afb749be-61f7-4b16-88d4-f2e124872740"
+                "id": "917308af-6f3e-2d57-9fbf-13b6b7b03a75"
               },
               {
                 "step": "action",
@@ -3910,14 +3910,14 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e37e3f89-67d9-4a84-87bb-fb139c04568d",
+                    "ref": "655ff278-c9cd-67c8-9888-6642e9efbbe8",
                     "index": 0,
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "0882f12c-da16-4862-bfe4-68679d172d12",
+                    "ref": "1c013b2c-2445-f5a2-4322-e95bc1df6c8e",
                     "index": 0,
                     "offset": 0
                   }
@@ -3926,7 +3926,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "dd568920-55ef-4c2d-a4ab-002427e91944"
+                "id": "dc199c27-5e86-f416-9394-62aac9ac876f"
               },
               {
                 "step": "action",
@@ -3936,14 +3936,14 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e37e3f89-67d9-4a84-87bb-fb139c04568d",
+                    "ref": "655ff278-c9cd-67c8-9888-6642e9efbbe8",
                     "index": 0,
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "0882f12c-da16-4862-bfe4-68679d172d12",
+                    "ref": "1c013b2c-2445-f5a2-4322-e95bc1df6c8e",
                     "index": 0,
                     "offset": 0
                   }
@@ -3952,7 +3952,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "2dcad487-b5e5-4291-9539-0c6ab1fe9ac3"
+                "id": "ebd767e8-43f9-795a-1b89-9026e340357a"
               },
               {
                 "step": "action",
@@ -3962,15 +3962,15 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e37e3f89-67d9-4a84-87bb-fb139c04568d",
+                    "ref": "655ff278-c9cd-67c8-9888-6642e9efbbe8",
                     "index": 0,
-                    "text": "af771c1d2fb448a2b3f06727a8e50976",
+                    "text": "8f3f109216ca08af1687ef4a83f54374",
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "0882f12c-da16-4862-bfe4-68679d172d12",
+                    "ref": "1c013b2c-2445-f5a2-4322-e95bc1df6c8e",
                     "index": 0,
                     "offset": 0
                   }
@@ -3979,7 +3979,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "6c7cfde9-3088-4ced-a87c-109c2a67ce1b"
+                "id": "98024dbb-2cf3-fc7a-ae02-f4734fa40304"
               },
               {
                 "step": "action",
@@ -3997,7 +3997,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "c1634d43-2e31-424f-96d3-e0360d26b520"
+                "id": "f2c70c07-eb3b-1271-c325-9d2986b91fcb"
               },
               {
                 "step": "action",
@@ -4007,14 +4007,14 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e37e3f89-67d9-4a84-87bb-fb139c04568d",
+                    "ref": "655ff278-c9cd-67c8-9888-6642e9efbbe8",
                     "index": 0,
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "0882f12c-da16-4862-bfe4-68679d172d12",
+                    "ref": "1c013b2c-2445-f5a2-4322-e95bc1df6c8e",
                     "index": 0,
                     "offset": 0
                   }
@@ -4023,7 +4023,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "ea885152-4ccf-48d4-8458-4bfd48c031bd"
+                "id": "3f65a544-5e88-8448-6f45-f25a14a1a9b3"
               },
               {
                 "step": "action",
@@ -4034,7 +4034,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "ac514b4b-6597-4314-8393-57d142b9998a"
+                "id": "cd54f2c0-892b-4817-ac1a-be9a16322acb"
               },
               {
                 "step": "action",
@@ -4051,7 +4051,7 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "0882f12c-da16-4862-bfe4-68679d172d12",
+                    "ref": "1c013b2c-2445-f5a2-4322-e95bc1df6c8e",
                     "index": 0,
                     "offset": 0
                   }
@@ -4060,7 +4060,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "91408e89-7fd4-4c7f-963d-8183f28e9a2e"
+                "id": "a82a9573-0442-c568-046d-aa450de16192"
               }
             ]
           }
@@ -5866,13 +5866,13 @@
           "basedOn": "Prendre pi\u00E8ce",
           "params": [
             {
-              "id": "f5f399d5-be25-4a2d-845e-2981f999b419",
+              "id": "269667d2-098d-ba8c-5033-770ee7d61a8a",
               "name": "Position",
               "type": "Position",
               "default": 0
             },
             {
-              "id": "70a64abc-5b37-41bc-b303-50a8d5d9608f",
+              "id": "6388f887-1cae-9537-376f-077a7db71122",
               "name": "Approche",
               "type": "Real",
               "unit": "mm",
@@ -5881,7 +5881,7 @@
               "max": 50
             },
             {
-              "id": "e9adcc28-e0a5-41ac-a25d-9a5ce7268d7b",
+              "id": "cefb95aa-1be6-11c9-e774-5a803f811352",
               "name": "Vitesse",
               "type": "Speed",
               "default": 1
@@ -5904,7 +5904,7 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e9adcc28-e0a5-41ac-a25d-9a5ce7268d7b",
+                    "ref": "cefb95aa-1be6-11c9-e774-5a803f811352",
                     "index": 0,
                     "offset": 0
                   }
@@ -5913,7 +5913,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "7ff4f878-81cf-45f9-b4cc-5746542c2c4d"
+                "id": "fa30339f-c533-9e9a-5710-55d7c968e5d4"
               },
               {
                 "step": "action",
@@ -5923,14 +5923,14 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "f5f399d5-be25-4a2d-845e-2981f999b419",
+                    "ref": "269667d2-098d-ba8c-5033-770ee7d61a8a",
                     "index": 0,
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e9adcc28-e0a5-41ac-a25d-9a5ce7268d7b",
+                    "ref": "cefb95aa-1be6-11c9-e774-5a803f811352",
                     "index": 0,
                     "offset": 0
                   }
@@ -5939,7 +5939,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "bcee6c2e-7f67-454e-97df-7661fa320f6e"
+                "id": "6e3fc6eb-b45e-ca9e-b062-85cbddac8ada"
               },
               {
                 "step": "action",
@@ -5949,14 +5949,14 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "f5f399d5-be25-4a2d-845e-2981f999b419",
+                    "ref": "269667d2-098d-ba8c-5033-770ee7d61a8a",
                     "index": 0,
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e9adcc28-e0a5-41ac-a25d-9a5ce7268d7b",
+                    "ref": "cefb95aa-1be6-11c9-e774-5a803f811352",
                     "index": 0,
                     "offset": 0
                   }
@@ -5965,7 +5965,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "f38ef247-03ca-4104-9ac9-8147eb83b32a"
+                "id": "dd019327-2276-2111-4980-44b36a08934f"
               },
               {
                 "step": "action",
@@ -5975,15 +5975,15 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "f5f399d5-be25-4a2d-845e-2981f999b419",
+                    "ref": "269667d2-098d-ba8c-5033-770ee7d61a8a",
                     "index": 0,
-                    "text": "70a64abc5b3741bcb30350a8d5d9608f",
+                    "text": "6388f8871cae9537376f077a7db71122",
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e9adcc28-e0a5-41ac-a25d-9a5ce7268d7b",
+                    "ref": "cefb95aa-1be6-11c9-e774-5a803f811352",
                     "index": 0,
                     "offset": 0
                   }
@@ -5992,7 +5992,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "a1f7b079-cd97-4723-98d1-68c73e1aa693"
+                "id": "c0061baa-2eff-0a23-964d-832380f665d7"
               },
               {
                 "step": "action",
@@ -6010,7 +6010,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "2b3b030e-8c91-4a4f-a24c-d4740c13632b"
+                "id": "d9275133-71f1-afa6-106b-5b91873d0e91"
               },
               {
                 "step": "action",
@@ -6020,14 +6020,14 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "f5f399d5-be25-4a2d-845e-2981f999b419",
+                    "ref": "269667d2-098d-ba8c-5033-770ee7d61a8a",
                     "index": 0,
                     "offset": 0
                   },
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e9adcc28-e0a5-41ac-a25d-9a5ce7268d7b",
+                    "ref": "cefb95aa-1be6-11c9-e774-5a803f811352",
                     "index": 0,
                     "offset": 0
                   }
@@ -6036,7 +6036,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "54cd991a-247e-46e1-aa38-1053e15a6310"
+                "id": "f59e94cc-7664-a230-28cb-2e86232cc24e"
               },
               {
                 "step": "action",
@@ -6047,7 +6047,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "69aa9dde-b098-4ae4-abb7-670f36afe5b4"
+                "id": "2b5f8a36-0e75-4c36-6ac0-33daeb7b0d50"
               },
               {
                 "step": "action",
@@ -6064,7 +6064,7 @@
                   {
                     "kind": "funcParam",
                     "number": 0,
-                    "ref": "e9adcc28-e0a5-41ac-a25d-9a5ce7268d7b",
+                    "ref": "cefb95aa-1be6-11c9-e774-5a803f811352",
                     "index": 0,
                     "offset": 0
                   }
@@ -6073,7 +6073,7 @@
                   "kind": "stopStation",
                   "retries": 0
                 },
-                "id": "27ea5ffc-9651-45bb-ab60-5f658624918b"
+                "id": "69b7f36e-6880-7b86-1ffb-bf91b7c3206f"
               }
             ]
           }

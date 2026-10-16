@@ -25,12 +25,14 @@ public static class DemoFunctions
             c.Body.Steps.Select(s => DemoText.Title(s, station)).ToArray());
 
     /// <summary>Copie d'une fonction de module en fonction personnalisée : mêmes paramètres, suite d'actions de base équivalente.</summary>
-    public static CustomFunction CopyOf(StationConfig station, ObjectNode module, FunctionDef def)
+    public static CustomFunction CopyOf(StationConfig station, ObjectNode module, FunctionDef def, string? idSeed = null)
     {
         var c = new CustomFunction { ModuleObjectId = module.Id, Name = def.Name + " (copie)", BasedOn = def.Name, Description = "Copie de la fonction « " + def.Name + " » du module." };
         foreach (var p in def.Params)
-            c.Params.Add(new ParamDef { Name = p.Name, Type = p.Type, Unit = p.Unit, Default = p.Default, Min = p.Min, Max = p.Max, Values = p.Values });
+            c.Params.Add(new ParamDef { Id = idSeed == null ? Guid.NewGuid() : DemoIds.Of(idSeed + "/" + p.Name), Name = p.Name, Type = p.Type, Unit = p.Unit, Default = p.Default, Min = p.Min, Max = p.Max, Values = p.Values });
         c.Body = Seed(station, module, def.Id, c);
+        if (idSeed != null)
+            for (int i = 0; i < c.Body.Steps.Count; i++) c.Body.Steps[i].Id = DemoIds.Of(idSeed + "/step/" + i);
         return c;
     }
 
