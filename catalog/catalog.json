@@ -1,0 +1,4984 @@
+{
+  "catalogVersion": 1,
+  "objectStates": [
+    "Non initialisé",
+    "Prêt",
+    "En cours",
+    "En erreur",
+    "Désactivé"
+  ],
+  "actionStatus": [
+    "Inactif",
+    "En cours",
+    "Terminée",
+    "En erreur"
+  ],
+  "commonErrors": [
+    {
+      "code": 1,
+      "text": "Timeout de l'action",
+      "subcode": "N° d'action"
+    },
+    {
+      "code": 2,
+      "text": "Verrouillage actif",
+      "subcode": "N° de verrouillage"
+    },
+    {
+      "code": 3,
+      "text": "Objet non prêt",
+      "subcode": "État de l'objet"
+    },
+    {
+      "code": 4,
+      "text": "Action inconnue pour ce type",
+      "subcode": "N° d'action"
+    },
+    {
+      "code": 5,
+      "text": "Paramètre d'action invalide",
+      "subcode": "N° de paramètre"
+    },
+    {
+      "code": 6,
+      "text": "Action interrompue par Abort",
+      "subcode": "N° d'action"
+    },
+    {
+      "code": 7,
+      "text": "Objet désactivé"
+    },
+    {
+      "code": 8,
+      "text": "Communication perdue",
+      "subcode": "Code du driver"
+    },
+    {
+      "code": 9,
+      "text": "Objet non initialisé"
+    },
+    {
+      "code": 10,
+      "text": "Matériel non raccordé"
+    },
+    {
+      "code": 11,
+      "text": "Action réservée au mode manuel",
+      "subcode": "N° d'action"
+    }
+  ],
+  "types": [
+    {
+      "id": 1,
+      "code": "DigitalInput",
+      "name": "Entrée numérique",
+      "category": "Entrées/sorties",
+      "icon": "login",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Entrée",
+          "kind": "DI",
+          "required": true
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Inversion",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 2,
+          "name": "Filtrage anti-rebond",
+          "type": "Duration",
+          "default": 10,
+          "min": 0,
+          "max": 1000
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Valeur filtrée",
+          "type": "Bool"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Lire",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Bool"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Attendre actif",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Attendre inactif",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [],
+          "results": []
+        }
+      ],
+      "simulation": {
+        "waitMs": 300
+      },
+      "errors": []
+    },
+    {
+      "id": 2,
+      "code": "DigitalOutput",
+      "name": "Sortie numérique",
+      "category": "Entrées/sorties",
+      "icon": "logout",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Sortie",
+          "kind": "DO",
+          "required": true
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Inversion",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 2,
+          "name": "Durée d'impulsion par défaut",
+          "type": "Duration",
+          "default": 200,
+          "min": 1,
+          "max": 60000
+        },
+        {
+          "no": 3,
+          "name": "État sûr",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Faux",
+            "Vrai",
+            "Maintien"
+          ]
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Valeur commandée",
+          "type": "Bool"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Activer",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Désactiver",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Impulsion",
+          "motion": false,
+          "timeoutMs": 1000,
+          "addsDuration": true,
+          "params": [
+            {
+              "name": "Durée",
+              "type": "Duration",
+              "default": "P2"
+            }
+          ],
+          "results": []
+        }
+      ],
+      "safeState": "P3",
+      "errors": []
+    },
+    {
+      "id": 3,
+      "code": "AnalogInput",
+      "name": "Entrée analogique",
+      "category": "Entrées/sorties",
+      "icon": "monitoring",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Entrée",
+          "kind": "AI",
+          "required": true
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Valeur brute min",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 2,
+          "name": "Valeur brute max",
+          "type": "Real",
+          "default": 32767
+        },
+        {
+          "no": 3,
+          "name": "Valeur min en unité",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 4,
+          "name": "Valeur max en unité",
+          "type": "Real",
+          "default": 10
+        },
+        {
+          "no": 5,
+          "name": "Unité",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "V",
+            "mA",
+            "bar",
+            "kPa",
+            "N",
+            "mm",
+            "°C",
+            "%"
+          ]
+        },
+        {
+          "no": 6,
+          "name": "Filtrage (moyenne glissante)",
+          "type": "Int",
+          "default": 1,
+          "unit": "échantillons",
+          "min": 1,
+          "max": 100
+        },
+        {
+          "no": 7,
+          "name": "Seuil d'alarme bas",
+          "type": "Real",
+          "default": -1000000000.0
+        },
+        {
+          "no": 8,
+          "name": "Seuil d'alarme haut",
+          "type": "Real",
+          "default": 1000000000.0
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Valeur",
+          "type": "Real"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Lire",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Attendre seuil",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [
+            {
+              "name": "Seuil",
+              "type": "Real"
+            },
+            {
+              "name": "Sens",
+              "type": "Enum",
+              "values": [
+                "Au-dessus",
+                "En dessous"
+              ]
+            }
+          ],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "name": "Vérifier plage",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Min",
+              "type": "Real"
+            },
+            {
+              "name": "Max",
+              "type": "Real"
+            }
+          ],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            },
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Valeur sous le seuil d'alarme bas"
+        },
+        {
+          "code": 101,
+          "text": "Valeur au-dessus du seuil d'alarme haut"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "code": "AnalogOutput",
+      "name": "Sortie analogique",
+      "category": "Entrées/sorties",
+      "icon": "tune",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Sortie",
+          "kind": "AO",
+          "required": true
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Valeur brute min",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 2,
+          "name": "Valeur brute max",
+          "type": "Real",
+          "default": 32767
+        },
+        {
+          "no": 3,
+          "name": "Valeur min en unité",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 4,
+          "name": "Valeur max en unité",
+          "type": "Real",
+          "default": 10
+        },
+        {
+          "no": 5,
+          "name": "Unité",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "V",
+            "mA",
+            "bar",
+            "kPa",
+            "N",
+            "mm",
+            "°C",
+            "%"
+          ]
+        },
+        {
+          "no": 6,
+          "name": "Limite min",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 7,
+          "name": "Limite max",
+          "type": "Real",
+          "default": 10
+        },
+        {
+          "no": 8,
+          "name": "Valeur sûre",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 9,
+          "name": "Variation max",
+          "type": "Real",
+          "default": 0,
+          "unit": "unité/s",
+          "note": "0 = illimitée"
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Valeur commandée",
+          "type": "Real"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Écrire",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Écrire avec rampe",
+          "motion": false,
+          "timeoutMs": 1000,
+          "addsDuration": true,
+          "params": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            },
+            {
+              "name": "Durée",
+              "type": "Duration"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Valeur sûre",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": []
+        }
+      ],
+      "safeState": "P8",
+      "errors": []
+    },
+    {
+      "id": 10,
+      "code": "Cylinder",
+      "name": "Vérin",
+      "category": "Mouvement",
+      "icon": "swap_vert",
+      "hasMotion": true,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Commande travail",
+          "kind": "DO",
+          "required": true
+        },
+        {
+          "no": 2,
+          "name": "Commande repos",
+          "kind": "DO",
+          "required": false,
+          "visibleWhen": "P1 == 1"
+        },
+        {
+          "no": 3,
+          "name": "Fin de course travail",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 4,
+          "name": "Fin de course repos",
+          "kind": "DI",
+          "required": false
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Commande",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Monostable",
+            "Bistable"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Temps de stabilisation",
+          "type": "Duration",
+          "default": 50,
+          "min": 0,
+          "max": 5000
+        },
+        {
+          "no": 3,
+          "name": "Temps de déplacement sans capteur",
+          "type": "Duration",
+          "default": 500,
+          "min": 10,
+          "max": 30000
+        },
+        {
+          "no": 4,
+          "name": "Position sûre sur Abort",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Repos",
+            "Travail",
+            "Maintien"
+          ]
+        },
+        {
+          "no": 5,
+          "name": "Ordre d'initialisation",
+          "type": "Int",
+          "default": 1,
+          "min": 0,
+          "max": 9
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Position",
+          "type": "Enum",
+          "values": [
+            "Inconnue",
+            "Repos",
+            "Travail",
+            "Intermédiaire",
+            "Incohérente"
+          ]
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Move travail",
+          "icon": "south",
+          "motion": true,
+          "timeoutMs": 2000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Move repos",
+          "icon": "north",
+          "motion": true,
+          "timeoutMs": 2000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Lire position",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Position",
+              "type": "Enum",
+              "values": [
+                "Inconnue",
+                "Repos",
+                "Travail",
+                "Intermédiaire",
+                "Incohérente"
+              ]
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Les deux capteurs actifs"
+        },
+        {
+          "code": 101,
+          "text": "Perte du capteur de la position atteinte hors mouvement"
+        },
+        {
+          "code": 102,
+          "text": "Capteur de départ toujours actif après 500 ms (vérin bloqué)"
+        }
+      ],
+      "simulation": {
+        "moveMs": "P3|300"
+      }
+    },
+    {
+      "id": 11,
+      "code": "LinearAxis",
+      "name": "Axe linéaire",
+      "category": "Mouvement",
+      "icon": "straighten",
+      "hasMotion": true,
+      "hardware": {
+        "kind": "Axis",
+        "required": true
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Vmax",
+          "type": "Real",
+          "default": 500,
+          "unit": "mm/s"
+        },
+        {
+          "no": 2,
+          "name": "Accélération",
+          "type": "Real",
+          "default": 2000,
+          "unit": "mm/s²"
+        },
+        {
+          "no": 3,
+          "name": "Décélération",
+          "type": "Real",
+          "default": 2000,
+          "unit": "mm/s²"
+        },
+        {
+          "no": 4,
+          "name": "Fenêtre de position atteinte",
+          "type": "Real",
+          "default": 0.02
+        },
+        {
+          "no": 5,
+          "name": "Course min",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 6,
+          "name": "Course max",
+          "type": "Real",
+          "default": 300
+        },
+        {
+          "no": 7,
+          "name": "Limites logicielles actives",
+          "type": "Bool",
+          "default": 1
+        },
+        {
+          "no": 8,
+          "name": "Position de homing",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 9,
+          "name": "Méthode de référencement",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Capteur de référence",
+            "Butée",
+            "Index codeur",
+            "Position actuelle"
+          ]
+        },
+        {
+          "no": 10,
+          "name": "Ordre de référencement",
+          "type": "Int",
+          "default": 1
+        },
+        {
+          "no": 11,
+          "name": "Après Abort",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Alimentation maintenue",
+            "Alimentation coupée"
+          ]
+        },
+        {
+          "no": 12,
+          "name": "Override manuel",
+          "type": "Percent",
+          "default": 50
+        },
+        {
+          "no": 13,
+          "name": "Composante",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "X",
+            "Y",
+            "Z"
+          ]
+        }
+      ],
+      "speeds": [
+        {
+          "no": 1,
+          "name": "Lente",
+          "percent": 10
+        },
+        {
+          "no": 2,
+          "name": "Rapide",
+          "percent": 80
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Position actuelle",
+          "type": "Real"
+        },
+        {
+          "no": 2,
+          "name": "Vitesse actuelle",
+          "type": "Real"
+        },
+        {
+          "no": 3,
+          "name": "Alimenté",
+          "type": "Bool"
+        },
+        {
+          "no": 4,
+          "name": "Référencé",
+          "type": "Bool"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Power on",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Power off",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Init",
+          "motion": true,
+          "timeoutMs": 30000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Move absolu",
+          "motion": true,
+          "timeoutCalc": "axisMove",
+          "params": [
+            {
+              "name": "Position",
+              "type": "Position"
+            },
+            {
+              "name": "Vitesse",
+              "type": "Speed"
+            },
+            {
+              "name": "Accélération",
+              "type": "Percent",
+              "default": 100
+            }
+          ],
+          "results": [
+            {
+              "name": "Position atteinte",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 5,
+          "name": "Move relatif",
+          "motion": true,
+          "timeoutCalc": "axisMove",
+          "params": [
+            {
+              "name": "Distance",
+              "type": "Real"
+            },
+            {
+              "name": "Vitesse",
+              "type": "Speed"
+            }
+          ],
+          "results": [
+            {
+              "name": "Position atteinte",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 6,
+          "name": "Stop",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 7,
+          "name": "Acquitter erreur",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 8,
+          "name": "Lire position",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Position",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 9,
+          "name": "Jog +",
+          "motion": true,
+          "manualOnly": true,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Vitesse",
+              "type": "Speed",
+              "default": 1
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 10,
+          "name": "Jog −",
+          "motion": true,
+          "manualOnly": true,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Vitesse",
+              "type": "Speed",
+              "default": 1
+            }
+          ],
+          "results": []
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Axe non référencé"
+        },
+        {
+          "code": 101,
+          "text": "Cible hors course"
+        },
+        {
+          "code": 102,
+          "text": "Erreur du drive",
+          "subcode": "Code d'erreur NC"
+        },
+        {
+          "code": 103,
+          "text": "Erreur de suivi"
+        },
+        {
+          "code": 104,
+          "text": "Perte d'alimentation"
+        },
+        {
+          "code": 105,
+          "text": "Axe non alimenté"
+        }
+      ],
+      "simulation": {
+        "profile": "trapezoid",
+        "initMs": 1500
+      },
+      "signals": []
+    },
+    {
+      "id": 12,
+      "code": "RotaryAxis",
+      "name": "Axe rotatif",
+      "category": "Mouvement",
+      "icon": "rotate_right",
+      "hasMotion": true,
+      "hardware": {
+        "kind": "Axis",
+        "required": true
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Vmax",
+          "type": "Real",
+          "default": 720,
+          "unit": "°/s"
+        },
+        {
+          "no": 2,
+          "name": "Accélération",
+          "type": "Real",
+          "default": 3600,
+          "unit": "°/s²"
+        },
+        {
+          "no": 3,
+          "name": "Décélération",
+          "type": "Real",
+          "default": 3600,
+          "unit": "°/s²"
+        },
+        {
+          "no": 4,
+          "name": "Fenêtre de position atteinte",
+          "type": "Real",
+          "default": 0.05
+        },
+        {
+          "no": 5,
+          "name": "Course min",
+          "type": "Real",
+          "default": -180
+        },
+        {
+          "no": 6,
+          "name": "Course max",
+          "type": "Real",
+          "default": 180
+        },
+        {
+          "no": 7,
+          "name": "Limites logicielles actives",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 8,
+          "name": "Position de homing",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 9,
+          "name": "Méthode de référencement",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Capteur de référence",
+            "Butée",
+            "Index codeur",
+            "Position actuelle"
+          ]
+        },
+        {
+          "no": 10,
+          "name": "Ordre de référencement",
+          "type": "Int",
+          "default": 3
+        },
+        {
+          "no": 11,
+          "name": "Après Abort",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Alimentation maintenue",
+            "Alimentation coupée"
+          ]
+        },
+        {
+          "no": 12,
+          "name": "Override manuel",
+          "type": "Percent",
+          "default": 50
+        },
+        {
+          "no": 13,
+          "name": "Composante",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "C"
+          ]
+        },
+        {
+          "no": 14,
+          "name": "Direction par défaut",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Plus court",
+            "Positif",
+            "Négatif"
+          ]
+        }
+      ],
+      "speeds": [
+        {
+          "no": 1,
+          "name": "Lente",
+          "percent": 10
+        },
+        {
+          "no": 2,
+          "name": "Rapide",
+          "percent": 80
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Position actuelle",
+          "type": "Real"
+        },
+        {
+          "no": 2,
+          "name": "Vitesse actuelle",
+          "type": "Real"
+        },
+        {
+          "no": 3,
+          "name": "Alimenté",
+          "type": "Bool"
+        },
+        {
+          "no": 4,
+          "name": "Référencé",
+          "type": "Bool"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Power on",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Power off",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Init",
+          "motion": true,
+          "timeoutMs": 30000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Move absolu",
+          "motion": true,
+          "timeoutCalc": "axisMove",
+          "params": [
+            {
+              "name": "Position",
+              "type": "Position"
+            },
+            {
+              "name": "Vitesse",
+              "type": "Speed"
+            },
+            {
+              "name": "Accélération",
+              "type": "Percent",
+              "default": 100
+            },
+            {
+              "name": "Direction",
+              "type": "Enum",
+              "values": [
+                "Plus court",
+                "Positif",
+                "Négatif"
+              ],
+              "optional": true
+            }
+          ],
+          "results": [
+            {
+              "name": "Position atteinte",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 5,
+          "name": "Move relatif",
+          "motion": true,
+          "timeoutCalc": "axisMove",
+          "params": [
+            {
+              "name": "Distance",
+              "type": "Real"
+            },
+            {
+              "name": "Vitesse",
+              "type": "Speed"
+            }
+          ],
+          "results": [
+            {
+              "name": "Position atteinte",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 6,
+          "name": "Stop",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 7,
+          "name": "Acquitter erreur",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 8,
+          "name": "Lire position",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Position",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 9,
+          "name": "Jog +",
+          "motion": true,
+          "manualOnly": true,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Vitesse",
+              "type": "Speed",
+              "default": 1
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 10,
+          "name": "Jog −",
+          "motion": true,
+          "manualOnly": true,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Vitesse",
+              "type": "Speed",
+              "default": 1
+            }
+          ],
+          "results": []
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Axe non référencé"
+        },
+        {
+          "code": 101,
+          "text": "Cible hors course"
+        },
+        {
+          "code": 102,
+          "text": "Erreur du drive",
+          "subcode": "Code d'erreur NC"
+        },
+        {
+          "code": 103,
+          "text": "Erreur de suivi"
+        },
+        {
+          "code": 104,
+          "text": "Perte d'alimentation"
+        },
+        {
+          "code": 105,
+          "text": "Axe non alimenté"
+        }
+      ],
+      "simulation": {
+        "profile": "trapezoid",
+        "initMs": 1500
+      },
+      "signals": []
+    },
+    {
+      "id": 13,
+      "code": "PlanarSystem",
+      "name": "Système planaire",
+      "category": "Mouvement",
+      "icon": "grid_view",
+      "hasMotion": false,
+      "scope": "machine",
+      "hardware": {
+        "kind": "Planar",
+        "required": true
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Vitesse par défaut des movers",
+          "type": "Real",
+          "default": 1000,
+          "unit": "mm/s"
+        },
+        {
+          "no": 2,
+          "name": "Accélération par défaut",
+          "type": "Real",
+          "default": 5000,
+          "unit": "mm/s²"
+        },
+        {
+          "no": 3,
+          "name": "Fenêtre de position atteinte",
+          "type": "Real",
+          "default": 0.1,
+          "unit": "mm"
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Système actif",
+          "type": "Bool"
+        },
+        {
+          "no": 2,
+          "name": "Movers détectés",
+          "type": "Int"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Activer le système",
+          "motion": false,
+          "timeoutMs": 20000,
+          "params": [],
+          "results": [
+            {
+              "name": "Movers détectés",
+              "type": "Int"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Désactiver le système",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Acquitter erreur",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [],
+          "results": []
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Collision détectée"
+        },
+        {
+          "code": 101,
+          "text": "Mover non détecté"
+        },
+        {
+          "code": 102,
+          "text": "Erreur du groupe planaire",
+          "subcode": "Code Tc3"
+        }
+      ],
+      "machineFault": true,
+      "signals": []
+    },
+    {
+      "id": 14,
+      "code": "PlanarMover",
+      "name": "Mover",
+      "category": "Mouvement",
+      "icon": "crop_square",
+      "hasMotion": true,
+      "scope": "machine",
+      "hardware": {
+        "kind": "Planar",
+        "required": true
+      },
+      "display": [
+        {
+          "no": 1,
+          "name": "X",
+          "type": "Real"
+        },
+        {
+          "no": 2,
+          "name": "Y",
+          "type": "Real"
+        },
+        {
+          "no": 3,
+          "name": "C",
+          "type": "Real"
+        },
+        {
+          "no": 4,
+          "name": "Vitesse",
+          "type": "Real"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Move vers position",
+          "motion": true,
+          "timeoutMs": 30000,
+          "params": [
+            {
+              "name": "Position",
+              "type": "Position"
+            },
+            {
+              "name": "Vitesse",
+              "type": "Percent"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Stop",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Lire position",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Position",
+              "type": "Position"
+            }
+          ]
+        }
+      ],
+      "signals": [],
+      "params": [],
+      "errors": []
+    },
+    {
+      "id": 15,
+      "code": "ExternalRobot",
+      "name": "Robot externe",
+      "category": "Mouvement",
+      "icon": "smart_toy",
+      "hasMotion": true,
+      "hardware": {
+        "kind": "Network",
+        "required": true
+      },
+      "interfaceToDefine": true,
+      "params": [
+        {
+          "no": 1,
+          "name": "Frame de base",
+          "type": "Int",
+          "default": 1
+        },
+        {
+          "no": 2,
+          "name": "Outil : décalage X",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 3,
+          "name": "Outil : décalage Y",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 4,
+          "name": "Outil : décalage Z",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 5,
+          "name": "Outil : décalage C",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 6,
+          "name": "Vitesse par défaut",
+          "type": "Percent",
+          "default": 50
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Init",
+          "motion": true,
+          "timeoutMs": 60000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Aller à",
+          "motion": true,
+          "timeoutMs": 20000,
+          "params": [
+            {
+              "name": "Position",
+              "type": "Position"
+            },
+            {
+              "name": "Vitesse",
+              "type": "Percent"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Prendre",
+          "motion": true,
+          "timeoutMs": 20000,
+          "params": [
+            {
+              "name": "Position",
+              "type": "Position"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Déposer",
+          "motion": true,
+          "timeoutMs": 20000,
+          "params": [
+            {
+              "name": "Position",
+              "type": "Position"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 5,
+          "name": "Exécuter programme",
+          "motion": true,
+          "timeoutMs": 60000,
+          "params": [
+            {
+              "name": "Programme",
+              "type": "Recipe"
+            }
+          ],
+          "results": [
+            {
+              "name": "Code retour",
+              "type": "Int"
+            }
+          ]
+        },
+        {
+          "no": 6,
+          "name": "Stop",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 7,
+          "name": "Acquitter erreur",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [],
+          "results": []
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Robot en défaut",
+          "subcode": "Code du contrôleur"
+        },
+        {
+          "code": 101,
+          "text": "Position hors de portée"
+        },
+        {
+          "code": 102,
+          "text": "Zone interdite"
+        }
+      ],
+      "signals": [],
+      "display": []
+    },
+    {
+      "id": 20,
+      "code": "VacuumBlow",
+      "name": "Aspiration et soufflage",
+      "category": "Préhension",
+      "icon": "air",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Aspiration",
+          "kind": "DO",
+          "required": true
+        },
+        {
+          "no": 2,
+          "name": "Soufflage",
+          "kind": "DO",
+          "required": false
+        },
+        {
+          "no": 3,
+          "name": "Vide atteint (pressostat)",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 4,
+          "name": "Vide (kPa)",
+          "kind": "AI",
+          "required": false
+        }
+      ],
+      "signalsNote": "S3 ou S4, l'un des deux",
+      "params": [
+        {
+          "no": 1,
+          "name": "Seuil « pièce présente »",
+          "type": "Real",
+          "default": -60,
+          "unit": "kPa"
+        },
+        {
+          "no": 2,
+          "name": "Seuil « buse vide »",
+          "type": "Real",
+          "default": -52,
+          "unit": "kPa"
+        },
+        {
+          "no": 3,
+          "name": "Durée de soufflage par défaut",
+          "type": "Duration",
+          "default": 50
+        },
+        {
+          "no": 4,
+          "name": "Sur Abort",
+          "type": "Enum",
+          "default": 1,
+          "values": [
+            "Tout couper",
+            "Maintenir l'aspiration"
+          ]
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Aspiration",
+          "type": "Bool"
+        },
+        {
+          "no": 2,
+          "name": "Soufflage",
+          "type": "Bool"
+        },
+        {
+          "no": 3,
+          "name": "Vide",
+          "type": "Real"
+        },
+        {
+          "no": 4,
+          "name": "Pièce présente",
+          "type": "Bool"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Aspirer",
+          "motion": false,
+          "timeoutMs": 1000,
+          "params": [
+            {
+              "name": "Attendre le vide",
+              "type": "Bool",
+              "default": 1
+            }
+          ],
+          "results": [
+            {
+              "name": "Pièce présente",
+              "type": "Bool"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Souffler",
+          "motion": false,
+          "timeoutMs": 500,
+          "addsDuration": true,
+          "params": [
+            {
+              "name": "Durée",
+              "type": "Duration",
+              "default": "P3"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Couper",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Vérifier présence pièce",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Pièce présente",
+              "type": "Bool"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Vide non atteint (pièce absente ou fuite)"
+        },
+        {
+          "code": 101,
+          "text": "Perte de vide pendant l'aspiration (pièce tombée)"
+        },
+        {
+          "code": 102,
+          "text": "Seuils incohérents (P1 ≥ P2)"
+        }
+      ],
+      "rules": [
+        "Aspiration et soufflage jamais actifs ensemble",
+        "V105 : avertir si P2 − P1 < 10 kPa"
+      ]
+    },
+    {
+      "id": 21,
+      "code": "Gripper",
+      "name": "Pince",
+      "category": "Préhension",
+      "icon": "back_hand",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Fermer",
+          "kind": "DO",
+          "required": true
+        },
+        {
+          "no": 2,
+          "name": "Ouvrir",
+          "kind": "DO",
+          "required": false
+        },
+        {
+          "no": 3,
+          "name": "Fermée",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 4,
+          "name": "Ouverte",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 5,
+          "name": "Présence pièce",
+          "kind": "DI",
+          "required": false
+        }
+      ],
+      "hardware": {
+        "kind": "Network",
+        "required": false,
+        "visibleWhen": "P1 == 2"
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Type",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Pneumatique monostable",
+            "Pneumatique bistable",
+            "Électrique"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Temps de fermeture sans capteur",
+          "type": "Duration",
+          "default": 120
+        },
+        {
+          "no": 3,
+          "name": "Force de serrage par défaut (électrique)",
+          "type": "Real",
+          "default": 20,
+          "unit": "N"
+        },
+        {
+          "no": 4,
+          "name": "Course d'ouverture (électrique)",
+          "type": "Real",
+          "default": 5,
+          "unit": "mm"
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "État",
+          "type": "Enum",
+          "values": [
+            "Inconnu",
+            "Ouverte",
+            "Fermée",
+            "Fermée sur pièce"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Pièce présente",
+          "type": "Bool"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Ouvrir",
+          "motion": false,
+          "timeoutMs": 1000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Fermer",
+          "motion": false,
+          "timeoutMs": 1000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Serrer sur pièce",
+          "motion": false,
+          "timeoutMs": 1000,
+          "params": [
+            {
+              "name": "Force",
+              "type": "Real",
+              "optional": true
+            }
+          ],
+          "results": [
+            {
+              "name": "Pièce présente",
+              "type": "Bool"
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "name": "Vérifier présence pièce",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Pièce présente",
+              "type": "Bool"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Pièce absente à la fermeture"
+        },
+        {
+          "code": 101,
+          "text": "Pièce perdue pendant le maintien"
+        },
+        {
+          "code": 102,
+          "text": "Capteurs incohérents"
+        }
+      ],
+      "safeState": "Maintien"
+    },
+    {
+      "id": 30,
+      "code": "KeyenceIV",
+      "name": "Vision Keyence IV",
+      "category": "Capteurs et mesure",
+      "icon": "photo_camera",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Déclenchement",
+          "kind": "DO",
+          "required": true
+        },
+        {
+          "no": 2,
+          "name": "Prêt",
+          "kind": "DI",
+          "required": true
+        },
+        {
+          "no": 3,
+          "name": "Résultat OK",
+          "kind": "DI",
+          "required": true
+        },
+        {
+          "no": 4,
+          "name": "Résultat NOK",
+          "kind": "DI",
+          "required": true
+        }
+      ],
+      "hardware": {
+        "kind": "Network",
+        "required": false,
+        "visibleWhen": "P1 == 1"
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Mode de communication",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Signaux",
+            "Réseau"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Programme par défaut",
+          "type": "Int",
+          "default": 0
+        },
+        {
+          "no": 3,
+          "name": "Attente avant lecture du résultat",
+          "type": "Duration",
+          "default": 20
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Sélectionner programme",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [
+            {
+              "name": "Programme",
+              "type": "Recipe"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Déclencher",
+          "motion": false,
+          "timeoutMs": 2000,
+          "params": [],
+          "results": [
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            },
+            {
+              "name": "Valeur mesurée",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "name": "Lire dernier résultat",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            },
+            {
+              "name": "Valeur",
+              "type": "Real"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Capteur non prêt"
+        }
+      ],
+      "simulation": {
+        "goodProbability": 0.95
+      },
+      "display": []
+    },
+    {
+      "id": 31,
+      "code": "KeyenceGT2",
+      "name": "Palpeur Keyence GT2",
+      "category": "Capteurs et mesure",
+      "icon": "height",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Valeur",
+          "kind": "AI",
+          "required": true
+        }
+      ],
+      "hardware": {
+        "kind": "Network",
+        "required": false,
+        "visibleWhen": "P1 == 1"
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Mode de communication",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Signaux",
+            "Réseau"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Valeur de référence",
+          "type": "Real",
+          "default": 0,
+          "unit": "mm"
+        },
+        {
+          "no": 3,
+          "name": "Tolérance haute",
+          "type": "Real",
+          "default": 0.02,
+          "unit": "mm"
+        },
+        {
+          "no": 4,
+          "name": "Tolérance basse",
+          "type": "Real",
+          "default": -0.02,
+          "unit": "mm"
+        },
+        {
+          "no": 5,
+          "name": "Nombre d'échantillons",
+          "type": "Int",
+          "default": 5
+        },
+        {
+          "no": 6,
+          "name": "Stabilisation avant mesure",
+          "type": "Duration",
+          "default": 100
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Valeur courante",
+          "type": "Real"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Mesurer",
+          "motion": false,
+          "timeoutMs": 2000,
+          "params": [
+            {
+              "name": "Échantillons",
+              "type": "Int",
+              "default": "P5"
+            }
+          ],
+          "results": [
+            {
+              "name": "Valeur moyenne",
+              "type": "Real"
+            },
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Trop haut",
+                "Bon",
+                "Trop bas"
+              ]
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Remise à zéro",
+          "motion": false,
+          "timeoutMs": 1000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Lire valeur courante",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Mesure hors plage"
+        },
+        {
+          "code": 101,
+          "text": "Capteur non prêt"
+        }
+      ]
+    },
+    {
+      "id": 32,
+      "code": "AsyrilEyePlus",
+      "name": "Vision Asyril Eye+",
+      "category": "Capteurs et mesure",
+      "icon": "center_focus_strong",
+      "hasMotion": false,
+      "hardware": {
+        "kind": "EtherCat",
+        "required": true
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Recette de vision par défaut",
+          "type": "Int",
+          "default": 1
+        },
+        {
+          "no": 2,
+          "name": "Frame de la vision",
+          "type": "Int",
+          "default": 2
+        },
+        {
+          "no": 3,
+          "name": "Timeout de réponse",
+          "type": "Duration",
+          "default": 2000
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Pièces trouvées",
+          "type": "Int"
+        },
+        {
+          "no": 2,
+          "name": "Recette active",
+          "type": "Int"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Init",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Sélectionner recette",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [
+            {
+              "name": "Recette de vision",
+              "type": "Recipe"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Chercher pièce",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": [
+            {
+              "name": "Pièces trouvées",
+              "type": "Int"
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "name": "Obtenir pièce",
+          "motion": false,
+          "timeoutMs": 1000,
+          "params": [],
+          "results": [
+            {
+              "name": "Position de la pièce",
+              "type": "Position"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Esclave EtherCAT hors ligne"
+        },
+        {
+          "code": 101,
+          "text": "Aucune pièce trouvée"
+        },
+        {
+          "code": 102,
+          "text": "Résultat invalide"
+        },
+        {
+          "code": 103,
+          "text": "Erreur Asyril",
+          "subcode": "Fichier de sous-alarmes Asyril"
+        }
+      ],
+      "simulation": {
+        "maxParts": 6,
+        "noPartProbability": 0.05
+      },
+      "advice": "Chercher pièce : refaire 3 fois, avec Vibrer du chargeur entre deux essais",
+      "signals": []
+    },
+    {
+      "id": 33,
+      "code": "Scale",
+      "name": "Pesage",
+      "category": "Capteurs et mesure",
+      "icon": "scale",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Mesure",
+          "kind": "AI",
+          "required": true
+        }
+      ],
+      "hardware": {
+        "kind": "Network",
+        "required": false
+      },
+      "params": [
+        {
+          "no": 1,
+          "name": "Unité",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "g",
+            "mg"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Tolérance haute",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 3,
+          "name": "Tolérance basse",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 4,
+          "name": "Valeur nominale",
+          "type": "Real",
+          "default": 0
+        },
+        {
+          "no": 5,
+          "name": "Nombre d'échantillons",
+          "type": "Int",
+          "default": 10
+        },
+        {
+          "no": 6,
+          "name": "Temps de stabilisation",
+          "type": "Duration",
+          "default": 500
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Tarer",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Mesurer",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [
+            {
+              "name": "Échantillons",
+              "type": "Int",
+              "default": "P5"
+            }
+          ],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            },
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Trop haut",
+                "Bon",
+                "Trop bas"
+              ]
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "name": "Lire valeur courante",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Real"
+            },
+            {
+              "name": "Stable",
+              "type": "Bool"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Mesure non stabilisée"
+        },
+        {
+          "code": 101,
+          "text": "Surcharge"
+        }
+      ],
+      "display": []
+    },
+    {
+      "id": 34,
+      "code": "CodeReader",
+      "name": "Lecteur de code",
+      "category": "Capteurs et mesure",
+      "icon": "qr_code_scanner",
+      "hasMotion": false,
+      "hardware": {
+        "kind": "Network",
+        "required": true
+      },
+      "interfaceToDefine": true,
+      "params": [
+        {
+          "no": 1,
+          "name": "Types de codes",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "DataMatrix",
+            "QR",
+            "Code-barres",
+            "Tous"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Nombre d'essais",
+          "type": "Int",
+          "default": 2
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Lire code",
+          "motion": false,
+          "timeoutMs": 2000,
+          "params": [],
+          "results": [
+            {
+              "name": "Contenu",
+              "type": "Text"
+            },
+            {
+              "name": "Qualité",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Vérifier code",
+          "motion": false,
+          "timeoutMs": 2000,
+          "params": [
+            {
+              "name": "Motif attendu",
+              "type": "Text"
+            }
+          ],
+          "results": [
+            {
+              "name": "Contenu",
+              "type": "Text"
+            },
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Aucun code lu"
+        },
+        {
+          "code": 101,
+          "text": "Code non conforme au motif"
+        }
+      ],
+      "simulation": {
+        "codePattern": "MX4-AAAAMMJJ-nnnnnn"
+      },
+      "signals": [],
+      "display": []
+    },
+    {
+      "id": 35,
+      "code": "Light",
+      "name": "Éclairage",
+      "category": "Capteurs et mesure",
+      "icon": "lightbulb",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Commande",
+          "kind": "DO",
+          "required": true
+        },
+        {
+          "no": 2,
+          "name": "Intensité",
+          "kind": "AO",
+          "required": false
+        },
+        {
+          "no": 3,
+          "name": "Synchronisation caméra",
+          "kind": "DO",
+          "required": false
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Type",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Continu",
+            "Flash"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Intensité par défaut",
+          "type": "Percent",
+          "default": 100
+        },
+        {
+          "no": 3,
+          "name": "Durée de flash par défaut",
+          "type": "Duration",
+          "default": 5
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Allumer",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Intensité",
+              "type": "Percent",
+              "default": "P2"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Éteindre",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Régler intensité",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Intensité",
+              "type": "Percent"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Flasher",
+          "motion": false,
+          "timeoutMs": 200,
+          "addsDuration": true,
+          "params": [
+            {
+              "name": "Durée",
+              "type": "Duration",
+              "default": "P3"
+            },
+            {
+              "name": "Intensité",
+              "type": "Percent",
+              "default": "P2"
+            }
+          ],
+          "results": []
+        }
+      ],
+      "safeState": "Éteint",
+      "display": [],
+      "errors": []
+    },
+    {
+      "id": 40,
+      "code": "Press",
+      "name": "Presse",
+      "category": "Process",
+      "icon": "compress",
+      "hasMotion": true,
+      "hardware": {
+        "kind": "Axis",
+        "required": true
+      },
+      "signals": [
+        {
+          "no": 1,
+          "name": "Capteur de force",
+          "kind": "AI",
+          "required": true
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Force maximale de sécurité",
+          "type": "Real",
+          "default": 2000,
+          "unit": "N"
+        },
+        {
+          "no": 2,
+          "name": "Timeout par défaut d'une recette",
+          "type": "Duration",
+          "default": 10000
+        },
+        {
+          "no": 3,
+          "name": "Vitesse de retour repos",
+          "type": "Percent",
+          "default": 50
+        },
+        {
+          "no": 4,
+          "name": "Vmax de l'axe presse",
+          "type": "Real",
+          "default": 50,
+          "unit": "mm/s"
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Force",
+          "type": "Real"
+        },
+        {
+          "no": 2,
+          "name": "Course",
+          "type": "Real"
+        },
+        {
+          "no": 3,
+          "name": "Recette active",
+          "type": "Int"
+        }
+      ],
+      "recipes": {
+        "max": 16,
+        "segmentsMax": 8,
+        "curvePointsMax": 1000
+      },
+      "actions": [
+        {
+          "no": 1,
+          "name": "Exécuter recette",
+          "motion": true,
+          "timeoutParam": 2,
+          "params": [
+            {
+              "name": "Recette de presse",
+              "type": "Recipe"
+            }
+          ],
+          "results": [
+            {
+              "name": "Jugement global",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            },
+            {
+              "name": "Force finale",
+              "type": "Real"
+            },
+            {
+              "name": "Course finale",
+              "type": "Real"
+            },
+            {
+              "name": "Force max",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Retour repos",
+          "motion": true,
+          "timeoutMs": 5000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Tarer la force",
+          "motion": false,
+          "timeoutMs": 2000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Lire force et course",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Force",
+              "type": "Real"
+            },
+            {
+              "name": "Course",
+              "type": "Real"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Force maximale dépassée (arrêt immédiat, défaut)"
+        },
+        {
+          "code": 101,
+          "text": "Recette interrompue"
+        },
+        {
+          "code": 102,
+          "text": "Capteur de force hors plage"
+        },
+        {
+          "code": 103,
+          "text": "Cible de la recette non atteinte"
+        },
+        {
+          "code": 104,
+          "text": "Recette inconnue"
+        }
+      ],
+      "simulation": {
+        "goodProbability": 0.97
+      }
+    },
+    {
+      "id": 41,
+      "code": "Screwdriver",
+      "name": "Visseuse",
+      "category": "Process",
+      "icon": "build",
+      "hasMotion": false,
+      "interfaceToDefine": true,
+      "params": [
+        {
+          "no": 1,
+          "name": "Programme par défaut",
+          "type": "Int",
+          "default": 1
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Sélectionner programme",
+          "motion": false,
+          "timeoutMs": 2000,
+          "params": [
+            {
+              "name": "Programme",
+              "type": "Recipe"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Visser",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [
+            {
+              "name": "Programme",
+              "type": "Recipe",
+              "optional": true
+            }
+          ],
+          "results": [
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            },
+            {
+              "name": "Couple final",
+              "type": "Real"
+            },
+            {
+              "name": "Angle final",
+              "type": "Real"
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "name": "Dévisser",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [
+            {
+              "name": "Angle",
+              "type": "Real"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Lire dernier résultat",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            },
+            {
+              "name": "Couple final",
+              "type": "Real"
+            },
+            {
+              "name": "Angle final",
+              "type": "Real"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Couple maximal dépassé"
+        },
+        {
+          "code": 101,
+          "text": "Angle hors fenêtre"
+        },
+        {
+          "code": 102,
+          "text": "Vis non prise"
+        },
+        {
+          "code": 103,
+          "text": "Défaut de l'outil"
+        }
+      ],
+      "safeState": "Arrêt de l'outil",
+      "signals": [],
+      "display": []
+    },
+    {
+      "id": 42,
+      "code": "Dispenser",
+      "name": "Distributeur",
+      "category": "Process",
+      "icon": "water_drop",
+      "hasMotion": false,
+      "interfaceToDefine": true,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Commande",
+          "kind": "DO",
+          "required": true
+        },
+        {
+          "no": 2,
+          "name": "Pression",
+          "kind": "AI",
+          "required": false
+        },
+        {
+          "no": 3,
+          "name": "Niveau bas",
+          "kind": "DI",
+          "required": false
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Type",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Temps et pression",
+            "Volumétrique",
+            "Jet"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Dose n° 1",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 3,
+          "name": "Dose n° 2",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 4,
+          "name": "Dose n° 3",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 5,
+          "name": "Dose n° 4",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 6,
+          "name": "Dose n° 5",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 7,
+          "name": "Dose n° 6",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 8,
+          "name": "Dose n° 7",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 9,
+          "name": "Dose n° 8",
+          "type": "Real",
+          "default": 0,
+          "note": "durée en ms ou volume en µl selon P1"
+        },
+        {
+          "no": 10,
+          "name": "Durée de purge par défaut",
+          "type": "Duration",
+          "default": 2000
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Déposer",
+          "motion": false,
+          "timeoutMs": 5000,
+          "params": [
+            {
+              "name": "Dose",
+              "type": "Int"
+            }
+          ],
+          "results": [
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Amorcer",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [
+            {
+              "name": "Volume",
+              "type": "Real"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Purger",
+          "motion": false,
+          "timeoutMs": 1000,
+          "addsDuration": true,
+          "params": [
+            {
+              "name": "Durée",
+              "type": "Duration",
+              "default": "P10"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Lire niveau",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Niveau",
+              "type": "Enum",
+              "values": [
+                "Plein",
+                "Normal",
+                "Vide"
+              ]
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Cartouche vide"
+        },
+        {
+          "code": 101,
+          "text": "Pression hors plage"
+        },
+        {
+          "code": 102,
+          "text": "Dépôt non détecté"
+        }
+      ],
+      "safeState": "Distribution coupée",
+      "display": []
+    },
+    {
+      "id": 43,
+      "code": "Marker",
+      "name": "Marquage",
+      "category": "Process",
+      "icon": "draw",
+      "hasMotion": false,
+      "interfaceToDefine": true,
+      "actions": [
+        {
+          "no": 1,
+          "name": "Sélectionner modèle",
+          "motion": false,
+          "timeoutMs": 2000,
+          "params": [
+            {
+              "name": "Modèle",
+              "type": "Recipe"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Marquer",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [
+            {
+              "name": "Contenu",
+              "type": "Text"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Vérifier marquage",
+          "motion": false,
+          "timeoutMs": 3000,
+          "params": [],
+          "results": [
+            {
+              "name": "Jugement",
+              "type": "Enum",
+              "values": [
+                "Mauvais",
+                "Bon"
+              ]
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "name": "Lire état",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "État",
+              "type": "Enum",
+              "values": [
+                "Prêt",
+                "En marquage",
+                "Défaut"
+              ]
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Marqueur non prêt"
+        },
+        {
+          "code": 101,
+          "text": "Capot ouvert"
+        },
+        {
+          "code": 102,
+          "text": "Défaut de la source"
+        }
+      ],
+      "safeState": "Arrêt du marquage",
+      "signals": [],
+      "params": [],
+      "display": []
+    },
+    {
+      "id": 44,
+      "code": "VibratoryFeeder",
+      "name": "Chargeur vibrant",
+      "category": "Process",
+      "icon": "vibration",
+      "hasMotion": false,
+      "hardware": {
+        "kind": "Network",
+        "required": true
+      },
+      "signals": [
+        {
+          "no": 1,
+          "name": "Trémie vide",
+          "kind": "DI",
+          "required": false
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Motif de vibration n° 1 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        },
+        {
+          "no": 2,
+          "name": "Motif de vibration n° 2 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        },
+        {
+          "no": 3,
+          "name": "Motif de vibration n° 3 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        },
+        {
+          "no": 4,
+          "name": "Motif de vibration n° 4 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        },
+        {
+          "no": 5,
+          "name": "Motif de vibration n° 5 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        },
+        {
+          "no": 6,
+          "name": "Motif de vibration n° 6 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        },
+        {
+          "no": 7,
+          "name": "Motif de vibration n° 7 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        },
+        {
+          "no": 8,
+          "name": "Motif de vibration n° 8 : durée par défaut",
+          "type": "Duration",
+          "default": 300
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Vibrer",
+          "motion": false,
+          "timeoutMs": 1000,
+          "addsDuration": true,
+          "params": [
+            {
+              "name": "Motif",
+              "type": "Int"
+            },
+            {
+              "name": "Durée",
+              "type": "Duration",
+              "optional": true
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Distribuer pièces",
+          "motion": false,
+          "timeoutMs": 1000,
+          "addsDuration": true,
+          "params": [
+            {
+              "name": "Durée",
+              "type": "Duration"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Vider",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Lire niveau",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Niveau",
+              "type": "Enum",
+              "values": [
+                "Plein",
+                "Normal",
+                "Vide"
+              ]
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Trémie vide (avertissement, balise bleu clignotant)"
+        },
+        {
+          "code": 101,
+          "text": "Défaut du chargeur"
+        }
+      ],
+      "safeState": "Vibration arrêtée",
+      "display": []
+    },
+    {
+      "id": 45,
+      "code": "Magazine",
+      "name": "Palettiseur ou magasin",
+      "category": "Process",
+      "icon": "pallet",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Plateau présent",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 2,
+          "name": "Magasin vide",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 3,
+          "name": "Magasin plein",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 4,
+          "name": "Présenter",
+          "kind": "DO",
+          "required": false
+        },
+        {
+          "no": 5,
+          "name": "Évacuer",
+          "kind": "DO",
+          "required": false
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Lignes",
+          "type": "Int",
+          "default": 4
+        },
+        {
+          "no": 2,
+          "name": "Colonnes",
+          "type": "Int",
+          "default": 6
+        },
+        {
+          "no": 3,
+          "name": "Pas en X",
+          "type": "Real",
+          "default": 20,
+          "unit": "mm"
+        },
+        {
+          "no": 4,
+          "name": "Pas en Y",
+          "type": "Real",
+          "default": 20,
+          "unit": "mm"
+        },
+        {
+          "no": 5,
+          "name": "Position nommée de la première case",
+          "type": "Int",
+          "default": 0
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Présenter plateau suivant",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Évacuer plateau",
+          "motion": false,
+          "timeoutMs": 10000,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Position de la case",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Case",
+              "type": "Int",
+              "default": 0
+            }
+          ],
+          "results": [
+            {
+              "name": "Position",
+              "type": "Position"
+            },
+            {
+              "name": "N° de case",
+              "type": "Int"
+            }
+          ]
+        },
+        {
+          "no": 4,
+          "name": "Marquer case",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Case",
+              "type": "Int"
+            },
+            {
+              "name": "Occupée",
+              "type": "Bool"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 5,
+          "name": "Lire occupation",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Occupées",
+              "type": "Int"
+            },
+            {
+              "name": "Libres",
+              "type": "Int"
+            },
+            {
+              "name": "Plein",
+              "type": "Bool"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Magasin vide"
+        },
+        {
+          "code": 101,
+          "text": "Magasin plein"
+        },
+        {
+          "code": 102,
+          "text": "Plateau absent"
+        },
+        {
+          "code": 103,
+          "text": "Plateau non évacué"
+        }
+      ],
+      "display": []
+    },
+    {
+      "id": 50,
+      "code": "Beacon",
+      "name": "Balise",
+      "category": "Machine",
+      "icon": "emergency_heat",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Rouge",
+          "kind": "DO",
+          "required": false
+        },
+        {
+          "no": 2,
+          "name": "Orange",
+          "kind": "DO",
+          "required": false
+        },
+        {
+          "no": 3,
+          "name": "Vert",
+          "kind": "DO",
+          "required": false
+        },
+        {
+          "no": 4,
+          "name": "Bleu",
+          "kind": "DO",
+          "required": false
+        },
+        {
+          "no": 5,
+          "name": "Buzzer",
+          "kind": "DO",
+          "required": false
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Période de clignotement",
+          "type": "Duration",
+          "default": 800
+        },
+        {
+          "no": 2,
+          "name": "Durée par défaut du buzzer",
+          "type": "Duration",
+          "default": 0,
+          "note": "0 = jusqu'à acquittement"
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Couleurs allumées",
+          "type": "Int"
+        }
+      ],
+      "drivenBySequencer": true,
+      "actions": [
+        {
+          "no": 1,
+          "name": "Tester",
+          "motion": false,
+          "manualOnly": true,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Couleur",
+              "type": "Enum",
+              "values": [
+                "Rouge",
+                "Orange",
+                "Vert",
+                "Bleu"
+              ]
+            },
+            {
+              "name": "Durée",
+              "type": "Duration"
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 2,
+          "name": "Buzzer",
+          "motion": false,
+          "manualOnly": true,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Durée",
+              "type": "Duration"
+            }
+          ],
+          "results": []
+        }
+      ],
+      "errors": []
+    },
+    {
+      "id": 51,
+      "code": "Safety",
+      "name": "Sécurités",
+      "category": "Machine",
+      "icon": "shield",
+      "hasMotion": false,
+      "signals": [
+        {
+          "no": 1,
+          "name": "Circuit 1",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 2,
+          "name": "Circuit 2",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 3,
+          "name": "Circuit 3",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 4,
+          "name": "Circuit 4",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 5,
+          "name": "Circuit 5",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 6,
+          "name": "Circuit 6",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 7,
+          "name": "Circuit 7",
+          "kind": "DI",
+          "required": false
+        },
+        {
+          "no": 8,
+          "name": "Circuit 8",
+          "kind": "DI",
+          "required": false
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Type du circuit 1",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Type du circuit 2",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 3,
+          "name": "Type du circuit 3",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 4,
+          "name": "Type du circuit 4",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 5,
+          "name": "Type du circuit 5",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 6,
+          "name": "Type du circuit 6",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 7,
+          "name": "Type du circuit 7",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 8,
+          "name": "Type du circuit 8",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Arrêt d'urgence",
+            "Porte",
+            "Barrière",
+            "Capot",
+            "Autre"
+          ]
+        },
+        {
+          "no": 9,
+          "name": "Acquittement requis pour le circuit 1",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 10,
+          "name": "Acquittement requis pour le circuit 2",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 11,
+          "name": "Acquittement requis pour le circuit 3",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 12,
+          "name": "Acquittement requis pour le circuit 4",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 13,
+          "name": "Acquittement requis pour le circuit 5",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 14,
+          "name": "Acquittement requis pour le circuit 6",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 15,
+          "name": "Acquittement requis pour le circuit 7",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 16,
+          "name": "Acquittement requis pour le circuit 8",
+          "type": "Bool",
+          "default": 0
+        },
+        {
+          "no": 17,
+          "name": "Temps de filtrage",
+          "type": "Duration",
+          "default": 10
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Circuits OK",
+          "type": "Int"
+        },
+        {
+          "no": 2,
+          "name": "Circuits à acquitter",
+          "type": "Int"
+        }
+      ],
+      "readOnly": true,
+      "actions": [
+        {
+          "no": 1,
+          "name": "Lire état",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Circuit",
+              "type": "Int",
+              "default": 0
+            }
+          ],
+          "results": [
+            {
+              "name": "OK",
+              "type": "Bool"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Acquitter",
+          "motion": false,
+          "timeoutMs": 1000,
+          "params": [
+            {
+              "name": "Circuit",
+              "type": "Int",
+              "default": 0
+            }
+          ],
+          "results": []
+        },
+        {
+          "no": 3,
+          "name": "Attendre OK",
+          "motion": false,
+          "timeoutMs": 30000,
+          "params": [
+            {
+              "name": "Circuit",
+              "type": "Int"
+            }
+          ],
+          "results": []
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Circuit ouvert",
+          "subcode": "N° de circuit"
+        },
+        {
+          "code": 101,
+          "text": "Incohérence de canaux"
+        },
+        {
+          "code": 102,
+          "text": "Acquittement requis"
+        }
+      ]
+    },
+    {
+      "id": 52,
+      "code": "Timer",
+      "name": "Temporisation",
+      "category": "Logique",
+      "icon": "timer",
+      "hasMotion": false,
+      "params": [
+        {
+          "no": 1,
+          "name": "Durée par défaut",
+          "type": "Duration",
+          "default": 1000
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Attendre",
+          "motion": false,
+          "params": [
+            {
+              "name": "Durée",
+              "type": "Duration",
+              "default": "P1"
+            }
+          ],
+          "results": [],
+          "noTimeout": true
+        }
+      ],
+      "signals": [],
+      "display": [],
+      "errors": []
+    },
+    {
+      "id": 53,
+      "code": "Counter",
+      "name": "Compteur",
+      "category": "Logique",
+      "icon": "exposure_plus_1",
+      "hasMotion": false,
+      "params": [
+        {
+          "no": 1,
+          "name": "Valeur de départ",
+          "type": "Int",
+          "default": 0
+        },
+        {
+          "no": 2,
+          "name": "Valeur maximale",
+          "type": "Int",
+          "default": 0,
+          "note": "0 = aucune"
+        },
+        {
+          "no": 3,
+          "name": "Remise à zéro au changement d'OF",
+          "type": "Bool",
+          "default": 1
+        },
+        {
+          "no": 4,
+          "name": "Persistant",
+          "type": "Bool",
+          "default": 1
+        }
+      ],
+      "display": [
+        {
+          "no": 1,
+          "name": "Valeur",
+          "type": "Int"
+        }
+      ],
+      "actions": [
+        {
+          "no": 1,
+          "name": "Incrémenter",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Pas",
+              "type": "Int",
+              "default": 1
+            }
+          ],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Int"
+            }
+          ]
+        },
+        {
+          "no": 2,
+          "name": "Lire",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": [
+            {
+              "name": "Valeur",
+              "type": "Int"
+            }
+          ]
+        },
+        {
+          "no": 3,
+          "name": "Remettre à zéro",
+          "motion": false,
+          "immediate": true,
+          "params": [],
+          "results": []
+        },
+        {
+          "no": 4,
+          "name": "Comparer",
+          "motion": false,
+          "immediate": true,
+          "params": [
+            {
+              "name": "Valeur",
+              "type": "Int"
+            }
+          ],
+          "results": [
+            {
+              "name": "Atteint",
+              "type": "Bool"
+            }
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "code": 100,
+          "text": "Valeur maximale dépassée"
+        }
+      ],
+      "signals": []
+    }
+  ],
+  "modules": [
+    {
+      "id": 100,
+      "code": "Group",
+      "name": "Groupe",
+      "category": "Modules",
+      "icon": "folder",
+      "roles": [],
+      "params": [],
+      "functions": [],
+      "freeChildren": true,
+      "aggregateState": [
+        "En erreur",
+        "Non initialisé",
+        "En cours",
+        "Prêt"
+      ]
+    },
+    {
+      "id": 101,
+      "code": "CartesianRobot",
+      "name": "Robot cartésien XYZC",
+      "category": "Modules",
+      "icon": "precision_manufacturing",
+      "roles": [
+        {
+          "role": "AxisX",
+          "types": [
+            11
+          ],
+          "component": "X",
+          "required": true
+        },
+        {
+          "role": "AxisY",
+          "types": [
+            11
+          ],
+          "component": "Y",
+          "required": true
+        },
+        {
+          "role": "AxisZ",
+          "types": [
+            11
+          ],
+          "component": "Z",
+          "required": true
+        },
+        {
+          "role": "AxisC",
+          "types": [
+            12
+          ],
+          "required": false
+        },
+        {
+          "role": "Tool",
+          "types": [
+            20,
+            21
+          ],
+          "required": true
+        }
+      ],
+      "params": [
+        {
+          "no": 1,
+          "name": "Hauteur Z de sécurité",
+          "type": "Real",
+          "default": -5,
+          "unit": "mm"
+        },
+        {
+          "no": 2,
+          "name": "Hauteur d'approche par défaut",
+          "type": "Real",
+          "default": 10,
+          "unit": "mm"
+        },
+        {
+          "no": 3,
+          "name": "Vitesse d'approche",
+          "type": "Speed",
+          "default": 1
+        },
+        {
+          "no": 4,
+          "name": "Sens de Z",
+          "type": "Enum",
+          "default": 0,
+          "values": [
+            "Z négatif vers le bas",
+            "Z positif vers le bas"
+          ]
+        }
+      ],
+      "generatedInterlocks": [
+        {
+          "roles": [
+            "AxisX",
+            "AxisY",
+            "AxisC"
+          ],
+          "allMotion": true,
+          "condition": "ObjValue(AxisZ,1) >= P1 - AxisZ.P4",
+          "note": "selon P4 (sens de Z)"
+        }
+      ],
+      "validation": [
+        "V108 : position nommée du robot au-dessus de la hauteur de sécurité"
+      ],
+      "functions": [
+        {
+          "id": "MoveTo",
+          "name": "Aller à",
+          "icon": "near_me",
+          "params": [
+            {
+              "name": "pos",
+              "type": "Position"
+            },
+            {
+              "name": "v",
+              "type": "Speed",
+              "default": 2
+            }
+          ],
+          "body": [
+            {
+              "step": "ifAbove",
+              "role": "AxisZ",
+              "then": [
+                {
+                  "step": "action",
+                  "role": "AxisZ",
+                  "action": 4,
+                  "args": [
+                    {
+                      "ref": "safeZ"
+                    },
+                    {
+                      "ref": "param",
+                      "name": "v"
+                    },
+                    {
+                      "ref": "const",
+                      "value": 100
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "step": "parallel",
+              "branches": [
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisX",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "X"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisY",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "Y"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "ifRole",
+                    "role": "AxisC",
+                    "then": [
+                      {
+                        "step": "action",
+                        "role": "AxisC",
+                        "action": 4,
+                        "args": [
+                          {
+                            "ref": "param",
+                            "name": "pos",
+                            "component": "C"
+                          },
+                          {
+                            "ref": "param",
+                            "name": "v"
+                          },
+                          {
+                            "ref": "const",
+                            "value": 100
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "param",
+                  "name": "pos",
+                  "component": "Z"
+                },
+                {
+                  "ref": "param",
+                  "name": "v"
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "MoveAbove",
+          "name": "Aller au-dessus",
+          "icon": "vertical_align_top",
+          "params": [
+            {
+              "name": "pos",
+              "type": "Position"
+            },
+            {
+              "name": "v",
+              "type": "Speed",
+              "default": 2
+            }
+          ],
+          "body": [
+            {
+              "step": "ifAbove",
+              "role": "AxisZ",
+              "then": [
+                {
+                  "step": "action",
+                  "role": "AxisZ",
+                  "action": 4,
+                  "args": [
+                    {
+                      "ref": "safeZ"
+                    },
+                    {
+                      "ref": "param",
+                      "name": "v"
+                    },
+                    {
+                      "ref": "const",
+                      "value": 100
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "step": "parallel",
+              "branches": [
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisX",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "X"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisY",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "Y"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "ifRole",
+                    "role": "AxisC",
+                    "then": [
+                      {
+                        "step": "action",
+                        "role": "AxisC",
+                        "action": 4,
+                        "args": [
+                          {
+                            "ref": "param",
+                            "name": "pos",
+                            "component": "C"
+                          },
+                          {
+                            "ref": "param",
+                            "name": "v"
+                          },
+                          {
+                            "ref": "const",
+                            "value": 100
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            }
+          ]
+        },
+        {
+          "id": "PickPart",
+          "name": "Prendre pièce",
+          "icon": "pan_tool",
+          "params": [
+            {
+              "name": "pos",
+              "type": "Position"
+            },
+            {
+              "name": "appr",
+              "type": "Real",
+              "default": "P2",
+              "unit": "mm"
+            },
+            {
+              "name": "v",
+              "type": "Speed",
+              "default": 2
+            }
+          ],
+          "results": [
+            {
+              "name": "Pièce présente",
+              "type": "Bool"
+            }
+          ],
+          "body": [
+            {
+              "step": "ifAbove",
+              "role": "AxisZ",
+              "then": [
+                {
+                  "step": "action",
+                  "role": "AxisZ",
+                  "action": 4,
+                  "args": [
+                    {
+                      "ref": "safeZ"
+                    },
+                    {
+                      "ref": "param",
+                      "name": "v"
+                    },
+                    {
+                      "ref": "const",
+                      "value": 100
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "step": "parallel",
+              "branches": [
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisX",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "X"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisY",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "Y"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "ifRole",
+                    "role": "AxisC",
+                    "then": [
+                      {
+                        "step": "action",
+                        "role": "AxisC",
+                        "action": 4,
+                        "args": [
+                          {
+                            "ref": "param",
+                            "name": "pos",
+                            "component": "C"
+                          },
+                          {
+                            "ref": "param",
+                            "name": "v"
+                          },
+                          {
+                            "ref": "const",
+                            "value": 100
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "param",
+                  "name": "pos",
+                  "component": "Z",
+                  "plus": "appr"
+                },
+                {
+                  "ref": "param",
+                  "name": "v"
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            },
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "param",
+                  "name": "pos",
+                  "component": "Z"
+                },
+                {
+                  "ref": "moduleParam",
+                  "no": 3
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            },
+            {
+              "step": "toolOr",
+              "tool": [
+                {
+                  "typeCode": "VacuumBlow",
+                  "action": 1,
+                  "args": [
+                    {
+                      "ref": "const",
+                      "value": 1
+                    }
+                  ]
+                },
+                {
+                  "typeCode": "Gripper",
+                  "action": 3,
+                  "args": []
+                }
+              ]
+            },
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "safeZ"
+                },
+                {
+                  "ref": "param",
+                  "name": "v"
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            },
+            {
+              "step": "toolOr",
+              "tool": [
+                {
+                  "typeCode": "VacuumBlow",
+                  "action": 4,
+                  "args": []
+                },
+                {
+                  "typeCode": "Gripper",
+                  "action": 4,
+                  "args": []
+                }
+              ],
+              "result": "Pièce présente"
+            }
+          ]
+        },
+        {
+          "id": "PlacePart",
+          "name": "Poser pièce",
+          "icon": "move_to_inbox",
+          "params": [
+            {
+              "name": "pos",
+              "type": "Position"
+            },
+            {
+              "name": "appr",
+              "type": "Real",
+              "default": "P2",
+              "unit": "mm"
+            },
+            {
+              "name": "blow",
+              "type": "Bool",
+              "default": 1
+            },
+            {
+              "name": "v",
+              "type": "Speed",
+              "default": 2
+            }
+          ],
+          "body": [
+            {
+              "step": "ifAbove",
+              "role": "AxisZ",
+              "then": [
+                {
+                  "step": "action",
+                  "role": "AxisZ",
+                  "action": 4,
+                  "args": [
+                    {
+                      "ref": "safeZ"
+                    },
+                    {
+                      "ref": "param",
+                      "name": "v"
+                    },
+                    {
+                      "ref": "const",
+                      "value": 100
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "step": "parallel",
+              "branches": [
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisX",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "X"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisY",
+                    "action": 4,
+                    "args": [
+                      {
+                        "ref": "param",
+                        "name": "pos",
+                        "component": "Y"
+                      },
+                      {
+                        "ref": "param",
+                        "name": "v"
+                      },
+                      {
+                        "ref": "const",
+                        "value": 100
+                      }
+                    ]
+                  }
+                ],
+                [
+                  {
+                    "step": "ifRole",
+                    "role": "AxisC",
+                    "then": [
+                      {
+                        "step": "action",
+                        "role": "AxisC",
+                        "action": 4,
+                        "args": [
+                          {
+                            "ref": "param",
+                            "name": "pos",
+                            "component": "C"
+                          },
+                          {
+                            "ref": "param",
+                            "name": "v"
+                          },
+                          {
+                            "ref": "const",
+                            "value": 100
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              ]
+            },
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "param",
+                  "name": "pos",
+                  "component": "Z",
+                  "plus": "appr"
+                },
+                {
+                  "ref": "param",
+                  "name": "v"
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            },
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "param",
+                  "name": "pos",
+                  "component": "Z"
+                },
+                {
+                  "ref": "moduleParam",
+                  "no": 3
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            },
+            {
+              "step": "toolRelease",
+              "blowParam": "blow"
+            },
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "safeZ"
+                },
+                {
+                  "ref": "param",
+                  "name": "v"
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "Clear",
+          "name": "Dégager",
+          "icon": "arrow_upward",
+          "params": [],
+          "body": [
+            {
+              "step": "action",
+              "role": "AxisZ",
+              "action": 4,
+              "args": [
+                {
+                  "ref": "safeZ"
+                },
+                {
+                  "ref": "param",
+                  "name": "v"
+                },
+                {
+                  "ref": "const",
+                  "value": 100
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "Home",
+          "name": "Référencer",
+          "icon": "home",
+          "params": [],
+          "body": [
+            {
+              "step": "parallel",
+              "branches": [
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisX",
+                    "action": 1,
+                    "args": []
+                  }
+                ],
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisY",
+                    "action": 1,
+                    "args": []
+                  }
+                ],
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisZ",
+                    "action": 1,
+                    "args": []
+                  }
+                ],
+                [
+                  {
+                    "step": "action",
+                    "role": "AxisC",
+                    "action": 1,
+                    "args": []
+                  }
+                ]
+              ]
+            },
+            {
+              "step": "initByOrder",
+              "firstRole": "AxisZ"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
