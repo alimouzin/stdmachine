@@ -48,8 +48,8 @@ public static class SimScenarios
                     break;
                 }
             case "manual":
+                // Docs/05 § 7 : le canal manuel demande le mode Maintenance et une station Stopped (aucune préparation).
                 SetMaintenance(c);
-                Prepare(c, DemoProject.Pressage01);
                 break;
             case "quality-hold":
                 Produce(c, 60_000);

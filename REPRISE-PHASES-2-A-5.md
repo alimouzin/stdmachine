@@ -36,3 +36,19 @@ Une session distante Linux (sans Windows ni WPF en exécution) a écrit les phas
 - **Phase 6** (Studio complet branché sur le projet réel, enregistrement automatique, chronogramme estimé), **phase 7** (page Manuel complète, pas à pas, Forçages en pages réelles), **phase 8** (utilisateurs/droits dans la HMI, page Communications branchée sur `PlantGateway`, SQLite — paquet `Microsoft.Data.Sqlite` à demander avant ajout), phases 9 et 10 sur demande seulement.
 - Règles de validation non implémentées faute de modèle : V014, V106, V114, V201.
 - Pas de collisions ni de trajets planaires (lignes droites), pas de courbes de presse, pas de sécurités simulées.
+
+## Vérification sur le poste Windows (2026-10-16, soir) — faite
+- **Compilation** : `tools\build.ps1 -Restore` : 0 erreur, 0 avertissement dans `Core`, `Persistence`, `Simulation`, `Plant`, `Hmi` ; 43 avertissements `xUnit1031` dans les projets de tests (tests synchrones qui attendent une tâche).
+- **Tests** : 162 verts (Core 62, Persistence 7, Plant 7, Simulation 86) avec `vstest.console.exe` sur les 4 DLL net48.
+- **Lancement** : la HMI démarre en `--simulator` sans erreur ; 8 scénarios × 22 pages = 176 captures sans erreur (`artifacts\screens\sim-<scénario>`), regardées pour Machine, Station, Manuel, Qualité, Forçages et Déploiement.
+- **Corrigé** (D67 à D69) : fonctions de module en manuel ; page Manuel (valeurs choisies envoyées, journal sans lignes factices, échec marqué d'une croix) ; page Qualité (répartition des rebuts calculée) ; page Machine (durée dans l'état, carte OF vide) ; page Déploiement (version déployée réelle, différences par empreinte, message de validation réussie) ; scénario `manual`.
+- **Pas un défaut** : les états PackML restent en anglais dans l'interface (glossaire, `docs/00` ligne « États »). Les captures sont rognées sur ce poste (D70).
+
+## Reste après cette vérification
+- Page Qualité : une station verrouillée par imputation (échelle `StationImputed`) n'affiche pas son verrou sur sa ligne ; il n'apparaît que dans « Verrous en cours ».
+- Pages encore en données de démonstration : Utilisateurs (tout PIN à 4 chiffres accepté), Communications, Système, historique de la page Station ; apprentissage des positions en manuel non branché sur `TeachPositionAsync`.
+- Capture `step-mode` : la station concernée est Pressage 02 (`Station-3`), pas `Station-2`.
+
+## Sujets de conception à traiter ensuite (demande du 2026-10-16)
+1. **Couloirs (swimlanes)** : sont-ils utiles pour programmer les stations et la machine ? Une présentation sans couloirs serait peut-être plus lisible. À étudier avant toute modification de `docs/07` § 3.2 et `docs/08` § 6.9.
+2. **Sorties de bloc** : une étape ou un bloc doit pouvoir **définir des sorties** (résultats nommés et typés, utilisables par les étapes suivantes). Exemples : une recherche de pièce Asyril fournit une position ; une caméra Keyence XG a des sorties variables à définir par l'ingénieur process. Aujourd'hui les résultats viennent seulement du catalogue (`CatalogAction.Results`) et se lient par `ActionStep.Bindings`. À concevoir : modèle (sorties déclarées par l'étape ou par l'objet, types, portée), catalogue (objets à sorties variables), compilation (variables cachées), validation (V014 liée), éditeur (panneau Étape).

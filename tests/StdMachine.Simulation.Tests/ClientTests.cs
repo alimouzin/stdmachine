@@ -287,11 +287,12 @@ public class ClientTests
     }
 
     [Fact]
-    public void Scenario_manual_has_station_1_idle_in_maintenance()
+    public void Scenario_manual_has_everything_stopped_in_maintenance_so_manual_is_available()
     {
         var s = Scenario("manual").Snapshot;
         Assert.Equal(MachineMode.Maintenance, s.Machine.Mode);
-        Assert.Equal(PackMlState.Idle, s.Station(DemoProject.Pressage01)!.State);
+        Assert.Equal(PackMlState.Stopped, s.Machine.State);
+        Assert.Equal(PackMlState.Stopped, s.Station(DemoProject.Pressage01)!.State);
     }
 
     [Fact]

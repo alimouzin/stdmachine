@@ -222,16 +222,23 @@
                 <Border Style="{StaticResource PageCard}" Padding="0,14,0,0">
                     <StackPanel>
                         <TextBlock Text="Journal manuel" Style="{StaticResource SectionTitle}" Margin="16,0,0,8"/>
+                        <TextBlock Text="Aucune action pour le moment." Style="{StaticResource Type.Caption}" Margin="16,0,16,14" Visibility="{Binding Journal.Count, Converter={x:Static infra:Conv.ZeroToVis}}"/>
                         <ItemsControl ItemsSource="{Binding Journal}" Focusable="False">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Border Style="{StaticResource TableRow}" MinHeight="44">
                                         <DockPanel Margin="16,0">
-                                            <c:Icon DockPanel.Dock="Right" Glyph="check" Foreground="{StaticResource Ok.Dot}" VerticalAlignment="Center"/>
+                                            <c:Icon x:Name="Ic" DockPanel.Dock="Right" Glyph="check" Foreground="{StaticResource Ok.Dot}" VerticalAlignment="Center"/>
                                             <TextBlock DockPanel.Dock="Left" Text="{Binding Time}" Style="{StaticResource TableCellMuted}" Width="56"/>
                                             <TextBlock Text="{Binding Text}" Style="{StaticResource TableCell}"/>
                                         </DockPanel>
                                     </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Ok}" Value="False">
+                                            <Setter TargetName="Ic" Property="Glyph" Value="close"/>
+                                            <Setter TargetName="Ic" Property="Foreground" Value="{StaticResource Err.Dot}"/>
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
