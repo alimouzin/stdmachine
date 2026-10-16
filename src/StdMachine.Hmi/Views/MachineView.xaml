@@ -1,0 +1,387 @@
+<UserControl x:Class="StdMachine.Hmi.Views.MachineView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:core="clr-namespace:StdMachine.Core;assembly=StdMachine.Core"
+             xmlns:infra="clr-namespace:StdMachine.Hmi.Infrastructure"
+             xmlns:res="clr-namespace:StdMachine.Hmi.Resources"
+             Background="{StaticResource Bg.App}">
+    <UserControl.Resources>
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Bg.Surface}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Border.Default}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="{StaticResource Radius.L}"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="0,0,0,16"/>
+        </Style>
+        <!-- Cases du plan : le conteneur d'un ItemsControl à panneau Canvas se place par Canvas.Left / Canvas.Top -->
+        <Style x:Key="PlacedItem" TargetType="ContentPresenter">
+            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+        </Style>
+
+        <!-- Commande avec explication quand elle est indisponible -->
+        <DataTemplate x:Key="StationRow">
+            <Grid Height="{StaticResource Size.Row}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="150"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="{Binding Name}" FontWeight="Medium" VerticalAlignment="Center"/>
+                <c:StateBadge Grid.Column="1" State="{Binding State}" Size="Small" VerticalAlignment="Center"/>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0,0,0" VerticalAlignment="Center" Visibility="{Binding HasOperation, Converter={x:Static infra:Conv.BoolToVis}}">
+                    <c:ProgressRing RingSize="24" Value="{Binding Progress}" Margin="0,0,8,0"/>
+                    <TextBlock Text="{Binding TimeText}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center"/>
+                </StackPanel>
+                <TextBlock Grid.Column="2" Text="{Binding Fault}" Foreground="{StaticResource Err.Text}" FontSize="12" Margin="12,0,8,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                           Visibility="{Binding IsAborted, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                <Button Grid.Column="3" Content="Réintégrer" Height="40" MinHeight="40" Padding="12,0" FontSize="14"
+                        Command="{Binding DataContext.ReintegrateCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                        Visibility="{Binding CanReintegrate, Converter={x:Static infra:Conv.BoolToVis}}" c:Ui.Variant="Primary"/>
+            </Grid>
+        </DataTemplate>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="552"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ================= Plan planaire en direct ================= -->
+        <Grid Grid.Column="0" Margin="24,16,8,16">
+            <Border Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1" CornerRadius="{StaticResource Radius.XL}" ClipToBounds="True">
+                <Grid>
+                    <TextBlock Text="Plan planaire en direct" Style="{StaticResource Type.Caps}" Margin="20,16,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,12,16,0">
+                        <c:StatusPill Tone="Busy" Text="En route" Margin="0,0,6,0"/>
+                        <c:StatusPill Tone="Ok" Text="En station" Margin="0,0,6,0"/>
+                        <c:StatusPill Tone="Err" Text="En erreur" Margin="0,0,6,0"/>
+                        <c:StatusPill Tone="Neutral" Text="Libre"/>
+                    </StackPanel>
+                    <Viewbox Stretch="Uniform" Margin="12,44,12,12">
+                        <Canvas Width="1100" Height="1140">
+                            <Canvas Canvas.Left="70" Canvas.Top="196">
+                                <!-- Tuiles -->
+                                <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Width="{Binding Width}" Height="{Binding Height}" Background="#F7F8FA" BorderBrush="{StaticResource Border.Divider}" BorderThickness="1" CornerRadius="8"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <!-- Positions : travail, file, tampon, parcage -->
+                                <ItemsControl ItemsSource="{Binding Markers}" Focusable="False" IsHitTestVisible="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="M" Width="{Binding Width}" Height="{Binding Height}" BorderThickness="2" CornerRadius="10" BorderBrush="{StaticResource Accent.Border}" Background="Transparent">
+                                                <TextBlock x:Name="T" FontSize="15" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Work">
+                                                    <Setter TargetName="M" Property="CornerRadius" Value="16"/>
+                                                    <Setter TargetName="M" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Queue">
+                                                    <Setter TargetName="T" Property="Text" Value="› ›"/>
+                                                    <Setter TargetName="M" Property="BorderBrush" Value="Transparent"/>
+                                                    <Setter TargetName="T" Property="Foreground" Value="{StaticResource Accent.Border}"/>
+                                                    <Setter TargetName="T" Property="FontSize" Value="26"/>
+                                                    <Setter TargetName="T" Property="FontWeight" Value="Bold"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Buffer">
+                                                    <Setter TargetName="T" Property="Text" Value="Tampon"/>
+                                                    <Setter TargetName="M" Property="BorderBrush" Value="{StaticResource Border.Strong}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Park">
+                                                    <Setter TargetName="T" Property="Text" Value="Parcage"/>
+                                                    <Setter TargetName="M" Property="BorderBrush" Value="{StaticResource Border.Strong}"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Destinations : ligne pointillée du mover vers sa destination -->
+                                <ItemsControl ItemsSource="{Binding Movers}" Focusable="False" IsHitTestVisible="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Line X1="{Binding CenterX}" Y1="{Binding CenterY}" X2="{Binding DestX}" Y2="{Binding DestY}" Stroke="{StaticResource Busy.Dot}" StrokeThickness="2"
+                                                  StrokeDashArray="3,3" Opacity="0.7" Visibility="{Binding ShowDestination, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Stations -->
+                                <ItemsControl ItemsSource="{Binding Stations}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="Canvas.Left" Value="{Binding BoxX}"/>
+                                            <Setter Property="Canvas.Top" Value="{Binding BoxY}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="Tile" Width="220" Height="150" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1.5"
+                                                    CornerRadius="12" ClipToBounds="True" Effect="{StaticResource Shadow.Card}">
+                                                <Border.InputBindings>
+                                                    <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.OpenStationCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                                </Border.InputBindings>
+                                                <Grid>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="6"/>
+                                                        <RowDefinition Height="*"/>
+                                                    </Grid.RowDefinitions>
+                                                    <Rectangle x:Name="Band" Fill="{Binding StateTone, Converter={x:Static infra:Conv.ToneDot}}"/>
+                                                    <Rectangle x:Name="Hatch" Grid.Row="1" Visibility="Collapsed" Fill="#14C63C3C"/>
+                                                    <Grid Grid.Row="1" Margin="12,8,10,8">
+                                                        <Grid.RowDefinitions>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                            <RowDefinition Height="*"/>
+                                                            <RowDefinition Height="Auto"/>
+                                                        </Grid.RowDefinitions>
+                                                        <DockPanel>
+                                                            <c:Beacon DockPanel.Dock="Right" Size="Small" Lights="{Binding Lights}" Blinking="{Binding Blinking}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,2,0,-30"/>
+                                                            <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="22"/>
+                                                        </DockPanel>
+                                                        <TextBlock Grid.Row="1" Text="{Binding GroupsText}" FontSize="15" Foreground="{StaticResource Text.Secondary}" TextTrimming="CharacterEllipsis" Margin="0,1,34,0"/>
+                                                        <StackPanel Grid.Row="2" Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <c:StateBadge State="{Binding State}" Size="Small"/>
+                                                            <c:ProgressRing RingSize="24" Value="{Binding Progress}" Margin="10,0,6,0" Visibility="{Binding HasOperation, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                                                            <TextBlock Text="{Binding TimeText}" FontSize="15" Foreground="{StaticResource Text.Secondary}" VerticalAlignment="Center"/>
+                                                        </StackPanel>
+                                                        <TextBlock Grid.Row="3" FontSize="14" Foreground="{StaticResource Text.Secondary}" TextTrimming="CharacterEllipsis" Height="19"
+                                                                   Text="{Binding Operation}"/>
+                                                    </Grid>
+                                                    <Border Grid.Row="1" x:Name="Macaron" Visibility="Collapsed" Background="{StaticResource Err.Dot}" CornerRadius="6" Padding="8,2" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,8,26">
+                                                        <TextBlock x:Name="MacaronText" FontSize="12" FontWeight="SemiBold" Foreground="White"/>
+                                                    </Border>
+                                                </Grid>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsAborted}" Value="True">
+                                                    <Setter TargetName="Tile" Property="BorderBrush" Value="{StaticResource Err.Dot}"/>
+                                                    <Setter TargetName="Hatch" Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding QualityHold}" Value="True">
+                                                    <Setter TargetName="Macaron" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="MacaronText" Property="Text" Value="Arrêt qualité"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding OutOfProduction}" Value="True">
+                                                    <Setter TargetName="Macaron" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="Macaron" Property="Background" Value="{StaticResource Maint.Dot}"/>
+                                                    <Setter TargetName="MacaronText" Property="Text" Value="Hors production"/>
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Traînées : 3 positions fantômes à 20 % -->
+                                <ItemsControl ItemsSource="{Binding Movers}" Focusable="False" IsHitTestVisible="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Canvas Visibility="{Binding ShowTrail, Converter={x:Static infra:Conv.BoolToVis}}">
+                                                <Border Width="113" Height="113" CornerRadius="14" Background="{StaticResource Busy.Dot}" Opacity="0.16" RenderTransformOrigin="0.5,0.5" Canvas.Left="{Binding Trail3X}" Canvas.Top="{Binding Trail3Y}"><Border.RenderTransform><ScaleTransform ScaleX="0.5" ScaleY="0.5"/></Border.RenderTransform></Border>
+                                                <Border Width="113" Height="113" CornerRadius="14" Background="{StaticResource Busy.Dot}" Opacity="0.16" RenderTransformOrigin="0.5,0.5" Canvas.Left="{Binding Trail2X}" Canvas.Top="{Binding Trail2Y}"><Border.RenderTransform><ScaleTransform ScaleX="0.5" ScaleY="0.5"/></Border.RenderTransform></Border>
+                                                <Border Width="113" Height="113" CornerRadius="14" Background="{StaticResource Busy.Dot}" Opacity="0.16" RenderTransformOrigin="0.5,0.5" Canvas.Left="{Binding Trail1X}" Canvas.Top="{Binding Trail1Y}"><Border.RenderTransform><ScaleTransform ScaleX="0.5" ScaleY="0.5"/></Border.RenderTransform></Border>
+                                            </Canvas>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+
+                                <!-- Movers -->
+                                <ItemsControl ItemsSource="{Binding Movers}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle>
+                                        <Style TargetType="ContentPresenter">
+                                            <Setter Property="c:Motion.X" Value="{Binding X}"/>
+                                            <Setter Property="c:Motion.Y" Value="{Binding Y}"/>
+                                        </Style>
+                                    </ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Width="113" Height="113">
+                                                <Grid.InputBindings>
+                                                    <MouseBinding MouseAction="LeftClick" Command="{Binding DataContext.OpenMoverCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                                </Grid.InputBindings>
+                                                <Ellipse x:Name="Halo" Visibility="Collapsed" Fill="#332563C9" Margin="-14"/>
+                                                <Border x:Name="Body" CornerRadius="14" Background="{StaticResource Bg.Sunken}" BorderBrush="{StaticResource Border.Strong}" BorderThickness="2" Effect="{StaticResource Shadow.Card}">
+                                                    <Grid>
+                                                        <TextBlock x:Name="Num" Text="{Binding Number}" FontSize="44" FontWeight="SemiBold" Foreground="{StaticResource Text.Secondary}" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,-8,0,0"/>
+                                                        <Ellipse x:Name="Part" Width="26" Height="26" HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,8" Visibility="Collapsed" Fill="White" Stroke="{StaticResource Border.Strong}" StrokeThickness="2"/>
+                                                        <c:Icon x:Name="Cross" Glyph="close" FontSize="48" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                                    </Grid>
+                                                </Border>
+                                            </Grid>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding State}" Value="EnRoute">
+                                                    <Setter TargetName="Body" Property="Background" Value="{StaticResource Busy.Dot}"/>
+                                                    <Setter TargetName="Body" Property="BorderBrush" Value="{StaticResource Accent.Pressed}"/>
+                                                    <Setter TargetName="Num" Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding State}" Value="Queued">
+                                                    <Setter TargetName="Body" Property="Background" Value="{StaticResource Accent.Bg}"/>
+                                                    <Setter TargetName="Body" Property="BorderBrush" Value="{StaticResource Accent.Border}"/>
+                                                    <Setter TargetName="Num" Property="Foreground" Value="{StaticResource Accent.Text}"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding State}" Value="InStation">
+                                                    <Setter TargetName="Body" Property="Background" Value="{StaticResource Ok.Dot}"/>
+                                                    <Setter TargetName="Body" Property="BorderBrush" Value="{StaticResource Ok.Text}"/>
+                                                    <Setter TargetName="Num" Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding State}" Value="Error">
+                                                    <Setter TargetName="Body" Property="Background" Value="{StaticResource Err.Dot}"/>
+                                                    <Setter TargetName="Body" Property="BorderBrush" Value="{StaticResource Err.Text}"/>
+                                                    <Setter TargetName="Num" Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding State}" Value="ToEmpty">
+                                                    <Setter TargetName="Body" Property="Background" Value="{StaticResource Busy.Dot}"/>
+                                                    <Setter TargetName="Halo" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="Num" Property="Foreground" Value="White"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding State}" Value="OutOfService">
+                                                    <Setter TargetName="Body" Property="Background" Value="#E3E6EA"/>
+                                                    <Setter TargetName="Cross" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="Num" Property="Opacity" Value="0.3"/>
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding HasPart}" Value="True">
+                                                    <Setter TargetName="Part" Property="Visibility" Value="Visible"/>
+                                                </DataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasPart}" Value="True"/>
+                                                        <Condition Binding="{Binding PartState}" Value="Good"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter TargetName="Part" Property="Fill" Value="#22C55E"/>
+                                                </MultiDataTrigger>
+                                                <MultiDataTrigger>
+                                                    <MultiDataTrigger.Conditions>
+                                                        <Condition Binding="{Binding HasPart}" Value="True"/>
+                                                        <Condition Binding="{Binding PartState}" Value="Bad"/>
+                                                    </MultiDataTrigger.Conditions>
+                                                    <Setter TargetName="Part" Property="Fill" Value="{StaticResource Err.Dot}"/>
+                                                </MultiDataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Canvas>
+                        </Canvas>
+                    </Viewbox>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- ================= Colonne de droite ================= -->
+        <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="8,16,24,16">
+                <!-- État et commandes -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <DockPanel Margin="0,0,0,14">
+                            <c:Beacon DockPanel.Dock="Right" Size="Medium" Lights="{Binding Lights}" Blinking="{Binding Blinking}" Margin="12,0,0,0"/>
+                            <StackPanel>
+                                <c:StateBadge State="{Binding State}" Size="Large" HorizontalAlignment="Left"/>
+                                <TextBlock Margin="0,8,0,0" Style="{StaticResource Type.Caption}">
+                                    <Run Text="Dans cet état depuis"/><Run Text=" "/><Run Text="{Binding StateSince, Mode=OneWay}" FontWeight="SemiBold"/>
+                                </TextBlock>
+                                <TextBlock Text="{Binding StopCause, StringFormat=Cause : {0}}" Foreground="{StaticResource Err.Text}" FontWeight="Medium" Margin="0,2,0,0"
+                                           Visibility="{Binding StopCause, Converter={x:Static infra:Conv.NotEmptyToVis}}"/>
+                                <c:StatusPill Tone="Maint" Text="{Binding DeclaredText}" IconName="engineering" HorizontalAlignment="Left" Margin="0,8,0,0"
+                                              Visibility="{Binding DeclaredText, Converter={x:Static infra:Conv.NotEmptyToVis}}"/>
+                            </StackPanel>
+                        </DockPanel>
+                        <UniformGrid Columns="3" Margin="0,0,0,8">
+                            <Grid Margin="0,0,6,8">
+                                <Button Style="{StaticResource CommandButton}" Content="{res:T Cmd.Reset}" c:Ui.Icon="restart_alt" c:Ui.Tone="Warn" IsEnabled="{Binding CanReset}"
+                                        c:Ui.IsBusy="{Binding ResetBusy}" Command="{Binding ResetCommand}" MinWidth="0" Padding="8,0"/>
+                                <Border Background="Transparent" Tag="Reset" Visibility="{Binding CanReset, Converter={x:Static infra:Conv.InvBoolToVis}}" MouseLeftButtonUp="Unavailable_Click"/>
+                            </Grid>
+                            <Grid Margin="3,0,3,8">
+                                <Button Style="{StaticResource CommandButton}" Content="{res:T Cmd.Start}" c:Ui.Icon="play_arrow" c:Ui.Tone="Ok" IsEnabled="{Binding CanStart}"
+                                        c:Ui.IsBusy="{Binding StartBusy}" Command="{Binding StartCommand}" MinWidth="0" Padding="8,0"/>
+                                <Border Background="Transparent" Tag="Start" Visibility="{Binding CanStart, Converter={x:Static infra:Conv.InvBoolToVis}}" MouseLeftButtonUp="Unavailable_Click"/>
+                            </Grid>
+                            <Grid Margin="6,0,0,8">
+                                <Button Style="{StaticResource CommandButton}" Content="{res:T Cmd.Hold}" c:Ui.Icon="pause" c:Ui.Tone="Warn" IsEnabled="{Binding CanHold}"
+                                        c:Ui.IsBusy="{Binding HoldBusy}" Command="{Binding HoldCommand}" MinWidth="0" Padding="8,0"/>
+                                <Border Background="Transparent" Tag="Hold" Visibility="{Binding CanHold, Converter={x:Static infra:Conv.InvBoolToVis}}" MouseLeftButtonUp="Unavailable_Click"/>
+                            </Grid>
+                            <Grid Margin="0,0,6,0">
+                                <Button Style="{StaticResource CommandButton}" Content="{res:T Cmd.Stop}" c:Ui.Icon="stop" c:Ui.Tone="Neutral" IsEnabled="{Binding CanStop}"
+                                        c:Ui.IsBusy="{Binding StopBusy}" Command="{Binding StopCommand}" MinWidth="0" Padding="8,0"/>
+                                <Border Background="Transparent" Tag="Stop" Visibility="{Binding CanStop, Converter={x:Static infra:Conv.InvBoolToVis}}" MouseLeftButtonUp="Unavailable_Click"/>
+                            </Grid>
+                            <Grid Margin="3,0,3,0">
+                                <Button Style="{StaticResource CommandButton}" Content="{res:T Cmd.Clear}" c:Ui.Icon="cleaning_services" c:Ui.Tone="Err" IsEnabled="{Binding CanClear}"
+                                        c:Ui.IsBusy="{Binding ClearBusy}" Command="{Binding ClearCommand}" MinWidth="0" Padding="8,0"/>
+                                <Border Background="Transparent" Tag="Clear" Visibility="{Binding CanClear, Converter={x:Static infra:Conv.InvBoolToVis}}" MouseLeftButtonUp="Unavailable_Click"/>
+                            </Grid>
+                        </UniformGrid>
+                        <Button Style="{StaticResource AbortButton}" Content="Abort" c:Ui.Icon="report" Command="{Binding AbortCommand}" Margin="0,8,0,16"/>
+                        <DockPanel Margin="0,0,0,10">
+                            <TextBlock DockPanel.Dock="Left" Text="Mode" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Width="70"/>
+                            <ListBox Style="{StaticResource Segmented}" SelectedIndex="{Binding ModeIndex, Mode=TwoWay}" HorizontalAlignment="Left">
+                                <ListBoxItem Content="Production"/>
+                                <ListBoxItem Content="Maintenance"/>
+                            </ListBox>
+                        </DockPanel>
+                        <DockPanel>
+                            <TextBlock DockPanel.Dock="Left" Text="Override" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Width="70"/>
+                            <c:OverrideControl Value="{Binding OverridePercent, Mode=TwoWay}" Label="Machine" HorizontalAlignment="Left"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- OF -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding OrderTitle}" FontWeight="SemiBold" FontSize="16"/>
+                        <DockPanel Margin="0,10,0,6">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding OrderPercent}" Style="{StaticResource Type.Caption}" VerticalAlignment="Bottom" Margin="0,0,0,6"/>
+                            <TextBlock Text="{Binding OrderCountText}" Style="{StaticResource Type.Kpi}"/>
+                        </DockPanel>
+                        <c:ProgressStrip BarHeight="8" Good="{Binding OrderGood}" Bad="{Binding OrderBad}" Active="{Binding OrderActive}"/>
+                        <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                            <TextBlock Text="{Binding OrderGoodText}" Foreground="{StaticResource Ok.Text}" FontWeight="SemiBold" Margin="0,0,18,0"/>
+                            <TextBlock Text="{Binding OrderBadText}" Foreground="{StaticResource Err.Text}" FontWeight="SemiBold" Margin="0,0,18,0"/>
+                            <TextBlock Text="{Binding OrderActiveText}" Foreground="{StaticResource Busy.Text}" FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <TextBlock Text="{Binding OrderEnd}" Style="{StaticResource Type.Caption}" Margin="0,8,0,0"/>
+                        <TextBlock Text="{Binding BudgetText}" Style="{StaticResource Type.Caption}" Margin="0,2,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Stations -->
+                <Border Style="{StaticResource Card}" Padding="20,16,20,8">
+                    <StackPanel>
+                        <TextBlock Text="STATIONS" Style="{StaticResource Type.Caps}" Margin="0,0,0,4"/>
+                        <ItemsControl ItemsSource="{Binding Stations}" ItemTemplate="{StaticResource StationRow}" Focusable="False"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

@@ -1,0 +1,162 @@
+<Window x:Class="StdMachine.Hmi.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+        xmlns:svc="clr-namespace:StdMachine.Hmi.Services"
+        xmlns:infra="clr-namespace:StdMachine.Hmi.Infrastructure"
+        xmlns:res="clr-namespace:StdMachine.Hmi.Resources"
+        Title="StdMachine" Background="{StaticResource Bg.App}"
+        FontFamily="{StaticResource Font.Sans}" FontSize="15"
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType"
+        UseLayoutRounding="True" SnapsToDevicePixels="True"
+        Typography.NumeralAlignment="Tabular">
+    <Grid x:Name="Shell">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="{StaticResource Size.NavRail.Length}"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== Rail de navigation ===== -->
+        <Border Grid.Column="0" Grid.RowSpan="3" Background="{StaticResource Bg.SurfaceAlt}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Hidden">
+                <ItemsControl ItemsSource="{Binding Rail}" Margin="0,6">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <Border x:Name="Sep" Height="1" Background="{StaticResource Border.Default}" Margin="16,8,16,8" Visibility="Collapsed"/>
+                                <Button Command="{Binding DataContext.OpenCommand, RelativeSource={RelativeSource AncestorType=Window}}" CommandParameter="{Binding}"
+                                        Style="{StaticResource RailButton}" IsEnabled="True">
+                                    <Grid Width="76" Height="64">
+                                        <Border x:Name="Tile" CornerRadius="{StaticResource Radius.L}" Background="Transparent" Margin="2"/>
+                                        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                                            <Grid HorizontalAlignment="Center">
+                                                <c:Icon x:Name="Ico" Glyph="{Binding Icon}" FontSize="28" Foreground="{StaticResource Text.Secondary}"/>
+                                                <Border x:Name="Badge" Visibility="Collapsed" Background="{StaticResource Err.Dot}" CornerRadius="9" MinWidth="18" Height="18"
+                                                        HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-6,-10,0" Padding="4,0">
+                                                    <TextBlock Text="{Binding Badge}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Text.OnColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                </Border>
+                                                <Ellipse x:Name="Dot" Visibility="Collapsed" Width="10" Height="10" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-3,-8,0"
+                                                         Fill="{Binding Dot, Converter={x:Static infra:Conv.ToneDot}}" Stroke="{StaticResource Bg.SurfaceAlt}" StrokeThickness="2"/>
+                                            </Grid>
+                                            <TextBlock x:Name="Lbl" Text="{Binding Label}" FontSize="12" HorizontalAlignment="Center" Margin="0,2,0,0" Foreground="{StaticResource Text.Secondary}"/>
+                                        </StackPanel>
+                                    </Grid>
+                                </Button>
+                            </StackPanel>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsFirstOfGroup}" Value="True">
+                                    <Setter TargetName="Sep" Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding IsSelected}" Value="True">
+                                    <Setter TargetName="Tile" Property="Background" Value="{StaticResource Accent.Bg}"/>
+                                    <Setter TargetName="Ico" Property="Foreground" Value="{StaticResource Accent}"/>
+                                    <Setter TargetName="Lbl" Property="Foreground" Value="{StaticResource Accent}"/>
+                                    <Setter TargetName="Lbl" Property="FontWeight" Value="SemiBold"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Badge, Converter={x:Static infra:Conv.PositiveToVis}}" Value="Visible">
+                                    <Setter TargetName="Badge" Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding Dot, Converter={x:Static infra:Conv.NotNullToVis}}" Value="Visible">
+                                    <Setter TargetName="Dot" Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ===== Barre du haut ===== -->
+        <Border Grid.Column="1" Grid.Row="0" Height="{StaticResource Size.TopBar}" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,0,0,1">
+            <DockPanel Margin="16,0,16,0" LastChildFill="True">
+                <!-- Droite -->
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <c:OverrideControl Value="{Binding OverridePercent, Mode=TwoWay}" Label="Override" Chain="{Binding OverrideChain}" Margin="0,0,10,0"/>
+                    <Button Command="{Binding GoAlarmsCommand}" c:Ui.Variant="Ghost" Width="56" Height="48" MinWidth="56" Padding="0">
+                        <Grid>
+                            <c:Icon Glyph="notifications" FontSize="28" Foreground="{Binding AlarmTone, Converter={x:Static infra:Conv.ToneDot}}"/>
+                            <Border Visibility="{Binding AlarmCount, Converter={x:Static infra:Conv.PositiveToVis}}" Background="{Binding AlarmTone, Converter={x:Static infra:Conv.ToneDot}}" CornerRadius="9" MinWidth="18" Height="18"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0" Padding="4,0">
+                                <TextBlock Text="{Binding AlarmCount}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource Text.OnColor}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </Button>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,0,8,0">
+                        <c:StatusDot Tone="{Binding ConnectionTone}" Margin="0,0,6,0"/>
+                        <TextBlock Text="{Binding ConnectionText}" Style="{StaticResource Type.Caption}" Foreground="{StaticResource Text.Primary}" FontWeight="Medium"/>
+                    </StackPanel>
+                    <Button Command="{Binding GoCommunicationsCommand}" c:Ui.Variant="Ghost" Width="48" Height="48" MinWidth="48" Padding="0">
+                        <c:Icon Glyph="lan" FontSize="26" Foreground="{Binding CommunicationsTone, Converter={x:Static infra:Conv.ToneDot}}"/>
+                    </Button>
+                    <Button Command="{Binding GoForcesCommand}" c:Ui.Variant="Ghost" Padding="4,0" MinHeight="48" Visibility="{Binding ForceCount, Converter={x:Static infra:Conv.PositiveToVis}}">
+                        <c:StatusPill Tone="Maint" IconName="engineering" Text="{Binding ForceText}"/>
+                    </Button>
+                    <Button c:Ui.Variant="Ghost" Padding="10,0" MinHeight="48" Click="Login_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <c:Icon Glyph="person" FontSize="24" Foreground="{StaticResource Text.Secondary}" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding UserLabel}" FontWeight="Medium" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Text="{Binding Clock}" Style="{StaticResource Type.Body}" Foreground="{StaticResource Text.Secondary}" VerticalAlignment="Center" Margin="6,0,0,0" MinWidth="64"/>
+                </StackPanel>
+                <!-- Gauche -->
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Command="{Binding BackCommand}" c:Ui.Variant="Ghost" c:Ui.Icon="arrow_back" Content="{res:T Common.Back}" Margin="0,0,10,0"
+                            Visibility="{Binding Navigation.CanGoBack, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                    <Border Width="22" Height="22" CornerRadius="5" Background="{StaticResource Text.Primary}" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <Border Width="8" Height="8" BorderBrush="White" BorderThickness="2" CornerRadius="2" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,16,0">
+                        <TextBlock Text="{Binding MachineName}" FontWeight="SemiBold" FontSize="17" Margin="0,0,0,-2"/>
+                        <TextBlock Text="{Binding ProjectName}" Style="{StaticResource Type.Caption}" MaxWidth="170" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
+                    <c:StateBadge State="{Binding State}" Size="Medium" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <c:StatusPill Text="{Binding ModeText}" Tone="{Binding ModeTone}" IconName="key" VerticalAlignment="Center" Margin="0,0,16,0"/>
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,3">
+                            <TextBlock Text="{Binding OrderText}" FontWeight="SemiBold" FontSize="14"/>
+                            <TextBlock Text="{Binding OrderCounts}" Style="{StaticResource Type.Caption}" Margin="10,1,0,0"/>
+                        </StackPanel>
+                        <c:ProgressStrip Width="190" BarHeight="8" Good="{Binding OrderGood}" Bad="{Binding OrderBad}" Active="{Binding OrderActive}"/>
+                    </StackPanel>
+                    <c:StatusPill Tone="Sim" IconName="science" Text="{res:T Shell.DemoChip}" VerticalAlignment="Center" Margin="0,0,10,0" Visibility="{Binding IsDemo, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                    <c:StatusPill Tone="Warn" IconName="pause" Text="{res:T Shell.OverrideZero}" VerticalAlignment="Center" Margin="0,0,10,0" Visibility="{Binding OverrideZero, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                    <c:StatusPill Tone="Maint" IconName="inventory_2" Text="{res:T Shell.LoadingLocked}" VerticalAlignment="Center" Visibility="{Binding LoadingLocked, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+        <!-- Bordure supérieure de la page : prend la couleur de l'état pendant 1 s après un changement d'état -->
+        <Rectangle Grid.Column="1" Grid.Row="1" Height="2" VerticalAlignment="Top" Panel.ZIndex="5" Fill="{Binding StateTone, Converter={x:Static infra:Conv.ToneDot}}"
+                   Visibility="{Binding StateFlash, Converter={x:Static infra:Conv.BoolToVis}}"/>
+
+        <!-- ===== Bandeau d'alarme ===== -->
+        <Border Grid.Column="1" Grid.Row="1" Height="56" Background="{StaticResource Err.Bg}" BorderBrush="{StaticResource Err.Dot}" BorderThickness="0,0,0,2"
+                Visibility="{Binding BannerVisible, Converter={x:Static infra:Conv.BoolToVis}}">
+            <DockPanel Margin="20,0,16,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="{res:T Common.GoTo}" Command="{Binding BannerGoToCommand}" c:Ui.Icon="chevron_right" Height="44" MinHeight="44" Margin="0,0,8,0"/>
+                    <Button Content="{res:T Cmd.Clear}" Command="{Binding BannerAcknowledgeCommand}" c:Ui.Variant="Danger" c:Ui.Icon="check" Height="44" MinHeight="44"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <c:Icon Glyph="report" FontSize="30" Foreground="{StaticResource Err.Dot}" Margin="0,0,12,0"
+                            Opacity="{Binding Source={x:Static infra:BlinkClock.Instance}, Path=Opacity}"/>
+                    <TextBlock Text="{Binding BannerTime}" FontWeight="SemiBold" Foreground="{StaticResource Err.Text}" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding BannerWhere}" Foreground="{StaticResource Err.Text}" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding BannerText}" FontWeight="SemiBold" FontSize="17" Foreground="{StaticResource Err.Text}" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding BannerMore}" Style="{StaticResource Type.Caption}" Foreground="{StaticResource Err.Text}" Margin="14,0,0,0" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ===== Page courante : la vue est choisie par le type de la vue-modèle (voir App.xaml) ===== -->
+        <ContentControl Grid.Column="1" Grid.Row="2" Content="{Binding Navigation.Current}" IsTabStop="False" Focusable="False"/>
+
+        <!-- Surimpressions : pavé numérique, clavier, tiroirs, dialogues, toasts -->
+        <svc:OverlayHost Grid.ColumnSpan="2" Grid.RowSpan="3"/>
+    </Grid>
+</Window>

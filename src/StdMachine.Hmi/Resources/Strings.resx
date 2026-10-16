@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+
+  <!-- Vocabulaire commun (docs/00-glossaire.md) -->
+  <data name="Common.Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Common.Validate" xml:space="preserve"><value>Valider</value></data>
+  <data name="Common.HoldOneSecond" xml:space="preserve"><value>Maintenir 1 s</value></data>
+
+  <!-- Commandes PackML (libellés d'interface) -->
+  <data name="Cmd.Reset" xml:space="preserve"><value>Réarmer</value></data>
+  <data name="Cmd.Start" xml:space="preserve"><value>Démarrer</value></data>
+  <data name="Cmd.Hold" xml:space="preserve"><value>Pause</value></data>
+  <data name="Cmd.Stop" xml:space="preserve"><value>Arrêter</value></data>
+  <data name="Cmd.Clear" xml:space="preserve"><value>Acquitter</value></data>
+  <data name="Cmd.Abort" xml:space="preserve"><value>Abort</value></data>
+
+  <!-- États PackML : description française du badge L (docs/08 § 2.3) -->
+  <data name="State.Stopped" xml:space="preserve"><value>Arrêtée</value></data>
+  <data name="State.Resetting" xml:space="preserve"><value>Initialisation en cours</value></data>
+  <data name="State.Idle" xml:space="preserve"><value>Prête à démarrer</value></data>
+  <data name="State.Execute" xml:space="preserve"><value>Production en cours</value></data>
+  <data name="State.Held" xml:space="preserve"><value>En pause</value></data>
+  <data name="State.Stopping" xml:space="preserve"><value>Arrêt ordonné en cours</value></data>
+  <data name="State.Aborted" xml:space="preserve"><value>Arrêt immédiat</value></data>
+  <data name="State.Clearing" xml:space="preserve"><value>Acquittement en cours</value></data>
+
+  <!-- Pavé numérique -->
+  <data name="Keypad.Bounds" xml:space="preserve"><value>Bornes : {0} à {1} {2}</value></data>
+  <data name="Keypad.OutOfBounds" xml:space="preserve"><value>Valeur hors bornes : {0} à {1} {2}</value></data>
+  <data name="Keypad.Invalid" xml:space="preserve"><value>Valeur invalide.</value></data>
+
+  <!-- Pages -->
+  <data name="Page.Components" xml:space="preserve"><value>Composants</value></data>
+  <data name="Page.ComponentsInput" xml:space="preserve"><value>Saisie</value></data>
+  <data name="Page.DragDropTest" xml:space="preserve"><value>Essai tactile</value></data>
+
+  <!-- Système › Essai tactile -->
+  <data name="Test.Title" xml:space="preserve"><value>Essai tactile</value></data>
+  <data name="Test.Help" xml:space="preserve"><value>Glissez une action depuis la palette vers une liste, réordonnez par la poignée, essayez les deux branches parallèles et la zone refusée.</value></data>
+  <data name="Test.Palette" xml:space="preserve"><value>Palette</value></data>
+  <data name="Test.Sequence" xml:space="preserve"><value>Liste réordonnable</value></data>
+  <data name="Test.BranchA" xml:space="preserve"><value>Branche 1</value></data>
+  <data name="Test.BranchB" xml:space="preserve"><value>Branche 2</value></data>
+  <data name="Test.Parallel" xml:space="preserve"><value>En parallèle</value></data>
+  <data name="Test.DropHere" xml:space="preserve"><value>Déposez une action ici</value></data>
+  <data name="Test.RefusedZone" xml:space="preserve"><value>Zone refusée</value></data>
+  <data name="Test.RefusedReason" xml:space="preserve"><value>Cette zone refuse tout dépôt (essai du refus expliqué).</value></data>
+  <data name="Test.BranchConflict" xml:space="preserve"><value>Un objet ne peut pas être dans deux branches parallèles (« {0} » est déjà dans l'autre branche).</value></data>
+  <data name="Test.AutoScroll" xml:space="preserve"><value>Défilement automatique</value></data>
+
+  <!-- Page de démonstration des composants -->
+  <data name="Gallery.Title" xml:space="preserve"><value>Composants</value></data>
+  <data name="Gallery.Help" xml:space="preserve"><value>Chaque composant de docs/08 § 3 dans ses états. Les champs, boutons à appui maintenu, toasts, tiroir et dialogue sont utilisables.</value></data>
+  <data name="Gallery.TitleInput" xml:space="preserve"><value>Composants : saisie, balises et retours</value></data>
+  <data name="Gallery.HelpInput" xml:space="preserve"><value>Champs, balises, progression, pavé numérique, clavier, état vide, notifications, tiroir et dialogue.</value></data>
+  <data name="Gallery.Buttons" xml:space="preserve"><value>Boutons : principal, secondaire, discret, danger — normal, désactivé, en cours</value></data>
+  <data name="Gallery.Commands" xml:space="preserve"><value>Commandes de machine, Abort et appui maintenu</value></data>
+  <data name="Gallery.StateBadges" xml:space="preserve"><value>Badges d'état PackML — tailles S, M, L</value></data>
+  <data name="Gallery.Pills" xml:space="preserve"><value>Pastilles et points d'état</value></data>
+  <data name="Gallery.Selectors" xml:space="preserve"><value>Onglets, segments, interrupteurs</value></data>
+  <data name="Gallery.Override" xml:space="preserve"><value>Override</value></data>
+  <data name="Gallery.Fields" xml:space="preserve"><value>Champs (toucher pour ouvrir le pavé ou le clavier)</value></data>
+  <data name="Gallery.Beacons" xml:space="preserve"><value>Balises</value></data>
+  <data name="Gallery.Progress" xml:space="preserve"><value>Progression</value></data>
+  <data name="Gallery.Keypad" xml:space="preserve"><value>Pavé numérique</value></data>
+  <data name="Gallery.KeypadTitle" xml:space="preserve"><value>Position Z</value></data>
+  <data name="Gallery.Keyboard" xml:space="preserve"><value>Clavier AZERTY</value></data>
+  <data name="Gallery.KeyboardTitle" xml:space="preserve"><value>Nom de la station</value></data>
+  <data name="Gallery.KeyboardPlaceholder" xml:space="preserve"><value>Saisir un nom</value></data>
+  <data name="Gallery.Empty" xml:space="preserve"><value>État vide et élément protégé</value></data>
+  <data name="Gallery.Overlays" xml:space="preserve"><value>Notifications, tiroir, dialogue</value></data>
+  <data name="Gallery.Toast.Success" xml:space="preserve"><value>Projet enregistré.</value></data>
+  <data name="Gallery.Toast.Info" xml:space="preserve"><value>Information : la démonstration est active.</value></data>
+  <data name="Gallery.Toast.Warning" xml:space="preserve"><value>Avertissement : seuil de vide proche.</value></data>
+  <data name="Gallery.Toast.Error" xml:space="preserve"><value>Refusée : la station n'est pas en Idle.</value></data>
+  <data name="Gallery.DrawerTitle" xml:space="preserve"><value>Tiroir de démonstration</value></data>
+  <data name="Gallery.DrawerBody" xml:space="preserve"><value>Le tiroir glisse depuis la droite sur 480 px. Toucher le fond atténué ou la croix le ferme.</value></data>
+  <data name="Gallery.HoldDone" xml:space="preserve"><value>Confirmé à {0}</value></data>
+  <data name="Gallery.ConfirmTitle" xml:space="preserve"><value>Supprimer la carte ?</value></data>
+  <data name="Gallery.ConfirmBody" xml:space="preserve"><value>La carte « Presser pignon » et ses paramètres seront supprimés du process.</value></data>
+  <data name="Gallery.ConfirmOk" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="Gallery.Confirmed" xml:space="preserve"><value>Supprimé.</value></data>
+  <data name="Gallery.Cancelled" xml:space="preserve"><value>Annulé.</value></data>
+
+  <!-- Coquille -->
+  <data name="Common.Refused" xml:space="preserve"><value>Refusée.</value></data>
+  <data name="Common.Close" xml:space="preserve"><value>Fermer</value></data>
+  <data name="Common.Back" xml:space="preserve"><value>Retour</value></data>
+  <data name="Common.GoTo" xml:space="preserve"><value>Aller à</value></data>
+  <data name="Common.Apply" xml:space="preserve"><value>Appliquer</value></data>
+  <data name="Common.Test" xml:space="preserve"><value>Tester</value></data>
+  <data name="Common.Settings" xml:space="preserve"><value>Réglages</value></data>
+  <data name="Rail.Machine" xml:space="preserve"><value>Machine</value></data>
+  <data name="Rail.Stations" xml:space="preserve"><value>Stations</value></data>
+  <data name="Rail.Manual" xml:space="preserve"><value>Manuel</value></data>
+  <data name="Rail.Alarms" xml:space="preserve"><value>Alarmes</value></data>
+  <data name="Rail.Quality" xml:space="preserve"><value>Qualité</value></data>
+  <data name="Rail.Forces" xml:space="preserve"><value>Forçages</value></data>
+  <data name="Rail.Parts" xml:space="preserve"><value>Pièces</value></data>
+  <data name="Rail.Orders" xml:space="preserve"><value>OF</value></data>
+  <data name="Rail.StudioMachine" xml:space="preserve"><value>Machine</value></data>
+  <data name="Rail.StudioStation" xml:space="preserve"><value>Station</value></data>
+  <data name="Rail.StudioProcess" xml:space="preserve"><value>Process</value></data>
+  <data name="Rail.Users" xml:space="preserve"><value>Utilisat.</value></data>
+  <data name="Rail.Stats" xml:space="preserve"><value>Statist.</value></data>
+  <data name="Rail.Communications" xml:space="preserve"><value>Comm.</value></data>
+  <data name="Rail.System" xml:space="preserve"><value>Système</value></data>
+  <data name="Mode.Production" xml:space="preserve"><value>Production</value></data>
+  <data name="Mode.Maintenance" xml:space="preserve"><value>Maintenance</value></data>
+  <data name="Order.Short" xml:space="preserve"><value>OF</value></data>
+  <data name="Connection.Demo" xml:space="preserve"><value>Démo</value></data>
+  <data name="Connection.Simulation" xml:space="preserve"><value>Simulation</value></data>
+  <data name="Connection.Connected" xml:space="preserve"><value>PLC</value></data>
+  <data name="Connection.Disconnected" xml:space="preserve"><value>Déconnecté</value></data>
+  <data name="Shell.DemoChip" xml:space="preserve"><value>Données de démonstration</value></data>
+  <data name="Shell.OverrideZero" xml:space="preserve"><value>Mouvements arrêtés (override 0 %)</value></data>
+  <data name="Shell.Forces" xml:space="preserve"><value>Forçages</value></data>
+  <data name="Shell.LoadingLocked" xml:space="preserve"><value>Chargement arrêté (qualité)</value></data>
+</root>

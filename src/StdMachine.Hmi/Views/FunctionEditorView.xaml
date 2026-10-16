@@ -1,0 +1,218 @@
+<UserControl x:Class="StdMachine.Hmi.Views.FunctionEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:dd="clr-namespace:StdMachine.Hmi.DragDrop"
+             xmlns:infra="clr-namespace:StdMachine.Hmi.Infrastructure"
+             Background="{StaticResource Bg.App}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="64"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="44"/>
+        </Grid.RowDefinitions>
+
+        <!-- Barre de page -->
+        <Border Grid.Row="0" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,0,0,1">
+            <DockPanel Margin="16,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button c:Ui.Icon="undo" c:Ui.Variant="Ghost" Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}" Width="48" Padding="0"/>
+                    <Button c:Ui.Icon="redo" c:Ui.Variant="Ghost" Command="{Binding RedoCommand}" IsEnabled="{Binding CanRedo}" Width="48" Padding="0" Margin="0,0,8,0"/>
+                    <c:StatusPill Tone="{Binding ValidationTone}" Text="{Binding ValidationSummary}" IconName="fact_check" Margin="0,0,12,0"/>
+                    <Button Content="Essayer" c:Ui.Icon="play_arrow" Command="{Binding TryRunCommand}" IsEnabled="{Binding Running, Converter={x:Static infra:Conv.InvBool}}" Margin="0,0,8,0"/>
+                    <Button Content="Utiliser dans un process" c:Ui.Icon="account_tree" Command="{Binding UseInProcessCommand}" Margin="0,0,8,0"/>
+                    <Button Content="Enregistrer" c:Ui.Variant="Primary" c:Ui.Icon="check" Command="{Binding SaveCommand}"/>
+                </StackPanel>
+                <Button DockPanel.Dock="Left" Content="Studio station" c:Ui.Icon="arrow_back" Command="{Binding BackCommand}" Margin="0,0,16,0"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Text="Fonction personnalisée" Style="{StaticResource Type.Title}"/>
+                    <TextBlock Style="{StaticResource Type.Caption}"><Run Text="{Binding StationName, Mode=OneWay}"/><Run Text=" › "/><Run Text="{Binding ModuleName, Mode=OneWay}"/><Run Text="  ·  "/><Run Text="{Binding BasedOnText, Mode=OneWay}"/></TextBlock>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{StaticResource Size.Palette.Length}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{StaticResource Size.SidePanel.Length}"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Palette : actions de base du module -->
+            <Border Grid.Column="0" Background="{StaticResource Bg.SurfaceAlt}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,0,1,0">
+                <DockPanel Margin="12,12,10,0">
+                    <c:TextField DockPanel.Dock="Top" Text="{Binding Query, Mode=TwoWay}" Placeholder="Rechercher une action" Label="Rechercher" Margin="0,0,0,8"/>
+                    <TextBlock DockPanel.Dock="Top" Text="Actions de base des objets du module. Glissez-les par la poignée dans la suite de la fonction." Style="{StaticResource Type.Caption}" TextWrapping="Wrap" FontSize="12" Margin="2,0,0,10"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                        <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" Margin="4,0,0,4">
+                                            <c:Icon Glyph="{Binding Icon}" FontSize="17" Foreground="{StaticResource Text.Secondary}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Type.Caps}"/>
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border x:Name="Item" Height="48" Margin="0,0,0,3" CornerRadius="8" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1"
+                                                            Opacity="{Binding ItemOpacity}" dd:Drag.Source="{Binding DragSource}" ToolTip="{Binding Reason}">
+                                                        <DockPanel>
+                                                            <Border DockPanel.Dock="Left" Width="38" Background="Transparent" dd:Drag.Handle="True"><c:Icon Glyph="drag_indicator" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                            <c:Icon DockPanel.Dock="Right" Glyph="{Binding Icon}" FontSize="20" Foreground="{StaticResource Text.Tertiary}" Margin="6,0,12,0" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Label}" FontSize="13.5" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        </DockPanel>
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <Trigger SourceName="Item" Property="dd:Drag.IsDragged" Value="True"><Setter TargetName="Item" Property="Opacity" Value="0.4"/></Trigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Centre : nom, suite d'actions -->
+            <DockPanel Grid.Column="1" Margin="24,16,24,0">
+                <Border DockPanel.Dock="Top" Style="{StaticResource PageCard}" Margin="0,0,0,12" Padding="18,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="360"/><ColumnDefinition Width="14"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <c:TextField Text="{Binding Name, Mode=TwoWay}" Label="Nom de la fonction" Placeholder="Nom de la fonction"/>
+                        <c:TextField Grid.Column="2" Text="{Binding Description, Mode=TwoWay}" Label="Description" Placeholder="À quoi sert cette fonction ?"/>
+                    </Grid>
+                </Border>
+                <DockPanel DockPanel.Dock="Top" Margin="2,0,2,8">
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding DurationSummary}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center"/>
+                    <TextBlock Text="SUITE D'ACTIONS DE BASE" Style="{StaticResource Type.Caps}"/>
+                </DockPanel>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                    <Grid>
+                        <Border x:Name="EmptyZone" Height="150" CornerRadius="12" BorderBrush="{StaticResource Accent.Border}" BorderThickness="2" Background="{StaticResource Accent.BgSoft}"
+                                Visibility="{Binding IsEmpty, Converter={x:Static infra:Conv.BoolToVis}}">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <c:Icon Glyph="drag_indicator" FontSize="34" Foreground="{StaticResource Accent}" HorizontalAlignment="Center"/>
+                                <TextBlock Text="Glissez des actions de base ici" FontWeight="SemiBold" FontSize="16" HorizontalAlignment="Center"/>
+                                <TextBlock Text="La suite s'exécute de haut en bas ; réordonnez par la poignée." Style="{StaticResource Type.Caption}" HorizontalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <ItemsControl x:Name="StepsList" ItemsSource="{Binding Steps}" Focusable="False" MinHeight="150" Background="Transparent">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border x:Name="Card" Height="84" Margin="0,0,0,16" CornerRadius="12" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1"
+                                            dd:Drag.Source="{Binding}" Effect="{StaticResource Shadow.Card}">
+                                        <Border.InputBindings>
+                                            <MouseBinding Gesture="LeftClick" Command="{Binding DataContext.SelectCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                        </Border.InputBindings>
+                                        <DockPanel>
+                                            <Border DockPanel.Dock="Left" Width="48" Background="Transparent" dd:Drag.Handle="True"><c:Icon Glyph="drag_indicator" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                            <Border DockPanel.Dock="Left" MinWidth="30" Height="28" CornerRadius="14" Background="{StaticResource Accent.Bg}" Margin="0,0,14,0" VerticalAlignment="Center" Padding="8,0">
+                                                <TextBlock Text="{Binding Number}" FontWeight="SemiBold" FontSize="13" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <c:Icon DockPanel.Dock="Right" x:Name="Warn" Glyph="error" FontSize="24" Foreground="{StaticResource Err.Dot}" Margin="0,0,16,0" VerticalAlignment="Center" Visibility="Collapsed"/>
+                                            <TextBlock DockPanel.Dock="Right" Text="{Binding DurationText}" Style="{StaticResource Type.Caption}" Margin="0,0,16,0" VerticalAlignment="Center"/>
+                                            <c:Icon DockPanel.Dock="Left" Glyph="{Binding Icon}" FontSize="28" Foreground="{StaticResource Text.Secondary}" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                                            <StackPanel VerticalAlignment="Center">
+                                                <TextBlock FontWeight="SemiBold" FontSize="16"><Run Text="{Binding Title, Mode=OneWay}"/><Run Text="  " /><Run Text="{Binding Subtitle, Mode=OneWay}" FontWeight="Normal" Foreground="{StaticResource Text.Secondary}" FontSize="13"/></TextBlock>
+                                                <TextBlock Text="{Binding LinesText}" Style="{StaticResource TableCellMuted}" TextTrimming="CharacterEllipsis"/>
+                                            </StackPanel>
+                                        </DockPanel>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <Trigger SourceName="Card" Property="dd:Drag.IsDragged" Value="True"><Setter TargetName="Card" Property="Opacity" Value="0.4"/></Trigger>
+                                        <DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter TargetName="Card" Property="BorderBrush" Value="{StaticResource Accent}"/><Setter TargetName="Card" Property="BorderThickness" Value="2"/></DataTrigger>
+                                        <DataTrigger Binding="{Binding IsRunning}" Value="True"><Setter TargetName="Card" Property="BorderBrush" Value="{StaticResource Ok.Dot}"/><Setter TargetName="Card" Property="BorderThickness" Value="2.5"/><Setter TargetName="Card" Property="Background" Value="{StaticResource Ok.Bg}"/></DataTrigger>
+                                        <DataTrigger Binding="{Binding HasError}" Value="True"><Setter TargetName="Warn" Property="Visibility" Value="Visible"/></DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </Grid>
+                </ScrollViewer>
+            </DockPanel>
+
+            <!-- Panneau de droite : paramètres de la fonction et action sélectionnée -->
+            <Border Grid.Column="2" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                    <StackPanel Margin="18,16,18,18">
+                        <DockPanel Margin="0,0,0,6">
+                            <Button DockPanel.Dock="Right" Content="Ajouter" c:Ui.Icon="add" Height="44" MinHeight="44" Command="{Binding AddParamCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"/>
+                            <TextBlock Text="Paramètres" Style="{StaticResource Type.Title}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Text="Ce que l'utilisateur de la fonction règle sur la carte, dans l'éditeur de process." Style="{StaticResource Type.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                        <ItemsControl ItemsSource="{Binding Params}" Focusable="False" Margin="0,0,0,14">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Height="64" Margin="0,0,0,6" CornerRadius="10" Background="{StaticResource Bg.SurfaceAlt}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1">
+                                        <DockPanel Margin="12,0,6,0">
+                                            <Button DockPanel.Dock="Right" c:Ui.Icon="close" c:Ui.Variant="Ghost" Width="44" MinWidth="44" Height="44" MinHeight="44" Padding="0" Command="{Binding DataContext.RemoveParamCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <Button DockPanel.Dock="Right" Content="{Binding DefaultText}" Height="44" MinHeight="44" Padding="10,0" Margin="0,0,4,0" Command="{Binding DataContext.EditDefaultCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}"/>
+                                            <Border Background="Transparent" Cursor="Hand">
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" TextTrimming="CharacterEllipsis"/>
+                                                    <TextBlock Text="{Binding TypeText}" Style="{StaticResource TableCellMuted}"/>
+                                                </StackPanel>
+                                                <Border.InputBindings><MouseBinding Gesture="LeftClick" Command="{Binding DataContext.RenameParamCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/></Border.InputBindings>
+                                            </Border>
+                                        </DockPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Rectangle Height="1" Fill="{StaticResource Border.Divider}" Margin="-18,0,-18,14"/>
+
+                        <c:EmptyState IconName="touch_app" Title="Aucune action sélectionnée" Message="Touchez une action de la suite pour lier ses paramètres à ceux de la fonction."
+                                      Visibility="{Binding HasSelection, Converter={x:Static infra:Conv.InvBoolToVis}}" Margin="0,20,0,0"/>
+                        <StackPanel Visibility="{Binding HasSelection, Converter={x:Static infra:Conv.BoolToVis}}">
+                            <TextBlock Text="{Binding SelectedTitle}" Style="{StaticResource Type.Title}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+                            <TextBlock Text="Chaque paramètre est soit une valeur fixe, soit lié à un paramètre de la fonction (« = Position »)." Style="{StaticResource Type.Caption}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                            <ItemsControl ItemsSource="{Binding Args}" Focusable="False" Margin="0,0,0,10">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <StackPanel Margin="0,0,0,8">
+                                            <TextBlock Text="{Binding Label}" FontSize="12.5" Foreground="{StaticResource Neutral.Text}" Margin="0,0,0,4"/>
+                                            <Button x:Name="Btn" Command="{Binding DataContext.EditArgCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" HorizontalContentAlignment="Stretch" Height="48" Padding="12,0">
+                                                <DockPanel>
+                                                    <c:Icon DockPanel.Dock="Right" Glyph="chevron_right" FontSize="20" Foreground="{StaticResource Text.Tertiary}"/>
+                                                    <c:Icon x:Name="Link" DockPanel.Dock="Left" Glyph="tune" FontSize="18" Foreground="{StaticResource Accent}" Margin="0,0,8,0" Visibility="Collapsed"/>
+                                                    <TextBlock x:Name="Val" Text="{Binding Value}" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                </DockPanel>
+                                            </Button>
+                                        </StackPanel>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding IsBound}" Value="True"><Setter TargetName="Link" Property="Visibility" Value="Visible"/><Setter TargetName="Val" Property="Foreground" Value="{StaticResource Accent.Text}"/><Setter TargetName="Btn" Property="BorderBrush" Value="{StaticResource Accent.Border}"/></DataTrigger>
+                                            <DataTrigger Binding="{Binding IsError}" Value="True"><Setter TargetName="Btn" Property="BorderBrush" Value="{StaticResource Err.Dot}"/><Setter TargetName="Val" Property="Foreground" Value="{StaticResource Err.Text}"/></DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+                                <Button Content="Dupliquer" c:Ui.Icon="content_copy" Command="{Binding DuplicateSelectedCommand}" Margin="0,0,10,0"/>
+                                <c:HoldButton Content="Supprimer" c:Ui.Variant="Danger" c:Ui.Icon="delete" Command="{Binding DeleteSelectedCommand}" Width="190" Height="56"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Barre de validation -->
+        <Border Grid.Row="2" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,1,0,0">
+            <ItemsControl ItemsSource="{Binding Issues}" Focusable="False" VerticalAlignment="Center" Margin="24,0">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
+                            <c:Icon Glyph="warning" FontSize="18" Foreground="{StaticResource Warn.Dot}" Margin="0,0,6,0"/>
+                            <TextBlock Text="{Binding}" FontSize="12.5" TextTrimming="CharacterEllipsis" MaxWidth="620" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </Border>
+    </Grid>
+</UserControl>

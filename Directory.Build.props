@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Deterministic>true</Deterministic>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <EnableNETAnalyzers>false</EnableNETAnalyzers>
+    <ArtifactsRoot>$(MSBuildThisFileDirectory)</ArtifactsRoot>
+  </PropertyGroup>
+  <!-- Avertissements traités comme erreurs dans Core et Simulation (CLAUDE.md) -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'StdMachine.Core' Or '$(MSBuildProjectName)' == 'StdMachine.Simulation'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <!-- Shims net48 (IsExternalInit, RequiredMember...) : un seul fichier, partagé par lien -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'StdMachine.Core' Or '$(MSBuildProjectName)' == 'StdMachine.Simulation'">
+    <Compile Include="$(MSBuildThisFileDirectory)src\StdMachine.Hmi\Compatibility.cs" Link="Compatibility.cs" />
+  </ItemGroup>
+</Project>

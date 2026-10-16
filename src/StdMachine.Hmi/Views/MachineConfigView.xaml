@@ -1,0 +1,271 @@
+<UserControl x:Class="StdMachine.Hmi.Views.MachineConfigView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:dd="clr-namespace:StdMachine.Hmi.DragDrop"
+             xmlns:infra="clr-namespace:StdMachine.Hmi.Infrastructure"
+             Background="{StaticResource Bg.App}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="64"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <Border Grid.Row="0" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,0,0,1">
+            <DockPanel Margin="24,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button c:Ui.Icon="undo" c:Ui.Variant="Ghost" Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}" Width="48" Padding="0"/>
+                    <Button c:Ui.Icon="redo" c:Ui.Variant="Ghost" Command="{Binding RedoCommand}" IsEnabled="{Binding CanRedo}" Width="48" Padding="0" Margin="0,0,10,0"/>
+                    <c:StatusPill Tone="Err" Text="{Binding ErrorSummary}" IconName="fact_check" Margin="0,0,12,0"/>
+                    <Button Content="Déployer" c:Ui.Variant="Primary" c:Ui.Icon="cloud_upload" Command="{Binding DeployCommand}"/>
+                </StackPanel>
+                <TextBlock Text="Studio · Machine" Style="{StaticResource Type.PageTitle}" VerticalAlignment="Center"/>
+            </DockPanel>
+        </Border>
+
+        <ListBox Grid.Row="1" Style="{StaticResource Tabs}" SelectedIndex="{Binding TabIndex, Mode=TwoWay}" Margin="24,0">
+            <ListBoxItem Content="Plan et stations"/>
+            <ListBoxItem Content="Fonctions"/>
+            <ListBoxItem Content="Objets machine"/>
+            <ListBoxItem Content="Données de pièce"/>
+            <ListBoxItem Content="Image E/S"/>
+            <ListBoxItem Content="Réglages"/>
+            <ListBoxItem Content="Qualité"/>
+        </ListBox>
+
+        <Grid Grid.Row="2" Margin="24,14,24,16">
+            <!-- ===== 0. Plan et stations ===== -->
+            <Grid Visibility="{Binding TabIndex, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=0}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="460"/>
+                </Grid.ColumnDefinitions>
+                <Border Style="{StaticResource PageCard}" Padding="12">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Margin="4,0,0,8" Style="{StaticResource Type.Caption}"><Run Text="Plan planaire · "/><Run Text="{Binding PlanSize, Mode=OneWay}"/><Run Text=" · "/><Run Text="{Binding MoverCount, Mode=OneWay}"/><Run Text=" movers"/></TextBlock>
+                        <Viewbox Stretch="Uniform">
+                            <Canvas Width="{Binding PlanWidth}" Height="{Binding PlanHeight}">
+                                <ItemsControl ItemsSource="{Binding Tiles}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding X}"/><Setter Property="Canvas.Top" Value="{Binding Y}"/></Style></ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate><DataTemplate><Border Width="{Binding Width}" Height="{Binding Height}" Background="#F7F8FA" BorderBrush="{StaticResource Border.Divider}" BorderThickness="1" CornerRadius="8"/></DataTemplate></ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <ItemsControl ItemsSource="{Binding Markers}" Focusable="False">
+                                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><Canvas/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemContainerStyle><Style TargetType="ContentPresenter"><Setter Property="Canvas.Left" Value="{Binding X}"/><Setter Property="Canvas.Top" Value="{Binding Y}"/></Style></ItemsControl.ItemContainerStyle>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border x:Name="M" Width="{Binding Width}" Height="{Binding Height}" BorderThickness="2" CornerRadius="10" BorderBrush="{StaticResource Accent.Border}">
+                                                <TextBlock x:Name="T" FontSize="14" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Work"><Setter TargetName="M" Property="Background" Value="{StaticResource Accent.Bg}"/><Setter TargetName="M" Property="BorderBrush" Value="{StaticResource Accent}"/><Setter TargetName="M" Property="CornerRadius" Value="18"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Queue"><Setter TargetName="M" Property="BorderThickness" Value="1.5"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Buffer"><Setter TargetName="T" Property="Text" Value="Tampon"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Park"><Setter TargetName="T" Property="Text" Value="Parcage"/></DataTrigger>
+                                                <DataTrigger Binding="{Binding Kind}" Value="Tile"><Setter TargetName="M" Property="Visibility" Value="Collapsed"/></DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </Canvas>
+                        </Viewbox>
+                    </DockPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource PageCard}" Padding="0,14,0,0">
+                    <DockPanel>
+                        <DockPanel DockPanel.Dock="Top" Margin="16,0,16,8">
+                            <Button DockPanel.Dock="Right" Content="Nouvelle station" c:Ui.Icon="add" Command="{Binding NewStationCommand}" Height="44" MinHeight="44"/>
+                            <TextBlock Text="Stations" Style="{StaticResource SectionTitle}" Margin="0" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                            <ItemsControl ItemsSource="{Binding Stations}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource TableRow}" Height="68" dd:Drag.Source="{Binding Drag}">
+                                            <DockPanel Margin="4,0,14,0">
+                                                <Border DockPanel.Dock="Left" Width="44" Background="Transparent" dd:Drag.Handle="True"><c:Icon Glyph="drag_indicator" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Number}" Style="{StaticResource TableCellMuted}"/>
+                                                <StackPanel VerticalAlignment="Center">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15"/>
+                                                    <TextBlock Text="{Binding Groups}" Style="{StaticResource TableCellMuted}"/>
+                                                </StackPanel>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ===== 1. Fonctions ===== -->
+            <Grid Visibility="{Binding TabIndex, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=1}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="340"/>
+                </Grid.ColumnDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                    <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource PageCard}" Margin="0,0,0,12" dd:Drop.Target="{Binding DropTarget}" MinHeight="130">
+                                    <DockPanel>
+                                        <StackPanel DockPanel.Dock="Right" Width="150" Margin="16,0,0,0">
+                                            <TextBlock Text="PRIORITÉ" Style="{StaticResource Type.Caps}"/>
+                                            <c:NumberField Value="{Binding Priority, Mode=TwoWay}" Minimum="1" Maximum="9" Step="1" Decimals="0" Label="Priorité"/>
+                                        </StackPanel>
+                                        <StackPanel>
+                                            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                                <c:Icon Glyph="star" FontSize="20" Foreground="{StaticResource Warn.Dot}" Margin="0,0,6,0" VerticalAlignment="Center" Visibility="{Binding IsReject, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                                                <TextBlock Text="{Binding Name}" FontSize="18" FontWeight="SemiBold" Margin="0,0,12,0"/>
+                                                <c:StatusPill Tone="Neutral" Text="{Binding Role}" VerticalAlignment="Center"/>
+                                            </StackPanel>
+                                            <ItemsControl ItemsSource="{Binding Members}" Focusable="False">
+                                                <ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapPanel/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Border Height="44" CornerRadius="22" Background="{StaticResource Accent.Bg}" Margin="0,0,8,6" Padding="14,0,6,0">
+                                                            <StackPanel Orientation="Horizontal">
+                                                                <c:StatusDot x:Name="Dot" Tone="Ok" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                                <TextBlock Text="{Binding Name}" FontWeight="Medium" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                                                                <Button c:Ui.Icon="close" c:Ui.Variant="Ghost" Width="32" Height="32" MinHeight="32" MinWidth="32" Padding="0"
+                                                                        Command="{Binding Owner.RemoveCommand}" CommandParameter="{Binding}"/>
+                                                            </StackPanel>
+                                                        </Border>
+                                                        <DataTemplate.Triggers>
+                                                            <DataTrigger Binding="{Binding ImplementsAll}" Value="False"><Setter TargetName="Dot" Property="Tone" Value="Err"/></DataTrigger>
+                                                        </DataTemplate.Triggers>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                            <TextBlock Text="{Binding Operations}" Style="{StaticResource Type.Caption}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <Border Grid.Column="2" Style="{StaticResource PageCard}" Padding="0,14,0,0">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Stations" Style="{StaticResource SectionTitle}" Margin="16,0,0,2"/>
+                        <TextBlock DockPanel.Dock="Top" Text="Glissez une station sur une fonction pour l'y ajouter. Le point vert indique que la station implémente toutes les opérations." Style="{StaticResource Type.Caption}" TextWrapping="Wrap" Margin="16,0,16,8"/>
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                            <ItemsControl ItemsSource="{Binding Stations}" Focusable="False">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Style="{StaticResource TableRow}" Height="60" dd:Drag.Source="{Binding Drag}">
+                                            <DockPanel Margin="4,0,14,0">
+                                                <Border DockPanel.Dock="Left" Width="44" Background="Transparent" dd:Drag.Handle="True"><c:Icon Glyph="drag_indicator" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/></Border>
+                                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+                                            </DockPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ===== 2. Objets machine ===== -->
+            <Border Style="{StaticResource PageCard}" Visibility="{Binding TabIndex, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=2}">
+                <StackPanel>
+                    <TextBlock Text="Objets machine" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Text="Système planaire · 12 tuiles de 240 mm · 6 movers (113 mm, 1 emplacement)" Margin="0,0,0,10"/>
+                    <TextBlock Text="Balise machine · 4 couleurs (rouge, orange, vert, bleu)" Margin="0,0,0,10"/>
+                    <TextBlock Text="Sécurités · circuit 1 « Porte avant » · circuit 2 « Porte arrière » · arrêt d'urgence" Margin="0,0,0,10"/>
+                    <TextBlock Text="Les raccordements se font depuis l'image E/S (onglet voisin)." Style="{StaticResource Type.Caption}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== 3. Données de pièce ===== -->
+            <Border Style="{StaticResource PageCard}" Padding="0,14,0,0" Visibility="{Binding TabIndex, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=3}">
+                <StackPanel>
+                    <TextBlock Text="Données de pièce" Style="{StaticResource SectionTitle}" Margin="16,0,0,8"/>
+                    <ItemsControl ItemsSource="{Binding PartData}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource TableRow}" Height="56">
+                                    <Grid Margin="16,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="300"/><ColumnDefinition Width="160"/><ColumnDefinition Width="120"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Name}" Style="{StaticResource TableCell}" FontWeight="SemiBold"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Type}" Style="{StaticResource TableCellMuted}"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Unit}" Style="{StaticResource TableCellMuted}"/>
+                                        <c:Icon Grid.Column="3" Glyph="lock" FontSize="18" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Left" Visibility="{Binding Locked, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== 4. Image E/S ===== -->
+            <Border Style="{StaticResource PageCard}" Padding="0,14,0,0" Visibility="{Binding TabIndex, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=4}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="16,0,16,10">
+                        <Button DockPanel.Dock="Right" Content="Importer le CSV TwinCAT" c:Ui.Icon="upload" Command="{Binding ImportCsvCommand}" Margin="12,0,0,0"/>
+                        <c:TextField DockPanel.Dock="Right" Width="300" Text="{Binding IoQuery, Mode=TwoWay}" Placeholder="Filtrer" Label="Filtrer"/>
+                        <ListBox Style="{StaticResource Segmented}" ItemsSource="{Binding IoKinds}" SelectedItem="{Binding IoKind, Mode=TwoWay}" HorizontalAlignment="Left"/>
+                    </DockPanel>
+                    <Grid DockPanel.Dock="Top" Margin="16,0,16,6">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="80"/><ColumnDefinition Width="280"/><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="TYPE" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="1" Text="INDEX" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="2" Text="NOM" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="3" Text="BORNE" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="4" Text="UTILISÉ PAR" Style="{StaticResource TableHead}"/>
+                    </Grid>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                        <ItemsControl ItemsSource="{Binding IoRows}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource TableRow}" Height="52">
+                                        <Grid Margin="16,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="80"/><ColumnDefinition Width="280"/><ColumnDefinition Width="180"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Kind}" Style="{StaticResource TableCellMuted}"/><TextBlock Grid.Column="1" Text="{Binding Index}" Style="{StaticResource TableCell}"/><TextBlock Grid.Column="2" Text="{Binding Name}" Style="{StaticResource TableCell}" FontWeight="Medium"/><TextBlock Grid.Column="3" Text="{Binding Terminal}" Style="{StaticResource TableCellMuted}"/><TextBlock Grid.Column="4" Text="{Binding UsedBy}" Style="{StaticResource TableCell}"/>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- ===== 5. Réglages ===== -->
+            <Border Style="{StaticResource PageCard}" Visibility="{Binding TabIndex, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=5}">
+                <StackPanel Width="520" HorizontalAlignment="Left">
+                    <TextBlock Text="Réglages machine" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock Text="Délai avant « mover à vider »" Style="{StaticResource Type.Caption}" Margin="2,0,0,4"/>
+                    <c:NumberField Label="Délai avant « mover à vider »" Value="{Binding NoStationDelay, Mode=TwoWay}" Unit="s" Minimum="5" Maximum="600" Step="5" Decimals="0" Margin="0,0,0,12"/>
+                    <TextBlock Text="Vitesse des movers (libre)" Style="{StaticResource Type.Caption}" Margin="2,0,0,4"/>
+                    <c:NumberField Label="Vitesse des movers (libre)" Value="1.5" Unit="m/s" Minimum="0.1" Maximum="3" Step="0.1" Decimals="1" Margin="0,0,0,12"/>
+                    <TextBlock Text="Vitesse des movers (approche)" Style="{StaticResource Type.Caption}" Margin="2,0,0,4"/>
+                    <c:NumberField Label="Vitesse des movers (approche)" Value="0.5" Unit="m/s" Minimum="0.1" Maximum="3" Step="0.1" Decimals="1"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ===== 6. Qualité ===== -->
+            <Border Style="{StaticResource PageCard}" Padding="0,14,0,0" Visibility="{Binding TabIndex, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=6}">
+                <StackPanel>
+                    <TextBlock Text="Seuils par portée" Style="{StaticResource SectionTitle}" Margin="16,0,0,8"/>
+                    <Grid Margin="16,0,16,6">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="120"/><ColumnDefinition Width="160"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="PORTÉE" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="1" Text="FENÊTRE" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="2" Text="AVERTISSEMENT" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="3" Text="ACTION" Style="{StaticResource TableHead}"/><TextBlock Grid.Column="4" Text="RÉACTION" Style="{StaticResource TableHead}"/>
+                    </Grid>
+                    <ItemsControl ItemsSource="{Binding Thresholds}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource TableRow}" Height="56">
+                                    <Grid Margin="16,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="220"/><ColumnDefinition Width="120"/><ColumnDefinition Width="160"/><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{Binding Scope}" Style="{StaticResource TableCell}" FontWeight="SemiBold"/><TextBlock Grid.Column="1" Text="{Binding Window}" Style="{StaticResource TableCell}"/><TextBlock Grid.Column="2" Text="{Binding Warning}" Style="{StaticResource TableCell}"/><TextBlock Grid.Column="3" Text="{Binding Action}" Style="{StaticResource TableCell}"/><TextBlock Grid.Column="4" Text="{Binding Reaction}" Style="{StaticResource TableCell}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

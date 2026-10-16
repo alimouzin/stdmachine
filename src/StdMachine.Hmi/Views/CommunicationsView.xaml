@@ -1,0 +1,75 @@
+<UserControl x:Class="StdMachine.Hmi.Views.CommunicationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:infra="clr-namespace:StdMachine.Hmi.Infrastructure"
+             Background="{StaticResource Bg.App}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+        <StackPanel Margin="24,16,24,24">
+            <DockPanel Margin="0,0,0,14">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <c:TextField Width="220" Label="Identifiant machine" Text="{Binding MachineId, Mode=TwoWay}" Margin="0,0,10,0"/>
+                    <c:TextField Width="360" Label="Racine" Text="{Binding Root, Mode=TwoWay}"/>
+                </StackPanel>
+                <TextBlock Text="Communications" Style="{StaticResource Type.PageTitle}" VerticalAlignment="Center"/>
+            </DockPanel>
+
+            <ItemsControl ItemsSource="{Binding Channels}" Focusable="False">
+                <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Columns="3"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border x:Name="Card" Style="{StaticResource PageCard}" Margin="0,0,14,14" Height="230">
+                            <DockPanel>
+                                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Content="Tester" Height="44" MinHeight="44" Margin="0,0,8,0" Command="{Binding DataContext.TestCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" IsEnabled="{Binding Planned, Converter={x:Static infra:Conv.InvBool}}"/>
+                                    <Button Content="Réglages" Height="44" MinHeight="44" Margin="0,0,8,0" Command="{Binding DataContext.SettingsCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                    <CheckBox Style="{StaticResource Toggle}" IsChecked="{Binding Enabled, Mode=TwoWay}" IsEnabled="{Binding Planned, Converter={x:Static infra:Conv.InvBool}}" VerticalAlignment="Center" Margin="8,0,0,0"/>
+                                </StackPanel>
+                                <StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                                        <c:Icon Glyph="{Binding Icon}" FontSize="26" Foreground="{StaticResource Text.Secondary}" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" FontSize="16" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                        <c:StatusDot Tone="{Binding Tone}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                        <TextBlock Text="{Binding StateText}" FontWeight="Medium"/>
+                                    </StackPanel>
+                                    <TextBlock Text="{Binding Detail}" Style="{StaticResource Type.Caption}" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                        <DataTemplate.Triggers>
+                            <DataTrigger Binding="{Binding Planned}" Value="True"><Setter TargetName="Card" Property="Background" Value="{StaticResource Bg.SurfaceAlt}"/></DataTrigger>
+                        </DataTemplate.Triggers>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <Border Style="{StaticResource PageCard}" Margin="0,0,0,14" Padding="0,14,0,0">
+                <StackPanel>
+                    <TextBlock Margin="16,0,0,8" Style="{StaticResource SectionTitle}"><Run Text="Appareils réseau · "/><Run Text="{Binding DevicesSummary, Mode=OneWay}"/></TextBlock>
+                    <ItemsControl ItemsSource="{Binding Devices}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource TableRow}" Height="52">
+                                    <Grid Margin="16,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="30"/><ColumnDefinition Width="300"/><ColumnDefinition Width="240"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <c:StatusDot Tone="Ok" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" Style="{StaticResource TableCell}" FontWeight="SemiBold"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Station}" Style="{StaticResource TableCellMuted}"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding Latency}" Style="{StaticResource TableCell}"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Exporter les schémas JSON" c:Ui.Icon="download" Command="{Binding ExportSchemasCommand}" Margin="0,0,12,0"/>
+                <c:HoldButton Content="Remettre à zéro les compteurs de production" c:Ui.Variant="Danger" c:Ui.Icon="restart_alt" Width="420" Height="56" Command="{Binding ResetCountersCommand}"/>
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

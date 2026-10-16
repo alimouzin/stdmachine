@@ -1,0 +1,152 @@
+<UserControl x:Class="StdMachine.Hmi.Views.DeployView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:infra="clr-namespace:StdMachine.Hmi.Infrastructure"
+             Background="{StaticResource Bg.App}">
+    <Grid Margin="24,16,24,16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" Margin="0,0,0,12">
+            <Button DockPanel.Dock="Right" Content="Fermer" c:Ui.Icon="close" Command="{Binding CloseCommand}"/>
+            <TextBlock Text="Déploiement" Style="{StaticResource Type.PageTitle}" VerticalAlignment="Center"/>
+            <TextBlock Text="{Binding DeployedText}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Margin="16,4,0,0"/>
+        </DockPanel>
+
+        <!-- Indicateur d'étapes -->
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Steps}" Focusable="False" Margin="0,0,0,14">
+            <ItemsControl.ItemsPanel><ItemsPanelTemplate><UniformGrid Rows="1"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border x:Name="B" Height="56" Margin="0,0,8,0" CornerRadius="10" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1">
+                        <StackPanel Orientation="Horizontal" Margin="16,0" VerticalAlignment="Center">
+                            <Border x:Name="Dot" Width="30" Height="30" CornerRadius="15" Background="{StaticResource Neutral.Bg}" Margin="0,0,12,0">
+                                <TextBlock x:Name="Num" Text="{Binding Number}" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource Neutral.Text}"/>
+                            </Border>
+                            <TextBlock Text="{Binding Label}" FontWeight="SemiBold" FontSize="15" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Border>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding IsCurrent}" Value="True">
+                            <Setter TargetName="B" Property="BorderBrush" Value="{StaticResource Accent}"/>
+                            <Setter TargetName="B" Property="BorderThickness" Value="2"/>
+                            <Setter TargetName="Dot" Property="Background" Value="{StaticResource Accent}"/>
+                            <Setter TargetName="Num" Property="Foreground" Value="White"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding IsDone}" Value="True">
+                            <Setter TargetName="Dot" Property="Background" Value="{StaticResource Ok.Dot}"/>
+                            <Setter TargetName="Num" Property="Foreground" Value="White"/>
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <Border Grid.Row="2" Style="{StaticResource PageCard}" Padding="0">
+            <Grid>
+                <!-- 1. Validation -->
+                <DockPanel Visibility="{Binding Step, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=0}">
+                    <TextBlock DockPanel.Dock="Top" Margin="20,16,20,8" Style="{StaticResource SectionTitle}"><Run Text="{Binding ErrorCount, Mode=OneWay}"/><Run Text=" erreur(s) bloquante(s) · "/><Run Text="{Binding WarningCount, Mode=OneWay}"/><Run Text=" avertissement(s)"/></TextBlock>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                        <ItemsControl ItemsSource="{Binding Issues}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource TableRow}" Height="60">
+                                        <DockPanel Margin="20,0">
+                                            <Button DockPanel.Dock="Right" Content="Corriger" c:Ui.Icon="arrow_forward" Height="44" MinHeight="44" Command="{Binding DataContext.FixCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"/>
+                                            <c:Icon x:Name="Ico" DockPanel.Dock="Left" Glyph="warning" FontSize="24" Foreground="{StaticResource Warn.Dot}" Margin="0,0,12,0" VerticalAlignment="Center"/>
+                                            <TextBlock DockPanel.Dock="Left" Text="{Binding Code}" Style="{StaticResource TableCellMuted}" Width="60"/>
+                                            <TextBlock Text="{Binding Message}" Style="{StaticResource TableCell}" Margin="0,0,12,0"/>
+                                        </DockPanel>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Severity}" Value="Error"><Setter TargetName="Ico" Property="Glyph" Value="error"/><Setter TargetName="Ico" Property="Foreground" Value="{StaticResource Err.Dot}"/></DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <!-- 2. Différences -->
+                <DockPanel Visibility="{Binding Step, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=1}">
+                    <TextBlock DockPanel.Dock="Top" Margin="20,16,20,8" Text="Changements par rapport à la version déployée" Style="{StaticResource SectionTitle}"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                        <ItemsControl ItemsSource="{Binding Diffs}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Style="{StaticResource TableRow}" Height="64">
+                                        <Grid Margin="20,0">
+                                            <Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                            <TextBlock Text="{Binding Category}" Style="{StaticResource TableCellMuted}"/>
+                                            <c:StatusPill Grid.Column="1" Text="{Binding Kind}" Tone="{Binding Tone}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                            <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                                                <TextBlock x:Name="P" Text="{Binding Path}" FontWeight="SemiBold" FontSize="15"/>
+                                                <TextBlock Text="{Binding Detail}" Style="{StaticResource TableCellMuted}"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Kind}" Value="Supprimé"><Setter TargetName="P" Property="TextDecorations" Value="Strikethrough"/></DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+
+                <!-- 3. Conditions -->
+                <StackPanel Visibility="{Binding Step, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=2}" Margin="0,16,0,0">
+                    <TextBlock Margin="20,0,20,8" Text="Conditions de déploiement (en direct)" Style="{StaticResource SectionTitle}"/>
+                    <ItemsControl ItemsSource="{Binding Conditions}" Focusable="False">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource TableRow}" Height="64">
+                                    <DockPanel Margin="20,0">
+                                        <c:Icon DockPanel.Dock="Left" Glyph="{Binding Ok, Converter={x:Static infra:Conv.OkIcon}}" FontSize="28" Foreground="{Binding Ok, Converter={x:Static infra:Conv.OkBrush}}" Margin="0,0,14,0" VerticalAlignment="Center"/>
+                                        <StackPanel VerticalAlignment="Center">
+                                            <TextBlock Text="{Binding Text}" FontWeight="SemiBold" FontSize="16"/>
+                                            <TextBlock Text="{Binding Hint}" Style="{StaticResource TableCellMuted}" Visibility="{Binding Hint, Converter={x:Static infra:Conv.NotEmptyToVis}}"/>
+                                        </StackPanel>
+                                    </DockPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- 4. Envoi -->
+                <StackPanel Visibility="{Binding Step, Converter={x:Static infra:Conv.EqualsParamToVis}, ConverterParameter=3}" Margin="20,16,20,16">
+                    <TextBlock Text="Envoi au PLC" Style="{StaticResource SectionTitle}"/>
+                    <ItemsControl ItemsSource="{Binding Blocks}" Focusable="False" Margin="0,0,0,16">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Height="44">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="260"/><ColumnDefinition Width="*"/><ColumnDefinition Width="40"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{Binding Name}" FontWeight="Medium" VerticalAlignment="Center"/>
+                                    <c:ProgressStrip Grid.Column="1" Value="{Binding Fraction}" BarHeight="12" VerticalAlignment="Center"/>
+                                    <c:Icon Grid.Column="2" Glyph="check_circle" Foreground="{StaticResource Ok.Dot}" HorizontalAlignment="Right" Visibility="{Binding Done, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <c:HoldButton Content="Déployer (maintenir)" c:Ui.Variant="Primary" c:Ui.Icon="cloud_upload" Width="320" Height="64" HorizontalAlignment="Left" Command="{Binding DeployCommand}"
+                                  IsEnabled="{Binding Finished, Converter={x:Static infra:Conv.InvBool}}"/>
+                    <TextBlock Text="{Binding ResultText}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource Ok.Text}" Margin="0,16,0,0" Visibility="{Binding ResultText, Converter={x:Static infra:Conv.NotEmptyToVis}}"/>
+                    <TextBlock Text="La somme de contrôle de chaque bloc est vérifiée avant l'activation." Style="{StaticResource Type.Caption}" Margin="0,8,0,0"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <DockPanel Grid.Row="3" Margin="0,12,0,0">
+            <Button DockPanel.Dock="Right" Content="Suivant" c:Ui.Variant="Primary" c:Ui.Icon="arrow_forward" Command="{Binding NextCommand}" IsEnabled="{Binding CanNext}" Visibility="{Binding Step, Converter={x:Static infra:Conv.NotThree}}"/>
+            <Button DockPanel.Dock="Left" Content="Précédent" c:Ui.Icon="arrow_back" Command="{Binding BackCommand}" HorizontalAlignment="Left"/>
+            <TextBlock Text="{Binding NextHint}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,16,0"/>
+        </DockPanel>
+    </Grid>
+</UserControl>

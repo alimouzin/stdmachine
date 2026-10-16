@@ -1,0 +1,153 @@
+<UserControl x:Class="StdMachine.Hmi.Views.DragDropTestView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:dd="clr-namespace:StdMachine.Hmi.DragDrop"
+             xmlns:res="clr-namespace:StdMachine.Hmi.Resources"
+             Background="{StaticResource Bg.App}">
+    <UserControl.Resources>
+        <!-- Carte glissable : poignée à gauche, nom, objet utilisé -->
+        <DataTemplate x:Key="TestItemCard">
+            <Border x:Name="Card" Height="48" Margin="0,0,0,8" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}"
+                    BorderThickness="1" CornerRadius="{StaticResource Radius.M}" dd:Drag.Source="{Binding}" Effect="{StaticResource Shadow.Card}">
+                <DockPanel>
+                    <Border DockPanel.Dock="Left" Width="44" Background="Transparent" dd:Drag.Handle="True">
+                        <c:Icon Glyph="drag_indicator" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <c:Icon DockPanel.Dock="Left" Glyph="{Binding Icon}" FontSize="22" Foreground="{StaticResource Text.Secondary}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <TextBlock DockPanel.Dock="Right" Text="{Binding ObjectName}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Margin="8,0,14,0"/>
+                    <TextBlock Text="{Binding Name}" Style="{StaticResource Type.BodyStrong}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                </DockPanel>
+            </Border>
+            <DataTemplate.Triggers>
+                <Trigger SourceName="Card" Property="dd:Drag.IsDragged" Value="True">
+                    <Setter TargetName="Card" Property="Opacity" Value="0.35"/>
+                </Trigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+
+        <!-- Liste de dépôt : cartes + invitation quand elle est vide -->
+        <Style x:Key="DropList" TargetType="ItemsControl">
+            <Setter Property="ItemTemplate" Value="{StaticResource TestItemCard}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ItemsControl">
+                        <Grid MinHeight="96">
+                            <Border x:Name="Empty" BorderThickness="2" CornerRadius="{StaticResource Radius.M}" Visibility="Collapsed">
+                                <Border.BorderBrush>
+                                    <DrawingBrush Viewport="0,0,8,8" ViewportUnits="Absolute" TileMode="Tile">
+                                        <DrawingBrush.Drawing>
+                                            <GeometryDrawing Brush="{StaticResource Accent.Border}">
+                                                <GeometryDrawing.Geometry>
+                                                    <GeometryGroup>
+                                                        <RectangleGeometry Rect="0,0,4,4"/>
+                                                        <RectangleGeometry Rect="4,4,4,4"/>
+                                                    </GeometryGroup>
+                                                </GeometryDrawing.Geometry>
+                                            </GeometryDrawing>
+                                        </DrawingBrush.Drawing>
+                                    </DrawingBrush>
+                                </Border.BorderBrush>
+                                <TextBlock Text="{res:T Test.DropHere}" Style="{StaticResource Type.Caption}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ItemsPresenter/>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="HasItems" Value="False">
+                                <Setter TargetName="Empty" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid Margin="32,24,32,24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Margin="0,0,0,20">
+            <TextBlock Text="{res:T Test.Title}" Style="{StaticResource Type.PageTitle}"/>
+            <TextBlock Text="{res:T Test.Help}" Style="{StaticResource Type.Body}" Foreground="{StaticResource Text.Secondary}" Margin="0,4,0,0"/>
+        </StackPanel>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="300"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="320"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="320"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Palette -->
+            <Border Grid.Column="0" Background="{StaticResource Bg.SurfaceAlt}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.L}" Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{res:T Test.Palette}" Style="{StaticResource Type.Caps}" Margin="0,0,0,10"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="PaletteList" ItemsSource="{Binding Palette}" ItemTemplate="{StaticResource TestItemCard}"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Liste réordonnable -->
+            <Border Grid.Column="2" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.L}" Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{res:T Test.Sequence}" Style="{StaticResource Type.Caps}" Margin="0,0,0,10"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="SequenceList" ItemsSource="{Binding Sequence}" Style="{StaticResource DropList}"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- Deux branches parallèles + zone refusée -->
+            <StackPanel Grid.Column="4">
+                <Border BorderBrush="{StaticResource Accent.Border}" BorderThickness="1.5" CornerRadius="{StaticResource Radius.L}" Background="{StaticResource Accent.BgSoft}"
+                        Padding="16">
+                    <StackPanel>
+                    <c:StatusPill Text="{res:T Test.Parallel}" Tone="Busy" IconName="call_split" HorizontalAlignment="Left" Margin="0,0,0,12"/>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="16"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="{res:T Test.BranchA}" Style="{StaticResource Type.Caps}" Margin="0,0,0,8"/>
+                            <ItemsControl x:Name="BranchAList" ItemsSource="{Binding BranchA}" Style="{StaticResource DropList}"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="2">
+                            <TextBlock Text="{res:T Test.BranchB}" Style="{StaticResource Type.Caps}" Margin="0,0,0,8"/>
+                            <ItemsControl x:Name="BranchBList" ItemsSource="{Binding BranchB}" Style="{StaticResource DropList}"/>
+                        </StackPanel>
+                    </Grid>
+                    </StackPanel>
+                </Border>
+                <Border x:Name="RefusedZone" Margin="0,24,0,0" Height="140" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Strong}" BorderThickness="1.5"
+                        CornerRadius="{StaticResource Radius.L}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <c:Icon Glyph="block" FontSize="40" Foreground="{StaticResource Text.Disabled}" HorizontalAlignment="Center"/>
+                        <TextBlock Text="{res:T Test.RefusedZone}" Style="{StaticResource Type.BodyStrong}" HorizontalAlignment="Center" Margin="0,6,0,0"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- Défilement automatique -->
+            <Border Grid.Column="6" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1"
+                    CornerRadius="{StaticResource Radius.L}" Padding="16">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="{res:T Test.AutoScroll}" Style="{StaticResource Type.Caps}" Margin="0,0,0,10"/>
+                    <ScrollViewer x:Name="LongScroll" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="LongList" ItemsSource="{Binding Long}" Style="{StaticResource DropList}"/>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+        </Grid>
+    </Grid>
+</UserControl>

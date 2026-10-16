@@ -1,0 +1,6 @@
+<Project>
+  <!-- System.Net.Http n'est pas référencé par défaut sur net48 -->
+  <ItemGroup>
+    <Using Remove="System.Net.Http" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..24,300,0,0&display=block" rel="stylesheet">
+<style>
+html,body{margin:0;height:100%;background:#f4f5f7;color:#1a1d21;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;-webkit-font-smoothing:antialiased}
+a{color:#2563c9;text-decoration:none}a:hover{color:#1a4b9c;text-decoration:underline}
+input,select,button{font-family:inherit}
+*{scrollbar-width:thin;scrollbar-color:#cfd4da transparent}
+</style>
+</helmet>
+<div style="height:100vh;min-width:1280px;display:flex;flex-direction:column;overflow:hidden">
+
+  <!-- TOP BAR -->
+  <div style="height:48px;flex:none;background:#fff;border-bottom:1px solid #e1e4e8;display:flex;align-items:center;padding:0 14px;gap:16px">
+    <div style="display:flex;align-items:center;gap:8px;flex:none;white-space:nowrap">
+      <div style="width:22px;height:22px;border-radius:5px;background:#1a1d21;display:flex;align-items:center;justify-content:center"><div style="width:8px;height:8px;border:2px solid #fff;border-radius:2px"></div></div>
+      <span style="font-weight:600;font-size:14px">Machine Studio</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;color:#5f6873;font-size:12px;flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap">
+      <span style="overflow:hidden;text-overflow:ellipsis;min-width:0">Ligne d'assemblage MX-4</span><span style="color:#b0b6bd">/</span><span style="color:#1a1d21;font-weight:500">Station Pressage 01</span>
+    </div>
+    <div style="display:flex;background:#f0f2f4;border-radius:7px;padding:3px;gap:2px;margin-left:8px;flex:none;white-space:nowrap">
+      <button onClick="{{goStation}}" style="border:0;cursor:pointer;height:28px;padding:0 14px;border-radius:5px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;background:{{tabStation.bg}};color:{{tabStation.fg}};box-shadow:{{tabStation.shadow}}"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">precision_manufacturing</span>Station</button>
+      <button onClick="{{goProcess}}" style="border:0;cursor:pointer;height:28px;padding:0 14px;border-radius:5px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px;background:{{tabProcess.bg}};color:{{tabProcess.fg}};box-shadow:{{tabProcess.shadow}}"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">account_tree</span>Process</button>
+    </div>
+    <div style="flex:1"></div>
+
+    <sc-if value="{{isStation}}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:12px;flex:none;white-space:nowrap">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#5f6873"><span style="width:8px;height:8px;border-radius:4px;background:{{stationInd.dot}}"></span>{{stationInd.label}}</div>
+        <span style="font-size:12px;color:#8a929c">Enregistré il y a 2 min</span>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isProcess}}">
+      <div style="display:flex;align-items:center;gap:6px;position:relative;flex:none;white-space:nowrap">
+        <button onClick="{{toggleIssues}}" style="height:30px;border:1px solid {{procInd.border}};background:{{procInd.bg}};color:{{procInd.fg}};border-radius:6px;padding:0 10px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500"><span style="width:8px;height:8px;border-radius:4px;background:{{procInd.dot}}"></span>{{procInd.label}}</button>
+        <div style="width:1px;height:22px;background:#e1e4e8;margin:0 4px"></div>
+        <button onClick="{{toggleIssues}}" style="height:30px;border:1px solid #d9dde2;background:#fff;border-radius:6px;padding:0 10px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#1a1d21" style-hover="background:#f4f5f7"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">task_alt</span>Valider</button>
+        <button onClick="{{simulate}}" style="height:30px;border:1px solid #d9dde2;background:{{simBtn.bg}};border-radius:6px;padding:0 10px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:{{simBtn.fg}}" style-hover="background:#f4f5f7"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">{{simBtn.icon}}</span>{{simBtn.label}}</button>
+        <button onClick="{{stepOnce}}" style="height:30px;border:1px solid #d9dde2;background:#fff;border-radius:6px;padding:0 10px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:#1a1d21" style-hover="background:#f4f5f7"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">skip_next</span>{{stepLabel}}</button>
+        <button onClick="{{deploy}}" style="height:30px;border:0;background:{{deployBtn.bg}};border-radius:6px;padding:0 12px;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:500;color:#fff"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">upload</span>Déployer</button>
+
+        <sc-if value="{{issuesOpen}}">
+          <div style="position:absolute;top:38px;left:0;width:380px;background:#fff;border:1px solid #e1e4e8;border-radius:8px;box-shadow:0 12px 32px rgba(20,30,45,.14);z-index:20;padding:6px">
+            <div style="padding:8px 10px;font-size:12px;color:#5f6873;font-weight:500">Validation du process</div>
+            <sc-for list="{{procIssues}}" as="i">
+              <div style="display:flex;gap:10px;padding:8px 10px;border-radius:6px;align-items:flex-start" style-hover="background:#f6f7f9">
+                <span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:{{i.fg}}">{{i.icon}}</span>
+                <div style="flex:1;display:flex;flex-direction:column;gap:3px"><span style="font-size:12px;line-height:1.4">{{i.text}}</span><span style="font-size:11px;color:#8a929c">Étape {{i.step}}</span></div>
+                <a href="#" onClick="{{i.onFix}}" style="font-size:12px;font-weight:500;white-space:nowrap">{{i.fixLabel}}</a>
+              </div>
+            </sc-for>
+            <sc-if value="{{procClean}}"><div style="padding:10px;font-size:12px;color:#1e8a4c">Aucun problème détecté. Le process peut être déployé.</div></sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+  </div>
+
+  <!-- ================= SCREEN 1 : STATION ================= -->
+  <sc-if value="{{isStation}}" hint-placeholder-val="{{ true }}">
+  <div data-screen-label="01 Station" style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div style="flex:1;min-height:0;display:flex">
+
+      <!-- Tree -->
+      <div style="width:244px;flex:none;background:#fafbfc;border-right:1px solid #e1e4e8;overflow:auto;padding:12px 8px;box-sizing:border-box;display:flex;flex-direction:column;gap:1px">
+        <div style="font-size:11px;color:#8a929c;font-weight:500;letter-spacing:.04em;text-transform:uppercase;padding:4px 8px 8px">Projet</div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:5px"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#8a929c">expand_more</span><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">factory</span>Machine MX-4</div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 22px;border-radius:5px"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#8a929c">expand_more</span><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">folder</span>Stations</div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 36px;border-radius:5px;color:#5f6873" style-hover="background:#f0f2f4"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#8a929c">chevron_right</span>Station Chargement</div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 36px;border-radius:5px;font-weight:600"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#8a929c">expand_more</span>Station Pressage 01</div>
+        <div onClick="{{treeDevices}}" style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 58px;border-radius:5px;cursor:pointer" style-hover="background:#f0f2f4"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">memory</span><span style="flex:1">Dispositifs</span><span style="font-size:11px;color:#8a929c;font-variant-numeric:tabular-nums">{{devCount}}</span></div>
+        <sc-for list="{{devices}}" as="d" hint-placeholder-count="4">
+          <div onClick="{{d.onClick}}" style="display:flex;align-items:center;gap:6px;height:26px;padding:0 8px 0 82px;border-radius:5px;cursor:pointer;font-size:12px;background:{{d.treeBg}};color:{{d.treeFg}}"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">{{d.icon}}</span><span style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{d.name}}</span><span style="width:6px;height:6px;border-radius:3px;background:{{d.st.dot}}"></span></div>
+        </sc-for>
+        <div onClick="{{treePositions}}" style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 58px;border-radius:5px;cursor:pointer" style-hover="background:#f0f2f4"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">my_location</span><span style="flex:1">Positions</span><span style="font-size:11px;color:#8a929c">{{posCount}}</span></div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 58px;border-radius:5px" style-hover="background:#f0f2f4"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">tune</span>Paramètres</div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 58px;border-radius:5px" style-hover="background:#f0f2f4"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">receipt_long</span><span style="flex:1">Recettes</span><span style="font-size:11px;color:#8a929c">3</span></div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 58px;border-radius:5px" style-hover="background:#f0f2f4"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">notifications</span><span style="flex:1">Alarmes</span><span style="font-size:11px;color:#8a929c">12</span></div>
+        <div onClick="{{goProcess}}" style="display:flex;align-items:center;gap:6px;height:30px;padding:0 8px 0 58px;border-radius:5px;cursor:pointer;color:#2563c9;font-weight:500;margin-top:2px" style-hover="background:#e9f0fb"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">account_tree</span><span style="flex:1">Process</span><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">arrow_forward</span></div>
+        <div style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px 0 36px;border-radius:5px;color:#5f6873" style-hover="background:#f0f2f4"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#8a929c">chevron_right</span>Station Contrôle final</div>
+      </div>
+
+      <!-- Center -->
+      <div style="flex:1;min-width:0;overflow:auto;padding:16px 20px;box-sizing:border-box;display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;align-items:flex-end;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:2px"><span style="font-size:18px;font-weight:600">Station Pressage 01</span><span style="font-size:12px;color:#5f6873">Chassage du pignon 12T sur l'axe de roue · vue de dessus</span></div>
+          <div style="flex:1"></div>
+          <span style="font-size:12px;color:#8a929c">Glissez un dispositif depuis la bibliothèque pour l'ajouter</span>
+        </div>
+
+        <div onDragOver="{{onDragOver}}" onDrop="{{onDrop}}" style="position:relative;height:340px;flex:none;background-color:#fff;background-image:radial-gradient(#dfe3e8 1px,transparent 1px);background-size:16px 16px;border:1px solid {{dropBorder}};border-radius:10px;overflow:hidden">
+          <div style="position:absolute;left:4%;width:92%;top:166px;height:156px;border:1.5px dashed #c6ccd3;border-radius:8px;box-sizing:border-box"></div>
+          <span style="position:absolute;left:calc(4% + 10px);top:304px;font-size:11px;color:#8a929c;background:#fff;padding:0 4px">Zone de travail robot · 320 × 180 mm</span>
+          {{synLines}}
+          <sc-for list="{{devices}}" as="d" hint-placeholder-count="4">
+            <div onClick="{{d.onClick}}" style="position:absolute;left:{{d.left}};top:{{d.top}};transform:translateX(-50%);width:196px;background:#fff;border:1px solid {{d.border}};box-shadow:{{d.shadow}};border-radius:8px;padding:10px 12px;box-sizing:border-box;cursor:pointer;display:flex;gap:10px;align-items:flex-start">
+              <div style="width:34px;height:34px;border-radius:7px;background:#f0f2f4;display:flex;align-items:center;justify-content:center;flex:none"><span style="font-family:'Material Symbols Outlined';font-size:22px;line-height:1;color:#3b424b">{{d.icon}}</span></div>
+              <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:3px">
+                <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{d.name}}</span>
+                <span style="font-size:11px;color:#5f6873;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{d.model}}</span>
+                <span style="align-self:flex-start;margin-top:3px;font-size:11px;font-weight:500;padding:1px 7px;border-radius:9px;background:{{d.st.bg}};color:{{d.st.fg}}">{{d.st.label}}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff;border:1px solid #e1e4e8;border-radius:10px;display:flex;flex-direction:column;flex:none">
+          <div style="display:flex;align-items:center;gap:4px;border-bottom:1px solid #e1e4e8;padding:0 8px">
+            <button onClick="{{lowerPositions}}" style="border:0;background:none;cursor:pointer;height:40px;padding:0 10px;font-size:13px;font-weight:500;color:{{lowerTabA.fg}};box-shadow:inset 0 -2px 0 {{lowerTabA.line}}">Positions nommées</button>
+            <button onClick="{{lowerCaps}}" style="border:0;background:none;cursor:pointer;height:40px;padding:0 10px;font-size:13px;font-weight:500;color:{{lowerTabB.fg}};box-shadow:inset 0 -2px 0 {{lowerTabB.line}}">Capacités de la station</button>
+            <div style="flex:1"></div>
+            <sc-if value="{{isPosTab}}"><span style="font-size:12px;color:#5f6873;padding-right:8px;font-variant-numeric:tabular-nums">Position actuelle du robot : X 268,40 · Y 92,15 · Z −31,60 · C 0,00</span></sc-if>
+            <sc-if value="{{isCapTab}}"><span style="font-size:12px;color:#5f6873;padding-right:8px;display:flex;align-items:center;gap:4px"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">autorenew</span>Générée à partir des dispositifs · utilisée par le process</span></sc-if>
+          </div>
+
+          <sc-if value="{{isPosTab}}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid;grid-template-columns:minmax(140px,1.6fr) repeat(4,minmax(64px,.8fr)) minmax(90px,.9fr) minmax(100px,1fr) 210px;font-size:12px">
+              <div style="display:contents;color:#8a929c;font-weight:500">
+                <div style="padding:9px 14px;border-bottom:1px solid #eef0f2">Nom</div>
+                <div style="padding:9px 8px;border-bottom:1px solid #eef0f2;text-align:right">X mm</div>
+                <div style="padding:9px 8px;border-bottom:1px solid #eef0f2;text-align:right">Y mm</div>
+                <div style="padding:9px 8px;border-bottom:1px solid #eef0f2;text-align:right">Z mm</div>
+                <div style="padding:9px 8px;border-bottom:1px solid #eef0f2;text-align:right">C °</div>
+                <div style="padding:9px 8px;border-bottom:1px solid #eef0f2;text-align:right">Pré-position mm</div>
+                <div style="padding:9px 8px 9px 16px;border-bottom:1px solid #eef0f2">État</div>
+                <div style="padding:9px 14px;border-bottom:1px solid #eef0f2"></div>
+              </div>
+              <sc-for list="{{positions}}" as="p" hint-placeholder-count="6">
+                <div style="display:contents">
+                  <div style="padding:0 8px;height:40px;display:flex;align-items:center;gap:2px;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}}"><input value="{{p.name}}" onChange="{{p.onName}}" title="Renommer" style="flex:1;min-width:0;height:28px;border:1px solid transparent;background:transparent;border-radius:5px;padding:0 6px;font-size:12px;font-weight:500;color:#1a1d21" style-hover="border-color:#d9dde2;background:#fff" style-focus="border-color:#2563c9;background:#fff;outline:none"><sc-if value="{{p.isNew}}"><button onClick="{{p.onDelete}}" title="Supprimer la position" style="border:0;background:none;cursor:pointer;color:#8a929c;width:24px;height:24px;display:flex;align-items:center;justify-content:center;border-radius:4px" style-hover="background:#fbe8e8;color:#c63c3c"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">delete</span></button></sc-if></div>
+                  <div style="padding:0 8px;height:40px;display:flex;align-items:center;justify-content:flex-end;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}};font-variant-numeric:tabular-nums;color:{{p.numFg}}">{{p.x}}</div>
+                  <div style="padding:0 8px;height:40px;display:flex;align-items:center;justify-content:flex-end;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}};font-variant-numeric:tabular-nums;color:{{p.numFg}}">{{p.y}}</div>
+                  <div style="padding:0 8px;height:40px;display:flex;align-items:center;justify-content:flex-end;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}};font-variant-numeric:tabular-nums;color:{{p.numFg}}">{{p.z}}</div>
+                  <div style="padding:0 8px;height:40px;display:flex;align-items:center;justify-content:flex-end;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}};font-variant-numeric:tabular-nums;color:{{p.numFg}}">{{p.c}}</div>
+                  <div style="padding:0 8px;height:40px;display:flex;align-items:center;justify-content:flex-end;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}};font-variant-numeric:tabular-nums">{{p.pre}}</div>
+                  <div style="padding:0 8px 0 16px;height:40px;display:flex;align-items:center;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}}"><span style="font-size:11px;font-weight:500;padding:1px 7px;border-radius:9px;background:{{p.stBg}};color:{{p.stFg}}">{{p.stLabel}}</span></div>
+                  <div style="padding:0 14px;height:40px;display:flex;align-items:center;justify-content:flex-end;gap:6px;border-bottom:1px solid #f1f2f4;background:{{p.rowBg}}">
+                    <button onClick="{{p.onLearn}}" style="height:26px;border:1px solid {{p.learnBorder}};background:#fff;color:{{p.learnFg}};border-radius:5px;padding:0 8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px" style-hover="background:#f4f5f7"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">ads_click</span>{{p.learnLabel}}</button>
+                    <button onClick="{{p.onGo}}" style="height:26px;border:1px solid #d9dde2;background:#fff;border-radius:5px;padding:0 8px;font-size:12px;cursor:pointer;color:#1a1d21;opacity:{{p.goOpacity}}" style-hover="background:#f4f5f7">Aller à</button>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+            <div style="padding:8px 10px">
+              <button onClick="{{addPosition}}" style="height:28px;border:1px dashed #9db7e3;background:#fff;color:#2563c9;border-radius:6px;padding:0 10px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:4px" style-hover="background:#f5f8fd"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">add</span>Ajouter une position</button>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{isCapTab}}">
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;padding:14px">
+              <sc-for list="{{caps}}" as="g">
+                <div style="border:1px solid #eef0f2;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;align-items:center;gap:6px;font-weight:600;font-size:12px;padding-bottom:4px"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">{{g.icon}}</span>{{g.name}}<span style="margin-left:auto;font-weight:400;color:#8a929c">{{g.count}}</span></div>
+                  <sc-for list="{{g.items}}" as="a">
+                    <div style="display:flex;flex-direction:column;gap:1px;opacity:{{a.op}}">
+                      <span style="font-size:12px;font-weight:500">{{a.name}}</span>
+                      <span style="font-size:11px;color:#5f6873">{{a.params}}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div style="width:372px;flex:none;background:#fff;border-left:1px solid #e1e4e8;display:flex;flex-direction:column;min-height:0">
+        <div style="display:flex;border-bottom:1px solid #e1e4e8;padding:0 8px;flex:none">
+          <button onClick="{{rightProps}}" style="border:0;background:none;cursor:pointer;height:40px;padding:0 10px;font-size:13px;font-weight:500;color:{{rightTabA.fg}};box-shadow:inset 0 -2px 0 {{rightTabA.line}}">Propriétés</button>
+          <button onClick="{{rightLib}}" style="border:0;background:none;cursor:pointer;height:40px;padding:0 10px;font-size:13px;font-weight:500;color:{{rightTabB.fg}};box-shadow:inset 0 -2px 0 {{rightTabB.line}}">Bibliothèque de dispositifs</button>
+        </div>
+        <div style="flex:1;overflow:auto;min-height:0">
+
+          <sc-if value="{{showLib}}">
+            <div style="padding:14px;display:flex;flex-direction:column;gap:8px">
+              <span style="font-size:12px;color:#5f6873;padding-bottom:4px">Fournie par l'automatisme. Glissez un type dans la vue de la station.</span>
+              <sc-for list="{{lib}}" as="l">
+                <div draggable="true" onDragStart="{{l.onDragStart}}" style="display:flex;gap:10px;padding:10px;border:1px solid #e1e4e8;border-radius:8px;cursor:grab;background:#fff" style-hover="border-color:#2563c9;background:#fafcff">
+                  <div style="width:34px;height:34px;border-radius:7px;background:#f0f2f4;display:flex;align-items:center;justify-content:center;flex:none"><span style="font-family:'Material Symbols Outlined';font-size:22px;line-height:1;color:#3b424b">{{l.icon}}</span></div>
+                  <div style="display:flex;flex-direction:column;gap:2px;flex:1"><span style="font-weight:600;font-size:13px">{{l.name}}</span><span style="font-size:12px;color:#5f6873;line-height:1.4;text-wrap:pretty">{{l.desc}}</span></div>
+                  <span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#b0b6bd">drag_indicator</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{showProps}}" hint-placeholder-val="{{ true }}">
+            <div style="padding:14px 16px;display:flex;gap:10px;align-items:center;border-bottom:1px solid #eef0f2">
+              <div style="width:38px;height:38px;border-radius:8px;background:#f0f2f4;display:flex;align-items:center;justify-content:center"><span style="font-family:'Material Symbols Outlined';font-size:24px;line-height:1;color:#3b424b">{{sel.icon}}</span></div>
+              <div style="flex:1;display:flex;flex-direction:column;gap:2px"><span style="font-weight:600;font-size:14px">{{sel.name}}</span><span style="font-size:12px;color:#5f6873">{{sel.model}}</span></div>
+              <span style="font-size:11px;font-weight:500;padding:2px 8px;border-radius:9px;background:{{sel.st.bg}};color:{{sel.st.fg}}">{{sel.st.label}}</span>
+            </div>
+
+            <sc-if value="{{isRobot}}" hint-placeholder-val="{{ true }}">
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #eef0f2">
+                <span style="font-size:12px;font-weight:600">Axes</span>
+                <div style="display:grid;grid-template-columns:44px repeat(4,minmax(0,1fr)) 40px;gap:4px 6px;align-items:center;font-size:11px">
+                  <span style="color:#8a929c">Actif</span><span style="color:#8a929c;text-align:right">Course min</span><span style="color:#8a929c;text-align:right">Course max</span><span style="color:#8a929c;text-align:right">V. lente</span><span style="color:#8a929c;text-align:right">V. rapide</span><span style="color:#8a929c;text-align:right">Réf.</span>
+                  <sc-for list="{{axes}}" as="a" hint-placeholder-count="4">
+                    <label style="display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;cursor:pointer"><input type="checkbox" checked="{{a.on}}" onChange="{{a.onToggle}}" style="margin:0;accent-color:#2563c9">{{a.ax}}</label>
+                    <input value="{{a.min}}" onChange="{{a.onMin}}" style="width:100%;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21;opacity:{{a.op}}">
+                    <input value="{{a.max}}" onChange="{{a.onMax}}" style="width:100%;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21;opacity:{{a.op}}">
+                    <input value="{{a.slow}}" onChange="{{a.onSlow}}" style="width:100%;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21;opacity:{{a.op}}">
+                    <input value="{{a.fast}}" onChange="{{a.onFast}}" style="width:100%;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21;opacity:{{a.op}}">
+                    <span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums;font-weight:500;opacity:{{a.op}}">{{a.order}}</span>
+                  </sc-for>
+                </div>
+                <span style="font-size:11px;color:#8a929c;line-height:1.4">Courses en mm (C en °), vitesses en mm/s (C en °/s). « Réf. » : ordre de référencement à l'initialisation, Z en premier.</span>
+              </div>
+
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid #eef0f2">
+                <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;font-weight:600;flex:1">Outil</span>
+                  <div style="display:flex;background:#f0f2f4;border-radius:6px;padding:2px;gap:2px">
+                    <button onClick="{{setAsp}}" style="border:0;cursor:pointer;height:24px;padding:0 10px;border-radius:4px;font-size:12px;background:{{toolA.bg}};color:{{toolA.fg}};box-shadow:{{toolA.shadow}}">Aspiration / soufflage</button>
+                    <button onClick="{{setGrip}}" style="border:0;cursor:pointer;height:24px;padding:0 10px;border-radius:4px;font-size:12px;background:{{toolB.bg}};color:{{toolB.fg}};box-shadow:{{toolB.shadow}}">Pince</button>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;flex:1">Hauteur Z de sécurité</span><div style="display:flex;align-items:center;gap:6px"><input value="{{zSafe}}" onChange="{{onZSafe}}" style="width:72px;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21"><span style="font-size:12px;color:#5f6873;width:24px">mm</span></div></div>
+                <span style="font-size:11px;color:#8a929c;line-height:1.4;margin-top:-4px">Le robot ne se déplace en X/Y que lorsque Z est remonté au-dessus de cette hauteur.</span>
+                <sc-if value="{{isAsp}}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:8px;padding:10px;border-radius:7px;border:1px solid {{vacBox.border}};background:{{vacBox.bg}}">
+                    <span style="font-size:12px;font-weight:500">Seuils de vide</span>
+                    <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;flex:1">Pièce présente en dessous de</span><input value="{{vacOn}}" onChange="{{onVacOn}}" style="width:72px;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21"><span style="font-size:12px;color:#5f6873;width:24px">kPa</span></div>
+                    <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;flex:1">Buse vide au-dessus de</span><input value="{{vacEmpty}}" onChange="{{onVacEmpty}}" style="width:72px;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21"><span style="font-size:12px;color:#5f6873;width:24px">kPa</span></div>
+                    <sc-if value="{{vacWarn}}"><span style="font-size:11px;color:#9a5a00;line-height:1.4">Écart inférieur à 10 kPa : une pièce mal prise risque d'être détectée comme présente.</span></sc-if>
+                  </div>
+                </sc-if>
+                <sc-if value="{{isGrip}}">
+                  <div style="display:flex;align-items:center;gap:10px"><span style="font-size:12px;flex:1">Temps de fermeture</span><input value="120" style="width:72px;box-sizing:border-box;height:26px;border:1px solid #d9dde2;border-radius:5px;padding:0 6px;font-size:12px;text-align:right"><span style="font-size:12px;color:#5f6873;width:24px">ms</span></div>
+                </sc-if>
+              </div>
+
+              <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;background:{{mapBox.bg}}">
+                <span style="font-size:12px;font-weight:600">Raccordement matériel</span>
+                <sc-for list="{{mapping}}" as="m" hint-placeholder-count="5">
+                  <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                    <span style="width:84px">{{m.from}}</span>
+                    <span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#b0b6bd">arrow_forward</span>
+                    <select value="{{m.to}}" onChange="{{m.onChange}}" style="flex:1;height:26px;border:1px solid {{m.border}};border-radius:5px;padding:0 6px;font-size:12px;background:#fff;color:#1a1d21"><sc-for list="{{m.opts}}" as="o"><option value="{{o}}">{{o}}</option></sc-for></select>
+                    <span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:{{m.iconFg}}">{{m.icon}}</span>
+                  </div>
+                </sc-for>
+                <sc-if value="{{conflict}}"><span style="font-size:11px;color:#c63c3c;line-height:1.4">Conflit : Servo 3 est déjà utilisé par l'axe Z. Choisissez un autre servo pour l'axe C.</span></sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{isOther}}">
+              <sc-for list="{{sel.sections}}" as="s">
+                <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #eef0f2">
+                  <span style="font-size:12px;font-weight:600">{{s.title}}</span>
+                  <sc-for list="{{s.rows}}" as="r">
+                    <div style="display:flex;align-items:center;gap:10px;font-size:12px;min-height:26px"><span style="flex:1;color:#3b424b">{{r.k}}</span><span style="font-variant-numeric:tabular-nums;font-weight:500;text-align:right">{{r.v}}</span></div>
+                  </sc-for>
+                </div>
+              </sc-for>
+              <sc-if value="{{showVerify}}">
+                <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+                  <span style="font-size:12px;color:#9a5a00;line-height:1.4">Le programme n°3 n'a pas encore été vérifié sur la presse.</span>
+                  <button onClick="{{verifyProg}}" style="align-self:flex-start;height:28px;border:1px solid #d9dde2;background:#fff;border-radius:6px;padding:0 10px;font-size:12px;cursor:pointer">Vérifier le programme sur la presse</button>
+                </div>
+              </sc-if>
+            </sc-if>
+          </sc-if>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation bar -->
+    <div style="height:36px;flex:none;background:#fff;border-top:1px solid #e1e4e8;display:flex;align-items:center;padding:0 14px;gap:14px;position:relative;font-size:12px">
+      <button onClick="{{toggleWarn}}" style="border:0;background:none;cursor:pointer;display:flex;align-items:center;gap:12px;font-size:12px;height:28px;padding:0 6px;border-radius:5px" style-hover="background:#f4f5f7">
+        <sc-if value="{{hasStErr}}"><span style="display:flex;align-items:center;gap:4px;color:#c63c3c;font-weight:500"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1">error</span>{{stErrLabel}}</span></sc-if>
+        <span style="display:flex;align-items:center;gap:4px;color:{{stWarnFg}};font-weight:500"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1">warning</span>{{stWarnLabel}}</span>
+        <span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#8a929c">{{warnChevron}}</span>
+      </button>
+      <div style="flex:1"></div>
+      <span style="color:#8a929c">{{capCount}} actions disponibles pour le process</span>
+      <sc-if value="{{warnOpen}}">
+        <div style="position:absolute;bottom:40px;left:10px;width:460px;background:#fff;border:1px solid #e1e4e8;border-radius:8px;box-shadow:0 12px 32px rgba(20,30,45,.14);padding:6px;z-index:20">
+          <sc-for list="{{stIssues}}" as="i">
+            <div onClick="{{i.onClick}}" style="display:flex;gap:10px;padding:8px 10px;border-radius:6px;align-items:center;cursor:pointer" style-hover="background:#f6f7f9">
+              <span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:{{i.fg}}">{{i.icon}}</span>
+              <span style="flex:1;font-size:12px">{{i.text}}</span>
+              <span style="font-size:11px;color:#8a929c">{{i.dev}}</span>
+            </div>
+          </sc-for>
+          <sc-if value="{{stClean}}"><div style="padding:10px;font-size:12px;color:#1e8a4c">Station complète, aucun avertissement.</div></sc-if>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ================= SCREEN 2 : PROCESS ================= -->
+  <sc-if value="{{isProcess}}">
+  <div data-screen-label="02 Process" style="flex:1;min-height:0;display:flex">
+
+    <!-- Palette -->
+    <div style="width:236px;flex:none;background:#fafbfc;border-right:1px solid #e1e4e8;overflow:auto;padding:12px 10px;box-sizing:border-box;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:center;gap:6px;height:30px;border:1px solid #d9dde2;border-radius:6px;background:#fff;padding:0 8px;color:#8a929c;font-size:12px"><span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1">search</span>Rechercher une action</div>
+      <span style="font-size:11px;color:#8a929c;line-height:1.4;margin-top:-6px">Glissez une action en haut ou en bas d'une étape pour l'insérer avant ou après, ou dans une zone vide d'un bloc. Les étapes et blocs existants se déplacent aussi par glisser.</span>
+      <sc-for list="{{palette}}" as="g">
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#5f6873;letter-spacing:.03em;text-transform:uppercase;padding:0 4px 4px"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">{{g.icon}}</span>{{g.name}}</div>
+          <sc-for list="{{g.items}}" as="a">
+            <div draggable="{{a.drag}}" onDragStart="{{a.onDragStart}}" title="{{a.title}}" style="display:flex;align-items:center;gap:6px;height:28px;padding:0 8px;border-radius:5px;font-size:12px;cursor:grab;opacity:{{a.op}};border:1px solid transparent" style-hover="background:#fff;border-color:#e1e4e8"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#b0b6bd">drag_indicator</span><span style="flex:1">{{a.name}}</span><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1;color:#8a929c">{{a.icon}}</span></div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- Center -->
+    <div style="flex:1;min-width:0;display:flex;flex-direction:column;min-height:0">
+      <div style="height:44px;flex:none;display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid #e1e4e8;background:#fff">
+        <span style="font-weight:600;font-size:14px">Cycle nominal</span>
+        <span style="color:#b0b6bd">·</span>
+        <div style="display:flex;gap:4px">
+          <span style="font-size:12px;padding:3px 9px;border-radius:12px;background:#e9f0fb;color:#2563c9;font-weight:500">Cycle nominal</span>
+          <span style="font-size:12px;padding:3px 9px;border-radius:12px;color:#5f6873">Initialisation</span>
+          <span style="font-size:12px;padding:3px 9px;border-radius:12px;color:#5f6873">Vidange station</span>
+          <span style="font-size:12px;padding:3px 9px;border-radius:12px;color:#5f6873">Évacuer pièce bonne</span>
+        </div>
+        <div style="flex:1"></div>
+        <span style="font-size:12px;color:#8a929c">Le cycle reboucle sur l'étape 1</span>
+      </div>
+
+      <div style="flex:1;min-height:0;overflow:auto;background:#f4f5f7">
+        <div style="min-width:780px;position:relative">
+          <div style="position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:#fff;border-bottom:1px solid #e1e4e8">
+            <sc-for list="{{lanes}}" as="l" hint-placeholder-count="4">
+              <div style="height:36px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:600;color:#3b424b;border-right:1px solid #eef0f2"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1;color:#5f6873">{{l.icon}}</span>{{l.name}}</div>
+            </sc-for>
+          </div>
+          <div style="position:absolute;top:36px;left:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));pointer-events:none">
+            <div style="border-right:1px solid #e6e9ec"></div><div style="border-right:1px solid #e6e9ec;background:rgba(255,255,255,.45)"></div><div style="border-right:1px solid #e6e9ec"></div><div style="background:rgba(255,255,255,.45)"></div>
+          </div>
+
+          <div ref="{{seqRef}}" onDragOver="{{seqDragOver}}" onDragLeave="{{seqDragLeave}}" onDrop="{{seqDrop}}" style="position:relative;padding:22px 10px 40px;display:flex;flex-direction:column;gap:34px">
+            {{edgesSvg}}
+            <sc-for list="{{rows}}" as="row" hint-placeholder-count="6">
+              <div data-node="{{row.node}}" style="position:relative;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));padding:{{row.pad}};border:{{row.frame}};border-radius:12px;background:{{row.bg}}">
+                <sc-if value="{{row.hasLabel}}">
+                  <div data-node="{{row.hdNode}}" draggable="true" onDragStart="{{row.onDragStart}}" onClick="{{row.onClick}}" title="Cliquer pour régler le bloc · glisser pour le déplacer" style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);z-index:2;display:flex;align-items:center;gap:5px;background:{{row.labelBg}};border:1px solid {{row.labelBorder}};color:{{row.labelFg}};font-size:11px;font-weight:600;padding:2px 4px 2px 8px;min-height:20px;border-radius:11px;cursor:grab;white-space:nowrap"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1">{{row.labelIcon}}</span>{{row.label}}<span style="font-weight:400;color:#5f6873;padding-right:4px">{{row.labelSub}}</span><sc-if value="{{row.canAddBranch}}"><button onClick="{{row.onAddBranch}}" style="border:0;background:#e9f0fb;color:#2563c9;font-size:11px;font-weight:500;height:18px;padding:0 7px;border-radius:9px;cursor:pointer">+ Branche</button></sc-if></div>
+                </sc-if>
+                <sc-for list="{{row.groups}}" as="g">
+                  <div data-node="{{g.gNode}}" style="grid-column:{{g.col}};display:flex;flex-direction:column;align-items:center;gap:30px;padding:0 8px;position:relative;z-index:1">
+                    <sc-if value="{{g.hasLabel}}"><div style="align-self:stretch;text-align:left;padding-left:4px;font-size:11px;font-weight:600;color:{{g.labelFg}};margin-bottom:-22px">{{g.label}}</div></sc-if>
+                    <sc-if value="{{g.isEnd}}">
+                      <div data-node="end" style="display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:16px;background:#fff;border:1px solid {{endBorder}};font-size:12px;color:#5f6873"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">replay</span>Fin de cycle · retour à l'étape 1</div>
+                    </sc-if>
+                    <sc-if value="{{g.isEmpty}}">
+                      <div data-node="{{g.phNode}}" style="width:100%;max-width:236px;height:64px;box-sizing:border-box;border:1.5px dashed {{g.phBorder}};background:{{g.phBg}};border-radius:9px;display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:{{g.phFg}}"><span style="font-family:'Material Symbols Outlined';font-size:18px;line-height:1">add</span>Déposez une action ici</div>
+                    </sc-if>
+                    <sc-for list="{{g.cards}}" as="c">
+                      <div data-node="{{c.id}}" draggable="true" onDragStart="{{c.onDragStart}}" onClick="{{c.onClick}}" style="position:relative;width:100%;max-width:236px;box-sizing:border-box;background:{{c.bg}};border:1px solid {{c.border}};box-shadow:{{c.shadow}};border-radius:9px;padding:10px 12px;cursor:pointer;display:flex;flex-direction:column;gap:6px">
+                        <sc-if value="{{c.dropBefore}}"><div style="position:absolute;left:-6px;right:-6px;top:-17px;height:3px;border-radius:2px;background:#2563c9"></div></sc-if>
+                        <sc-if value="{{c.dropAfter}}"><div style="position:absolute;left:-6px;right:-6px;bottom:-17px;height:3px;border-radius:2px;background:#2563c9"></div></sc-if>
+                        <div style="display:flex;align-items:center;gap:7px">
+                          <span style="min-width:22px;height:20px;border-radius:10px;background:{{c.numBg}};color:{{c.numFg}};font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 5px;box-sizing:border-box;font-variant-numeric:tabular-nums">{{c.n}}</span>
+                          <span style="font-weight:600;font-size:13px;flex:1;line-height:1.25">{{c.title}}</span>
+                          <span style="font-family:'Material Symbols Outlined';font-size:17px;line-height:1;color:#8a929c">{{c.icon}}</span>
+                        </div>
+                        <sc-for list="{{c.params}}" as="p">
+                          <div style="display:flex;gap:8px;font-size:12px;line-height:1.35"><span style="color:#5f6873;white-space:nowrap">{{p.k}}</span><span style="margin-left:auto;text-align:right;font-variant-numeric:tabular-nums;font-weight:500;color:{{p.fg}}">{{p.v}}</span></div>
+                        </sc-for>
+                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#8a929c;padding-top:2px;border-top:1px solid #f1f2f4"><span style="font-family:'Material Symbols Outlined';font-size:14px;line-height:1;padding-top:4px">schedule</span><span style="padding-top:4px;font-variant-numeric:tabular-nums">{{c.dur}}</span><span style="flex:1"></span><span style="padding-top:4px;color:{{c.stateFg}};font-weight:500">{{c.state}}</span></div>
+                        <sc-if value="{{c.hasErr}}">
+                          <div style="display:flex;gap:6px;align-items:flex-start;background:#fbe8e8;border-radius:6px;padding:6px 8px;font-size:12px;color:#9e2d2d;line-height:1.35"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">error</span><span style="flex:1">{{c.errMsg}}</span><a href="#" onClick="{{c.onFix}}" style="font-weight:600;color:#c63c3c;white-space:nowrap">Corriger</a></div>
+                        </sc-if>
+                        <sc-if value="{{c.hasWarn}}">
+                          <div style="display:flex;gap:6px;align-items:flex-start;background:#fcf0db;border-radius:6px;padding:6px 8px;font-size:12px;color:#8a5200;line-height:1.35"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">warning</span><span style="flex:1">{{c.warnMsg}}</span></div>
+                        </sc-if>
+                      </div>
+                    </sc-for>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <sc-if value="{{showTimeline}}" hint-placeholder-val="{{ true }}">
+      <div style="height:196px;flex:none;background:#fff;border-top:1px solid #e1e4e8;display:flex;flex-direction:column;padding:10px 16px 12px;box-sizing:border-box;gap:8px">
+        <div style="display:flex;align-items:baseline;gap:16px">
+          <span style="font-size:12px;font-weight:600">Chronogramme estimé</span>
+          <span style="font-size:12px;color:#5f6873">Chemin nominal (pièce bonne)</span>
+          <div style="flex:1"></div>
+          <span style="font-size:12px;color:#5f6873">Étape critique : <span style="color:#1a1d21;font-weight:500">{{critLabel}}</span></span>
+          <span style="font-size:12px;color:#5f6873">Cadence ≈ <span style="color:#1a1d21;font-weight:500;font-variant-numeric:tabular-nums">{{cadenceLabel}}</span></span>
+          <span style="font-size:12px;color:#5f6873">Temps de cycle <span style="font-size:18px;font-weight:600;color:#1a1d21;font-variant-numeric:tabular-nums">{{cycleLabel}}</span></span>
+        </div>
+        <div style="flex:1;display:grid;grid-template-columns:96px minmax(0,1fr);grid-template-rows:repeat(4,minmax(0,1fr)) 16px;row-gap:4px">
+          <sc-for list="{{tlRows}}" as="r" hint-placeholder-count="4">
+            <div style="display:contents">
+              <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:#5f6873"><span style="font-family:'Material Symbols Outlined';font-size:15px;line-height:1">{{r.icon}}</span>{{r.name}}</div>
+              <div style="position:relative;background:#f6f7f9;border-radius:4px">
+                <sc-for list="{{r.bars}}" as="b">
+                  <div onClick="{{b.onClick}}" title="{{b.title}}" style="position:absolute;top:2px;bottom:2px;left:{{b.left}};width:{{b.width}};background:{{b.bg}};color:{{b.fg}};box-shadow:{{b.ring}};border-radius:3px;font-size:11px;font-weight:500;display:flex;align-items:center;padding:0 6px;box-sizing:border-box;overflow:hidden;white-space:nowrap;cursor:pointer">{{b.label}}</div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <div></div>
+          <div style="position:relative;font-size:10px;color:#8a929c;font-variant-numeric:tabular-nums">
+            <sc-for list="{{ticks}}" as="t"><span style="position:absolute;left:{{t.left}};transform:translateX(-50%)">{{t.label}}</span></sc-for>
+          </div>
+          <sc-if value="{{hasPlayhead}}">
+            <div style="grid-column:2;grid-row:1 / 5;position:relative;pointer-events:none"><div style="position:absolute;top:-2px;bottom:-2px;left:{{playLeft}};width:2px;background:#1e8a4c;border-radius:1px"></div></div>
+          </sc-if>
+        </div>
+      </div>
+      </sc-if>
+    </div>
+
+    <!-- Right panel -->
+    <div style="width:340px;flex:none;background:#fff;border-left:1px solid #e1e4e8;display:flex;flex-direction:column;min-height:0">
+      <div style="display:flex;border-bottom:1px solid #e1e4e8;padding:0 8px;flex:none">
+        <button onClick="{{tabStep}}" style="border:0;background:none;cursor:pointer;height:40px;padding:0 10px;font-size:13px;font-weight:500;color:{{stTabA.fg}};box-shadow:inset 0 -2px 0 {{stTabA.line}}">Étape</button>
+        <button onClick="{{tabData}}" style="border:0;background:none;cursor:pointer;height:40px;padding:0 10px;font-size:13px;font-weight:500;color:{{stTabB.fg}};box-shadow:inset 0 -2px 0 {{stTabB.line}}">Données du process</button>
+      </div>
+      <div style="flex:1;overflow:auto;min-height:0">
+        <sc-if value="{{showStep}}" hint-placeholder-val="{{ true }}">
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #eef0f2">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="min-width:24px;height:22px;border-radius:11px;background:#e9f0fb;color:#2563c9;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box">{{step.n}}</span>
+              <span style="font-weight:600;font-size:15px;flex:1">{{step.title}}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px;font-size:12px;color:#5f6873"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">{{step.icon}}</span>{{step.devName}}<span style="color:#b0b6bd">·</span>{{step.kind}}</div>
+            <span style="font-size:12px;color:#3b424b;line-height:1.45;text-wrap:pretty">{{step.desc}}</span>
+            <button onClick="{{deleteStep}}" style="align-self:flex-start;height:26px;border:1px solid #e7a3a3;background:#fff;color:#a83232;border-radius:5px;padding:0 8px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">delete</span>Supprimer l'étape</button>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid #eef0f2">
+            <span style="font-size:12px;font-weight:600">Paramètres</span>
+            <sc-for list="{{fields}}" as="f">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <span style="font-size:12px;color:#3b424b">{{f.label}}</span>
+                <sc-if value="{{f.isSelect}}"><select value="{{f.value}}" onChange="{{f.onChange}}" style="height:30px;border:1px solid #d9dde2;border-radius:6px;padding:0 8px;font-size:12px;background:#fff;color:#1a1d21"><sc-for list="{{f.opts}}" as="o"><option value="{{o}}">{{o}}</option></sc-for></select></sc-if>
+                <sc-if value="{{f.isNum}}"><div style="display:flex;align-items:center;gap:6px"><input value="{{f.value}}" onChange="{{f.onChange}}" style="width:110px;box-sizing:border-box;height:30px;border:1px solid #d9dde2;border-radius:6px;padding:0 8px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21"><span style="font-size:12px;color:#5f6873">{{f.unit}}</span></div></sc-if>
+                <sc-if value="{{f.isRange}}">
+                  <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:#5f6873">
+                    <span>entre</span>
+                    <input value="{{f.minV}}" onChange="{{f.onMin}}" placeholder="min" style="width:76px;box-sizing:border-box;height:30px;border:1px solid #d9dde2;border-radius:6px;padding:0 8px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21">
+                    <span>et</span>
+                    <input value="{{f.maxV}}" onChange="{{f.onMax}}" placeholder="max" style="width:76px;box-sizing:border-box;height:30px;border:1px solid {{f.maxBorder}};box-shadow:{{f.maxRing}};border-radius:6px;padding:0 8px;font-size:12px;font-variant-numeric:tabular-nums;text-align:right;color:#1a1d21">
+                    <span>{{f.unit}}</span>
+                  </div>
+                </sc-if>
+                <sc-if value="{{f.isInfo}}"><span style="font-size:12px;font-weight:500;padding:6px 8px;background:#f6f7f9;border-radius:6px">{{f.value}}</span></sc-if>
+                <sc-if value="{{f.hasErr}}"><span style="font-size:11px;color:#c63c3c;line-height:1.4">{{f.errMsg}}</span></sc-if>
+                <sc-if value="{{f.hasHint}}"><span style="font-size:11px;color:#8a929c;line-height:1.4">{{f.hint}}</span></sc-if>
+              </div>
+            </sc-for>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-bottom:1px solid #eef0f2">
+            <span style="font-size:12px;font-weight:600">En cas d'échec</span>
+            <div style="display:flex;background:#f0f2f4;border-radius:6px;padding:2px;gap:2px">
+              <sc-for list="{{failModes}}" as="m" hint-placeholder-count="3">
+                <button onClick="{{m.onClick}}" style="flex:1;border:0;cursor:pointer;height:26px;border-radius:4px;font-size:12px;background:{{m.bg}};color:{{m.fg}};box-shadow:{{m.shadow}}">{{m.label}}</button>
+              </sc-for>
+            </div>
+            <sc-if value="{{failRetry}}"><div style="display:flex;align-items:center;gap:8px;font-size:12px"><span style="flex:1;color:#3b424b">Nombre de tentatives</span><input value="{{failN}}" onChange="{{onFailN}}" style="width:60px;box-sizing:border-box;height:28px;border:1px solid #d9dde2;border-radius:6px;padding:0 8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums"><span style="color:#5f6873;width:58px">puis alarme</span></div></sc-if>
+            <span style="font-size:11px;color:#8a929c;line-height:1.4">{{failHint}}</span>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px">
+            <span style="font-size:12px;font-weight:600">Délai maximal</span>
+            <div style="display:flex;align-items:center;gap:8px;font-size:12px"><input value="{{timeout}}" onChange="{{onTimeout}}" style="width:76px;box-sizing:border-box;height:30px;border:1px solid #d9dde2;border-radius:6px;padding:0 8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums"><span style="color:#5f6873">s</span><span style="flex:1"></span><span style="color:#8a929c">Défaut : {{timeoutDef}} s</span><sc-if value="{{timeoutChanged}}"><a href="#" onClick="{{resetTimeout}}">Rétablir</a></sc-if></div>
+            <span style="font-size:11px;color:#8a929c;line-height:1.4">Si l'étape n'est pas terminée dans ce délai, le comportement d'échec ci-dessus s'applique.</span>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{showBlock}}">
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:8px;border-bottom:1px solid #eef0f2">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="min-width:24px;height:22px;border-radius:11px;background:#e9f0fb;color:#2563c9;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;padding:0 6px;box-sizing:border-box">{{blk.n}}</span>
+              <span style="font-weight:600;font-size:15px;flex:1">{{blk.title}}</span>
+              <span style="font-family:'Material Symbols Outlined';font-size:20px;line-height:1;color:#5f6873">{{blk.icon}}</span>
+            </div>
+            <span style="font-size:12px;color:#3b424b;line-height:1.45;text-wrap:pretty">{{blk.desc}}</span>
+          </div>
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;border-bottom:1px solid #eef0f2">
+            <span style="font-size:12px;font-weight:600">Paramètres</span>
+            <sc-if value="{{blk.isIf}}">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <span style="font-size:12px;color:#3b424b">Condition</span>
+                <select value="{{blk.cond}}" onChange="{{onCond}}" style="height:30px;border:1px solid #d9dde2;border-radius:6px;padding:0 8px;font-size:12px;background:#fff;color:#1a1d21"><sc-if value="{{blk.condMissing}}"><option value="{{blk.cond}}">{{blk.cond}} (indisponible ici)</option></sc-if><sc-for list="{{blk.condGroups}}" as="g"><optgroup label="{{g.name}}"><sc-for list="{{g.items}}" as="o"><option value="{{o}}">{{o}}</option></sc-for></optgroup></sc-for></select>
+                <sc-if value="{{blk.hasCondErr}}"><span style="font-size:11px;color:#c63c3c;line-height:1.4">{{blk.condErr}}</span></sc-if>
+                <sc-if value="{{blk.condSrc}}"><span style="font-size:11px;color:#5f6873;line-height:1.4">Source : {{blk.condSrc}}</span></sc-if>
+                <span style="font-size:11px;color:#8a929c;line-height:1.4">La liste dépend de la position du bloc : résultats des étapes exécutées avant lui, états des dispositifs de la station et compteurs.</span>
+              </div>
+            </sc-if>
+            <sc-if value="{{blk.isLoop}}">
+              <div style="display:flex;flex-direction:column;gap:5px">
+                <span style="font-size:12px;color:#3b424b">Nombre de répétitions</span>
+                <div style="display:flex;align-items:center;gap:6px"><input value="{{blk.count}}" onChange="{{onCount}}" style="width:80px;box-sizing:border-box;height:30px;border:1px solid #d9dde2;border-radius:6px;padding:0 8px;font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:#1a1d21"><span style="font-size:12px;color:#5f6873">fois</span></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{blk.isPar}}">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+                <span style="flex:1;color:#3b424b">Branches</span>
+                <span style="font-weight:600;font-variant-numeric:tabular-nums;padding-right:4px">{{blk.nBranches}}</span>
+                <button onClick="{{onRemoveBranch}}" title="Retire la dernière branche vide" style="height:26px;border:1px solid #d9dde2;background:#fff;border-radius:5px;padding:0 8px;font-size:12px;cursor:pointer;opacity:{{blk.remOp}}">Retirer</button>
+                <button onClick="{{onAddBranch}}" style="height:26px;border:1px solid #2563c9;background:#fff;color:#2563c9;border-radius:5px;padding:0 8px;font-size:12px;cursor:pointer;opacity:{{blk.addOp}}">Ajouter</button>
+              </div>
+            </sc-if>
+            <span style="font-size:11px;color:#8a929c;line-height:1.4">Glissez des actions de la palette dans les zones « Déposez une action ici » ou contre une étape du bloc. Glissez l'étiquette du bloc pour le déplacer.</span>
+          </div>
+          <div style="padding:14px 16px">
+            <button onClick="{{onDeleteBlock}}" style="height:28px;border:1px solid #e7a3a3;background:#fff;color:#a83232;border-radius:5px;padding:0 10px;font-size:12px;cursor:pointer;display:flex;align-items:center;gap:4px"><span style="font-family:'Material Symbols Outlined';font-size:16px;line-height:1">delete</span>Supprimer le bloc et ses étapes</button>
+          </div>
+        </sc-if>
+        <sc-if value="{{showNoSel}}"><div style="padding:24px 16px;font-size:12px;color:#8a929c">Sélectionnez une étape ou un bloc dans la séquence.</div></sc-if>
+
+        <sc-if value="{{showData}}">
+          <div style="padding:14px 16px;display:flex;flex-direction:column;gap:16px">
+            <span style="font-size:12px;color:#5f6873;line-height:1.45">Valeurs produites pendant le cycle. Elles peuvent être utilisées dans les conditions (« Contrôler résultat », « Si / Sinon », « Attendre condition »).</span>
+            <sc-for list="{{vars}}" as="g">
+              <div style="display:flex;flex-direction:column;gap:2px">
+                <span style="font-size:11px;font-weight:600;color:#5f6873;letter-spacing:.03em;text-transform:uppercase;padding-bottom:4px">{{g.group}}</span>
+                <sc-for list="{{g.items}}" as="v">
+                  <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f1f2f4">
+                    <div style="flex:1;display:flex;flex-direction:column;gap:1px"><span style="font-size:12px;font-weight:500">{{v.name}}</span><span style="font-size:11px;color:#8a929c">{{v.src}}</span></div>
+                    <span style="font-size:12px;font-variant-numeric:tabular-nums;text-align:right">{{v.val}}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <sc-if value="{{hasToast}}">
+    <div style="position:fixed;bottom:56px;left:50%;transform:translateX(-50%);background:#1a1d21;color:#fff;font-size:12px;padding:9px 14px;border-radius:7px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:50">{{toast}}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startScreen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Station&quot;,&quot;Process&quot;],&quot;default&quot;:&quot;Station&quot;,&quot;tsType&quot;:&quot;'Station'|'Process'&quot;},&quot;showTimeline&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;simSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;min&quot;:0.25,&quot;max&quot;:3,&quot;step&quot;:0.25,&quot;default&quot;:1,&quot;tsType&quot;:&quot;number&quot;,&quot;unit&quot;:&quot;×&quot;}}">
+const ICON={robot:'precision_manufacturing',feeder:'center_focus_strong',press:'compress',nest:'crop_square',cyl:'swap_vert',conv:'conveyor_belt',sensor:'sensors',logic:'rule'};
+const LIB=[
+ {type:'robot',name:'Robot cartésien XYZC',desc:'2 à 4 axes, outil aspiration ou pince. Prise et dépose de pièces.'},
+ {type:'feeder',name:'Alimenteur à vision',desc:'Présente les pièces en vrac et indique leur position (X, Y, angle).'},
+ {type:'press',name:'Presse',desc:'Pressage piloté en force et en course, programmes sélectionnables.'},
+ {type:'cyl',name:'Vérin',desc:'Mouvement deux positions, sorti / rentré, avec contrôle de fin de course.'},
+ {type:'conv',name:'Convoyeur',desc:'Transfert de pièces ou de palettes entre stations.'},
+ {type:'nest',name:'Support de pièce (nid)',desc:'Emplacement fixe, avec ou sans capteur de présence.'},
+ {type:'sensor',name:'Capteur de contrôle',desc:'Détection ou mesure : présence, hauteur, orientation.'}];
+const LIBNAME={robot:'Robot',feeder:'Alimenteur',press:'Presse',cyl:'Vérin',conv:'Convoyeur',nest:'Nid',sensor:'Capteur'};
+const ST={complet:{label:'Complet',fg:'#1e7a45',bg:'#e5f3ea',dot:'#1e8a4c'},incomplet:{label:'Incomplet',fg:'#8a5200',bg:'#fcf0db',dot:'#d98a00'},erreur:{label:'Erreur',fg:'#a83232',bg:'#fbe8e8',dot:'#c63c3c'}};
+const LANES=[{id:'feeder',name:'Alimenteur',icon:ICON.feeder},{id:'robot',name:'Robot XYZC',icon:ICON.robot},{id:'press',name:'Presse',icon:ICON.press},{id:'logic',name:'Contrôle',icon:ICON.logic}];
+const LANECOL={feeder:'1',robot:'2',press:'3',logic:'4'};
+const DEVNAME={feeder:'Alimenteur vision',robot:'Robot XYZC',press:'Presse',logic:'Contrôle'};
+const STEPS={
+ s1:{n:'1',title:'Trouver une pièce',dev:'feeder',start:0,dur:0.6,kind:'Action alimenteur',desc:"Demande à l'alimenteur de localiser une pièce sur le plateau. Sa position (X, Y, angle) est transmise à l'étape suivante."},
+ s2:{n:'2',title:'Prendre pièce',dev:'robot',start:0.6,dur:0.9,kind:'Action robot',desc:"Le robot va chercher la pièce à la position trouvée par l'alimenteur, la saisit et contrôle sa présence."},
+ s3:{n:'3',title:'Poser pièce',dev:'robot',start:1.5,dur:1.1,kind:'Action robot',desc:"Dépose la pièce dans l'outillage de la presse."},
+ s4:{n:'4a',title:'Lancer pressage',dev:'press',start:2.6,dur:2.4,kind:'Action presse',desc:"Exécute le programme de pressage. La force et la course finales sont enregistrées pour le contrôle."},
+ s4b:{n:'4b',title:'Trouver la pièce suivante',dev:'feeder',start:2.6,dur:0.6,kind:'Action alimenteur',desc:"Prépare la pièce du cycle suivant pendant le pressage."},
+ s4c:{n:'4c',title:'Aller à',dev:'robot',start:2.6,dur:0.7,kind:'Action robot',desc:"Dégage le robot de la presse pendant le pressage."},
+ s5:{n:'5',title:'Contrôler résultat',dev:'logic',start:5.0,dur:0.1,kind:'Condition',desc:"Compare les résultats du pressage aux tolérances. Le résultat (bonne ou rebut) oriente la suite du cycle."},
+ s6a:{n:'6a',title:'Évacuer pièce bonne',dev:'robot',start:5.1,dur:1.3,kind:'Sous-process',desc:"Appelle le sous-process qui reprend la pièce dans la presse et la dépose sur la sortie des pièces bonnes."},
+ s6b:{n:'6b',title:'Évacuer en rebut',dev:'robot',start:5.1,dur:1.4,kind:'Action robot',desc:"Reprend la pièce dans la presse et la dépose dans le bac rebut."},
+ s6c:{n:'6c',title:'Compter le rebut',dev:'logic',start:6.5,dur:0,kind:'Compteur',desc:"Incrémente le compteur de pièces NOK et signale un défaut si trop de rebuts se suivent."}};
+const BLK={par:{label:'En parallèle',icon:'view_week',border:'#9db7e3',fg:'#2563c9',bg:'rgba(37,99,201,.035)'},if:{label:'Si / Sinon',icon:'call_split',border:'#c3c9d0',fg:'#3b424b',bg:'rgba(255,255,255,.5)'},loop:{label:'Répéter',icon:'repeat',border:'#c3c9d0',fg:'#3b424b',bg:'rgba(255,255,255,.5)'}};
+const CONDS=['Pièce bonne','Pièce présente sur le nid','Presse prête','Rebuts consécutifs atteints'];
+const MOVE='application/x-ms-move', ADD='application/x-ms-action';
+const DEFTO={feeder:'3,0',robot:'5,0',press:'10,0',logic:'1,0'};
+const RECIPES=['Pignon 12T','Roue 24T','Pont de rouage'];
+const ACT={'Aller à':{field:'pos',dur:0.7},'Prendre pièce':{field:'pos',dur:0.9},'Poser pièce':{field:'pos',dur:1.0},'Ouvrir pince':{dur:0.2},'Fermer pince':{dur:0.2},
+ 'Aspiration on / off':{field:'sel',fieldLabel:'État',opts:['Activer','Couper'],dur:0.1},'Soufflage':{field:'num',fieldLabel:'Durée',unit:'ms',def:'50',dur:0.1},
+ 'Trouver une pièce':{field:'sel',fieldLabel:'Recette',opts:RECIPES,dur:0.6},'Pièce prise':{dur:0},
+ 'Charger programme':{field:'sel',fieldLabel:'Programme',opts:['n°1 · Chassage léger','n°2 · Rivetage','n°3 · Chassage pignon'],dur:0.2},
+ 'Lancer cycle de pressage':{field:'num',fieldLabel:'Force cible',unit:'N',def:'850',dur:2.4},'Lire force / course max':{dur:0.1},'Se référencer':{dur:1.5},'Pièce présente ?':{dur:0},
+ 'Attendre condition':{field:'sel',fieldLabel:'Condition',opts:['Pièce présente sur le nid','Presse prête','Pièce bonne']},
+ 'Si / Sinon':{field:'sel',fieldLabel:'Condition',opts:['Pièce bonne','Pièce présente sur le nid']},
+ 'Répéter N fois':{field:'num',fieldLabel:'Nombre de répétitions',unit:'fois',def:'3'},'En parallèle':{},
+ 'Appeler sous-process':{field:'sel',fieldLabel:'Sous-process',opts:['Évacuer pièce bonne','Vidange station','Initialisation']},
+ 'Fin de cycle':{field:'sel',fieldLabel:'Ensuite',opts:["Reprendre à l'étape 1","Arrêter la station","Appeler « Vidange station »"]},
+ 'Signaler défaut':{field:'sel',fieldLabel:'Message',opts:['Pièce non trouvée','Presse en défaut','Trop de rebuts']}};
+const fr=n=>String(n).replace('.',',');
+const num=s=>parseFloat(String(s).replace(',','.').replace('−','-'));
+const segOn={bg:'#fff',fg:'#1a1d21',shadow:'0 1px 2px rgba(0,0,0,.08)'}, segOff={bg:'transparent',fg:'#5f6873',shadow:'none'};
+const tabOn={fg:'#1a1d21',line:'#2563c9'}, tabOff={fg:'#5f6873',line:'transparent'};
+
+class Component extends DCLogic {
+  seqRef=React.createRef();
+  state={
+    screen:(this.props.startScreen==='Process')?'process':'station',
+    selDev:'robot',rightTab:'props',lowerTab:'positions',warnOpen:false,hlPos:null,hl:null,dragOver:false,
+    devices:[
+      {id:'robot',type:'robot',name:'Robot XYZC',model:'Cartésien 4 axes',cx:50,top:22},
+      {id:'feeder',type:'feeder',name:'Alimenteur vision',model:'Asyril Eye+',cx:17,top:196},
+      {id:'nest',type:'nest',name:'Nid de dépose',model:'Support fixe · capteur présence',cx:50,top:196},
+      {id:'press',type:'press',name:'Presse',model:'Promess · 2 kN',cx:83,top:196}],
+    positions:[
+      {id:'repos',name:'Repos',x:'0,00',y:'0,00',z:'0,00',c:'0,00',pre:'—',learned:true},
+      {id:'feed',name:'Zone alimenteur',x:'38,00',y:'64,50',z:'−12,00',c:'0,00',pre:'15,0',learned:true},
+      {id:'nid',name:'Dépose nid',x:'142,50',y:'38,20',z:'−24,80',c:'90,00',pre:'10,0',learned:true},
+      {id:'presse',name:'Pose presse',x:'—',y:'—',z:'—',c:'—',pre:'12,0',learned:false},
+      {id:'evac',name:'Évacuation bonne',x:'296,00',y:'150,00',z:'−8,00',c:'0,00',pre:'10,0',learned:true},
+      {id:'rebut',name:'Bac rebut',x:'310,00',y:'20,00',z:'−5,00',c:'0,00',pre:'—',learned:true}],
+    axes:[
+      {ax:'X',on:true,min:'0',max:'320',slow:'20',fast:'400',order:'2'},
+      {ax:'Y',on:true,min:'0',max:'180',slow:'20',fast:'400',order:'3'},
+      {ax:'Z',on:true,min:'−60',max:'0',slow:'10',fast:'200',order:'1'},
+      {ax:'C',on:true,min:'−180',max:'180',slow:'30',fast:'720',order:'4'}],
+    tool:'asp',zSafe:'−5,0',vacOn:'−60',vacEmpty:'−52',cServo:'Servo 3',progVerified:false,
+    selStep:'s4',stepTab:'step',focusKey:null,issuesOpen:false,simT:null,running:false,toast:null,
+    vals:{'s1.recette':'Pignon 12T','s1.zone':'Plateau complet','s2.src':"Position trouvée par l'alimenteur",'s2.app':'15,0','s2.chk':'Oui','s2.ack':'Automatiquement après la prise',
+      's3.pos':'Pose presse','s3.blow':'50','s4.prog':'n°3 · Chassage pignon','s4.force':'850','s4.course':'1,20','s4.curve':'Oui',
+      's4b.recette':'Pignon 12T','s4c.pos':'Repos','s4c.speed':'Rapide','s5.fmin':'800','s5.fmax':'900','s5.cmin':'1,15','s5.cmax':'','s5.comb':'Toutes les conditions sont vraies',
+      's6a.sub':'Évacuer pièce bonne','s6a.pos':'Évacuation bonne','s6b.pos':'Bac rebut','s6b.blow':'Oui','s6c.lim':'3'},
+    fail:{}, paths:[], custom:{}, drop:null, stepI:null,
+    tree:[{t:'step',id:'s1'},{t:'step',id:'s2'},{t:'step',id:'s3'},
+      {t:'par',id:'b4',branches:[['s4'],['s4b'],['s4c']]},
+      {t:'step',id:'s5'},
+      {t:'if',id:'b6',cond:'Pièce bonne',noLabel:'Sinon (rebut)',branches:[['s6a'],['s6b','s6c']]}]
+  };
+
+  componentDidMount(){ this._onR=()=>this.measure(); window.addEventListener('resize',this._onR); this._de=()=>{ if(this.state.drop) this.setState({drop:null}); }; document.addEventListener('dragend',this._de); document.fonts&&document.fonts.ready.then(()=>this.measure()); this.measure(); }
+  componentDidUpdate(){ this.measure(); }
+  componentWillUnmount(){ window.removeEventListener('resize',this._onR); document.removeEventListener('dragend',this._de); clearInterval(this.timer); clearTimeout(this._tt); }
+
+  measure(){
+    const el=this.seqRef.current; if(!el){ this._pk=null; return; }
+    const cr=el.getBoundingClientRect(), pos={};
+    el.querySelectorAll('[data-node]').forEach(n=>{const r=n.getBoundingClientRect(); pos[n.getAttribute('data-node')]={x:r.left-cr.left+r.width/2,top:r.top-cr.top,bot:r.bottom-cr.top};});
+    const paths=(this._edges||[]).map(([a,b,kind,join])=>{const A=pos[a],B=pos[b]; if(!A||!B) return null;
+      const x1=Math.round(A.x),y1=Math.round(A.bot),x2=Math.round(B.x),y2=Math.round(B.top);
+      const ym=join?Math.max(y2-16,(y1+y2)/2):Math.min(y1+16,(y1+y2)/2); let d;
+      if(Math.abs(x1-x2)<2) d=`M${x1} ${y1} V${y2-2}`;
+      else{const r=Math.min(7,Math.abs(x2-x1)/2),s=x2>x1?1:-1; d=`M${x1} ${y1} V${ym-r} Q${x1} ${ym} ${x1+s*r} ${ym} H${x2-s*r} Q${x2} ${ym} ${x2} ${ym+r} V${y2-2}`;}
+      return {d,kind:kind||'',lx:x2,ly:ym};}).filter(Boolean);
+    const key=JSON.stringify(paths); if(key!==this._pk){ this._pk=key; this.setState({paths}); }
+  }
+
+  flash(t){ clearTimeout(this._tt); this.setState({toast:t}); this._tt=setTimeout(()=>this.setState({toast:null}),2600); }
+  setVal(k,v){ this.setState(s=>({vals:{...s.vals,[k]:v},focusKey:s.focusKey===k&&v?null:s.focusKey})); }
+  cloneTree(){ return this.state.tree.map(n=>n.t==='step'?{...n}:{...n,branches:n.branches.map(b=>b.slice())}); }
+  placeIn(tree,item,d){
+    const isBlock=item.t!=='step';
+    if(d.node==='end'){ tree.push(item); return true; }
+    if(d.node.startsWith('ph:')){ if(isBlock) return 'nest'; const [,bid,bi]=d.node.split(':'); const b=tree.find(n=>n.id===bid); if(!b||!b.branches[+bi]) return false; b.branches[+bi].push(item.id); return true; }
+    if(d.node.startsWith('blk:')){ const i=tree.findIndex(n=>n.id===d.node.slice(4)); if(i<0) return false; tree.splice(d.pos==='before'?i:i+1,0,item); return true; }
+    for(let i=0;i<tree.length;i++){ const n=tree[i];
+      if(n.t==='step'&&n.id===d.node){ tree.splice(d.pos==='before'?i:i+1,0,item); return true; }
+      if(n.t!=='step') for(const br of n.branches){ const j=br.indexOf(d.node); if(j>=0){ if(isBlock) return 'nest'; br.splice(d.pos==='before'?j:j+1,0,item.id); return true; } } }
+    return false;
+  }
+  removeFrom(tree,kind,id){
+    if(kind==='block'){ const i=tree.findIndex(n=>n.id===id); return i>=0?tree.splice(i,1)[0]:null; }
+    for(let i=0;i<tree.length;i++){ const n=tree[i];
+      if(n.t==='step'&&n.id===id){ tree.splice(i,1); return {t:'step',id}; }
+      if(n.t!=='step') for(const br of n.branches){ const j=br.indexOf(id); if(j>=0){ br.splice(j,1); return {t:'step',id}; } } }
+    return null;
+  }
+  moveItem(mv,d){
+    if(d.node===mv.id||d.node==='blk:'+mv.id) return;
+    const tree=this.cloneTree(), item=this.removeFrom(tree,mv.kind,mv.id); if(!item) return;
+    const r=this.placeIn(tree,item,d);
+    if(r==='nest'){ this.flash("Un bloc ne peut pas être placé dans un autre bloc dans cette version"); return; }
+    if(!r) return;
+    this.setState({tree,selStep:mv.kind==='block'?'blk:'+mv.id:mv.id,stepTab:'step'}); this.flash(mv.kind==='block'?'Bloc déplacé':'Étape déplacée');
+  }
+  insertAction(p,d){
+    const def=ACT[p.name]||{}, id='c'+Date.now(); let item, extra={};
+    if(p.name==='Si / Sinon') item={t:'if',id,cond:'Pièce bonne',branches:[[],[]]};
+    else if(p.name==='En parallèle') item={t:'par',id,branches:[[],[]]};
+    else if(p.name==='Répéter N fois') item={t:'loop',id,count:'3',branches:[[]]};
+    else { item={t:'step',id}; extra={[id]:{id,title:p.name,dev:p.dev,dur:def.dur||0,field:def.field,fieldLabel:def.fieldLabel,unit:def.unit||'',opts:def.opts,icon:p.icon||null,
+      terminal:p.name==='Fin de cycle',kind:p.name==='Fin de cycle'?'Fin de cycle':p.dev==='logic'?'Bloc logique':'Action ajoutée',desc:p.name==='Fin de cycle'?"Termine le cycle à cet endroit. Les étapes suivantes de la même branche ne sont pas exécutées.":`Étape ajoutée depuis la palette (${p.group}). Ajustez ses paramètres ci-dessous.`}}; }
+    const tree=this.cloneTree(), r=this.placeIn(tree,item,d);
+    if(r==='nest'){ this.flash("Déposez ce bloc hors d'un autre bloc (blocs imbriqués non pris en charge dans cette version)"); return; }
+    if(!r) return;
+    const vals={...this.state.vals};
+    if(item.t==='step'){ if(def.field==='pos') vals[id+'.pos']='Repos'; else if(def.field) vals[id+'.v']=def.def||(def.opts&&def.opts[0])||''; }
+    this.setState({tree,custom:{...(this.state.custom||{}),...extra},vals,selStep:item.t==='step'?id:'blk:'+id,stepTab:'step'});
+    this.flash(item.t==='step'?`« ${p.name} » ajouté à la séquence`:`Bloc « ${p.name} » ajouté · déposez des actions dans ses branches`);
+  }
+  addPosition(){ const n=this.state.positions.filter(p=>p.added).length+1, id='pos'+Date.now();
+    this.setState(s=>({lowerTab:'positions',hlPos:id,positions:[...s.positions,{id,name:`Nouvelle position ${n}`,x:'—',y:'—',z:'—',c:'—',pre:'10,0',learned:false,added:true}]}));
+    this.flash('Position ajoutée · renommez-la puis apprenez-la depuis la position actuelle du robot'); }
+  deleteStep(id){ const tree=this.cloneTree(); this.removeFrom(tree,'step',id); this.setState({tree,selStep:null}); this.flash('Étape supprimée'); }
+  deleteBlock(id){ const tree=this.cloneTree(); this.removeFrom(tree,'block',id); this.setState({tree,selStep:null}); this.flash('Bloc supprimé avec ses étapes'); }
+  updBlock(id,p){ this.setState(s=>({tree:s.tree.map(n=>n.id===id?{...n,...p}:n)})); }
+  addBranch(id){ this.setState(s=>({tree:s.tree.map(n=>n.id===id&&n.branches.length<4?{...n,branches:[...n.branches,[]]}:n)})); }
+  removeBranch(id){ this.setState(s=>({tree:s.tree.map(n=>{ if(n.id!==id||n.branches.length<=2) return n; const k=n.branches.map(b=>b.length).lastIndexOf(0); if(k<0) return n; return {...n,branches:n.branches.filter((b,i)=>i!==k)}; })})); }
+  getFail(id){ const dev=(this._all||STEPS)[id].dev; return {mode:dev==='logic'?'alarm':'retry',n:'2',timeout:DEFTO[dev],...(this.state.fail[id]||{})}; }
+  setFail(id,p){ this.setState(s=>({fail:{...s.fail,[id]:{...(s.fail[id]||{}),...p}}})); }
+
+  simulate(){
+    if(this.timer){ clearInterval(this.timer); this.timer=null; this.setState({running:false,simT:null,stepI:null}); return; }
+    const sp=this.props.simSpeed??1, t0=performance.now(), TOT=this._total||0;
+    this.setState({running:true,simT:0,stepI:null});
+    this.timer=setInterval(()=>{const t=(performance.now()-t0)/1000*sp;
+      if(t>=TOT){ clearInterval(this.timer); this.timer=null; this.setState({running:false,simT:null}); this.flash(`Simulation terminée · temps de cycle ${fr(TOT.toFixed(1))} s`); return; }
+      this.setState({simT:t});},50);
+  }
+  stepOnce(){
+    if(this.timer){ clearInterval(this.timer); this.timer=null; }
+    const stops=this._stops||[], cur=(this.state.simT!=null&&this.state.stepI!=null)?this.state.stepI:-1, nx=cur+1;
+    if(nx>=stops.length){ this.setState({simT:null,running:false,stepI:null}); this.flash('Fin du cycle en pas à pas'); return; }
+    this.setState({simT:stops[nx].t+0.001,running:false,stepI:nx,selStep:stops[nx].id,stepTab:'step'});
+  }
+
+  renderVals(){
+    const S=this.state, V=S.vals;
+    const learnedPose=S.positions.find(p=>p.id==='presse').learned;
+    const conflict=S.cServo==='Servo 3';
+    const vacWarn=S.tool==='asp'&&Math.abs(num(S.vacOn)-num(S.vacEmpty))<10;
+    const status=d=>{ if(d.type==='robot'&&d.id==='robot') return conflict?'erreur':(S.positions.some(p=>!p.learned)||vacWarn)?'incomplet':'complet';
+      if(d.id==='press') return S.progVerified?'complet':'incomplet'; if(d.added) return 'incomplet'; return 'complet'; };
+
+    // ----- station issues
+    const stIssues=[];
+    const pick=(p)=>()=>this.setState({warnOpen:false,rightTab:'props',...p});
+    if(conflict) stIssues.push({lvl:'err',text:'Axes Z et C raccordés au même servo (Servo 3)',dev:'Robot XYZC',onClick:pick({selDev:'robot',hl:'map'})});
+    S.positions.filter(p=>!p.learned).forEach(p=>stIssues.push({lvl:'warn',text:`Position « ${p.name||'sans nom'} » non apprise`,dev:'Robot XYZC',onClick:pick({selDev:'robot',lowerTab:'positions',hlPos:p.id})}));
+    if(!S.progVerified) stIssues.push({lvl:'warn',text:'Programme de presse n°3 non vérifié sur la presse',dev:'Presse',onClick:pick({selDev:'press'})});
+    if(vacWarn) stIssues.push({lvl:'warn',text:'Seuil « buse vide » trop proche du seuil « pièce présente »',dev:'Robot XYZC',onClick:pick({selDev:'robot',hl:'vac'})});
+    S.devices.filter(d=>d.added).forEach(d=>stIssues.push({lvl:'warn',text:`« ${d.name} » : raccordement matériel à compléter`,dev:d.name,onClick:pick({selDev:d.id})}));
+    stIssues.forEach(i=>{i.fg=i.lvl==='err'?'#c63c3c':'#d98a00';i.icon=i.lvl==='err'?'error':'warning';});
+    const nErr=stIssues.filter(i=>i.lvl==='err').length, nWarn=stIssues.length-nErr;
+
+    const devices=S.devices.map(d=>{const sel=S.selDev===d.id, st=ST[status(d)];
+      return {...d,icon:ICON[d.type],left:d.cx+'%',top:d.top+'px',st,
+        border:sel?'#2563c9':'#d9dde2',shadow:sel?'0 0 0 3px rgba(37,99,201,.16)':'0 1px 2px rgba(20,30,45,.05)',
+        treeBg:sel?'#e9f0fb':'transparent',treeFg:sel?'#1a4b9c':'#3b424b',
+        onClick:()=>this.setState({selDev:d.id,rightTab:'props',hl:null})};});
+    const h=React.createElement, robot=S.devices.find(d=>d.id==='robot');
+    const synLines=h('svg',{style:{position:'absolute',inset:0,width:'100%',height:'100%',pointerEvents:'none'}},
+      S.devices.filter(d=>d.id!=='robot').map(d=>h('line',{key:d.id,x1:robot.cx+'%',y1:robot.top+70,x2:d.cx+'%',y2:d.top,stroke:'#b9c0c8',strokeWidth:1.5,strokeDasharray:d.added?'4 4':'none'})));
+
+    const selD=S.devices.find(d=>d.id===S.selDev)||S.devices[0];
+    const sections={
+      feeder:[{title:'Configuration',rows:[{k:'Modèle',v:'Asyril Eye+ · plateau 240 mm'},{k:'Recette pièce active',v:'Pignon 12T'},{k:'Recherche maximale',v:'3,0 s'},{k:'Vibration si aucune pièce',v:'Oui, 2 essais'}]},
+        {title:'Résultats fournis',rows:[{k:'Position de la pièce',v:'X, Y (mm)'},{k:'Orientation',v:'Angle (°)'},{k:'Pièces visibles',v:'Nombre'}]},
+        {title:'Raccordement matériel',rows:[{k:'Caméra',v:'Réseau · 192.168.10.21'},{k:'Plateau vibrant',v:'Module E/S 2'}]}],
+      press:[{title:'Configuration',rows:[{k:'Modèle',v:'Promess · force max 2 000 N'},{k:'Course utile',v:'0 – 40,00 mm'},{k:'Programme par défaut',v:'n°3 · Chassage pignon'},{k:'Référencement au démarrage',v:'Oui'}]},
+        {title:'Résultats fournis',rows:[{k:'Force finale',v:'N'},{k:'Course finale',v:'mm'},{k:'Verdict presse',v:'OK / NOK'}]},
+        {title:'Raccordement matériel',rows:[{k:'Contrôleur presse',v:'Réseau · 192.168.10.30'}]}],
+      nest:[{title:'Configuration',rows:[{k:'Position associée',v:'Dépose nid'},{k:'Capteur de présence',v:'Oui'},{k:'Orientation de la pièce',v:'90,00 °'}]},
+        {title:'Raccordement matériel',rows:[{k:'Capteur présence',v:'Module E/S 1 · entrée 4'}]}]};
+    const sel={name:selD.name,model:selD.model,icon:ICON[selD.type],st:ST[status(selD)],
+      sections:sections[selD.id]||[{title:'Configuration',rows:[{k:'Type',v:LIB.find(l=>l.type===selD.type).name},{k:'Paramètres',v:'À compléter'}]},{title:'Raccordement matériel',rows:[{k:'Sorties / entrées',v:'Non raccordé'}]}]};
+    const isRobot=selD.id==='robot';
+
+    const axes=S.axes.map((a,i)=>{const set=k=>e=>{const v=e.target.value; this.setState(s=>({axes:s.axes.map((x,j)=>j===i?{...x,[k]:v}:x)}));};
+      return {...a,op:a.on?1:.4,onToggle:()=>this.setState(s=>({axes:s.axes.map((x,j)=>j===i?{...x,on:!x.on}:x)})),onMin:set('min'),onMax:set('max'),onSlow:set('slow'),onFast:set('fast')};});
+    const servos=['Servo 1','Servo 2','Servo 3','Servo 4'];
+    const okIcon={icon:'check_circle',iconFg:'#1e8a4c',border:'#d9dde2'};
+    const mapping=[
+      {from:'Axe X',to:'Servo 1',opts:servos,onChange:()=>{},...okIcon},
+      {from:'Axe Y',to:'Servo 2',opts:servos,onChange:()=>{},...okIcon},
+      {from:'Axe Z',to:'Servo 3',opts:servos,onChange:()=>{},...(conflict?{icon:'error',iconFg:'#c63c3c',border:'#e7a3a3'}:okIcon)},
+      {from:'Axe C',to:S.cServo,opts:servos,onChange:e=>this.setState({cServo:e.target.value}),...(conflict?{icon:'error',iconFg:'#c63c3c',border:'#c63c3c'}:okIcon)},
+      {from:S.tool==='asp'?'Vide / souffle':'Pince',to:'Servo 4',opts:[S.tool==='asp'?'Module E/S 1 · sorties 1-2':'Module E/S 1 · sortie 3'],onChange:()=>{},...okIcon}];
+    mapping[4].to=mapping[4].opts[0];
+
+    const positions=S.positions.map(p=>{const hl=S.hlPos===p.id;
+      return {...p,rowBg:hl?'#fff7e6':'transparent',numFg:p.learned?'#1a1d21':'#b0b6bd',
+        stLabel:p.learned?'Apprise':'Non apprise',stBg:p.learned?'#e5f3ea':'#fcf0db',stFg:p.learned?'#1e7a45':'#8a5200',
+        learnLabel:p.learned?'Réapprendre':'Apprendre',learnBorder:p.learned?'#d9dde2':'#2563c9',learnFg:p.learned?'#1a1d21':'#2563c9',
+        goOpacity:p.learned?1:.4,isNew:!!p.added,
+        onName:e=>{const v=e.target.value; this.setState(s=>({positions:s.positions.map(q=>q.id===p.id?{...q,name:v}:q)}));},
+        onDelete:()=>{this.setState(s=>({positions:s.positions.filter(q=>q.id!==p.id)})); this.flash(`Position « ${p.name} » supprimée`);},
+        onLearn:()=>{this.setState(s=>({hlPos:null,positions:s.positions.map(q=>q.id===p.id?{...q,x:'268,40',y:'92,15',z:'−31,60',c:'0,00',learned:true}:q)})); this.flash(`Position « ${p.name} » apprise depuis la position actuelle`);},
+        onGo:()=>p.learned?this.flash(`Robot en déplacement vers « ${p.name} » (Z remonté à la hauteur de sécurité)`):this.flash(`« ${p.name} » doit d'abord être apprise`)};});
+
+    const pince=S.tool==='grip';
+    const caps=[
+      {name:'Robot XYZC',icon:ICON.robot,items:[['Aller à','position nommée, vitesse lente / rapide'],['Prendre pièce','position ou position trouvée, hauteur d\'approche'],['Poser pièce','position nommée, soufflage à la dépose'],['Ouvrir pince','—',!pince],['Fermer pince','—',!pince],['Aspiration on / off','état',pince],['Soufflage','durée (ms)',pince]]},
+      {name:'Alimenteur vision',icon:ICON.feeder,items:[['Trouver une pièce','recette pièce → X, Y, angle'],['Pièce prise','acquittement']]},
+      {name:'Presse',icon:ICON.press,items:[['Charger programme','n° de programme'],['Lancer cycle de pressage','programme, force cible (N), course cible (mm) → force et course finales'],['Lire force / course max','→ force (N), course (mm)'],['Se référencer','—']]},
+      {name:'Nid de dépose',icon:ICON.nest,items:[['Pièce présente ?','→ oui / non']]}]
+      .map(g=>({...g,count:g.items.filter(a=>!a[2]).length,items:g.items.map(a=>({name:a[0]+(a[2]?' · outil non monté':''),params:a[1],op:a[2]?.45:1}))}));
+    const capCount=caps.reduce((n,g)=>n+g.count,0);
+
+    // ----- process
+    const custom=S.custom||{}, ALL={...STEPS,...custom}, tree=S.tree, dp=S.drop||{};
+    const nmap={}, inTree=[], blocks={};
+    tree.forEach((nd,i)=>{const k=String(i+1); if(nd.t==='step'){nmap[nd.id]=k;inTree.push(nd.id);} else {blocks[nd.id]={...nd,n:k}; let L=0; nd.branches.forEach(br=>br.forEach(id=>{nmap[id]=k+'abcdefghijklmnopqrstuvwxyz'[L++];inTree.push(id);}));}});
+    Object.keys(nmap).forEach(id=>{ALL[id]={...ALL[id],n:nmap[id]};});
+    this._all=ALL;
+    const blkName=b=>b.t==='loop'?`Répéter ${b.count} fois`:BLK[b.t].label;
+    const stepErr={}, stepWarn={}, blkWarn={};
+    if(inTree.includes('s5')&&!V['s5.cmax']) stepErr.s5='Course maximale non renseignée : la pièce ne peut pas être jugée.';
+    inTree.forEach(id=>{ if(V[id+'.pos']==='Pose presse'&&!learnedPose) stepWarn[id]="Position « Pose presse » pas encore apprise sur la station."; });
+    Object.values(blocks).forEach(b=>{ if(b.t==='if'?b.branches.every(br=>!br.length):b.branches.some(br=>!br.length)) blkWarn[b.id]=b.t==='if'?'Bloc Si / Sinon vide : ajoutez au moins une action.':'Le bloc contient une branche vide.'; });
+    const deadWarn={}, isT=id=>!!(ALL[id]&&ALL[id].terminal); let dead=false;
+    tree.forEach(nd=>{ const msg='Étape jamais exécutée : elle suit une fin de cycle.';
+      if(nd.t==='step'){ if(dead) deadWarn[nd.id]=msg; else if(isT(nd.id)) dead=true; return; }
+      nd.branches.forEach(br=>{let d=dead; br.forEach(id=>{ if(d) deadWarn[id]=msg; else if(isT(id)) d=true; });});
+      if(!dead&&nd.branches.length&&nd.branches.every(br=>br.some(isT))) dead=true; });
+    // conditions available to each Si block: results of steps executed before it + device states + counters
+    const PROD={'Trouver une pièce':'Pièce trouvée','Trouver la pièce suivante':'Pièce trouvée','Prendre pièce':'Pièce présente sur la buse','Lancer pressage':'Verdict presse OK','Lancer cycle de pressage':'Verdict presse OK','Contrôler résultat':'Pièce bonne','Pièce présente ?':'Pièce présente sur le nid'};
+    const condsFor=bid=>{const groups=[{name:"Résultats d'étapes précédentes",items:[]},{name:'États des dispositifs',items:['Presse prête','Pièce présente sur le nid']},{name:'Compteurs',items:['Rebuts consécutifs atteints']}], src={};
+      for(const nd of tree){ if(nd.id===bid) break; const ids=nd.t==='step'?[nd.id]:nd.branches.flat();
+        ids.forEach(sid=>{const c=PROD[ALL[sid].title]; if(c&&!src[c]){src[c]=`Étape ${ALL[sid].n} · ${ALL[sid].title}`; if(!groups[1].items.includes(c)) groups[0].items.push(c);}}); }
+      groups[1].items.forEach(c=>{src[c]=src[c]||(c==='Presse prête'?'État de la presse':'Capteur du nid de dépose');}); src['Rebuts consécutifs atteints']='Compteur · étape « Compter le rebut »';
+      return {groups:groups.filter(g=>g.items.length),src,all:groups.flatMap(g=>g.items)};};
+    const condInfo={}, blkErr={};
+    Object.values(blocks).filter(b=>b.t==='if').forEach(b=>{const c=condsFor(b.id); condInfo[b.id]=c; if(!c.all.includes(b.cond)) blkErr[b.id]=`La condition « ${b.cond} » n'est calculée qu'après ce bloc. Déplacez le bloc ou choisissez une autre condition.`;});
+    const procIssues=[];
+    Object.keys(deadWarn).forEach(id=>procIssues.push({fg:'#d98a00',icon:'warning',text:deadWarn[id],step:ALL[id].n+' · '+ALL[id].title,fixLabel:'Voir',onFix:e=>{e.preventDefault();this.setState({selStep:id,stepTab:'step',issuesOpen:false});}}));
+    Object.keys(blkErr).forEach(bid=>procIssues.push({fg:'#c63c3c',icon:'error',text:blkErr[bid],step:blocks[bid].n+' · Si / Sinon',fixLabel:'Corriger',onFix:e=>{e.preventDefault();this.setState({selStep:'blk:'+bid,stepTab:'step',issuesOpen:false});}}));
+    Object.keys(stepErr).forEach(id=>procIssues.push({fg:'#c63c3c',icon:'error',text:stepErr[id],step:ALL[id].n+' · '+ALL[id].title,fixLabel:'Corriger',onFix:e=>{e.preventDefault();this.setState({selStep:id,stepTab:'step',focusKey:'s5.cmax',issuesOpen:false});}}));
+    Object.keys(stepWarn).forEach(id=>procIssues.push({fg:'#d98a00',icon:'warning',text:stepWarn[id],step:ALL[id].n+' · '+ALL[id].title,fixLabel:'Ouvrir la station',onFix:e=>{e.preventDefault();this.setState({screen:'station',selDev:'robot',rightTab:'props',lowerTab:'positions',hlPos:'presse',issuesOpen:false});}}));
+    Object.keys(blkWarn).forEach(bid=>procIssues.push({fg:'#d98a00',icon:'warning',text:blkWarn[bid],step:blocks[bid].n+' · '+blkName(blocks[bid]),fixLabel:'Voir le bloc',onFix:e=>{e.preventDefault();this.setState({selStep:'blk:'+bid,stepTab:'step',issuesOpen:false});}}));
+    const pErr=Object.keys(stepErr).length+Object.keys(blkErr).length, pWarn=Object.keys(stepWarn).length+Object.keys(blkWarn).length+Object.keys(deadWarn).length;
+    const pl=(n,w)=>`${n} ${w}${n>1?'s':''}`;
+    const procInd=pErr?{label:`${pl(pErr,'erreur')} · ${pl(pWarn,'avertissement')}`,dot:'#c63c3c',fg:'#a83232',bg:'#fbe8e8',border:'#f1c6c6'}
+      :pWarn?{label:pl(pWarn,'avertissement'),dot:'#d98a00',fg:'#8a5200',bg:'#fcf0db',border:'#f0d9ad'}
+      :{label:'Process valide',dot:'#1e8a4c',fg:'#1e7a45',bg:'#e5f3ea',border:'#bfe0cb'};
+
+    // schedule
+    const sched={}, stops=[]; let tc=0;
+    const runSeq=(ids,t0,alt)=>{let x=t0; ids.forEach(id=>{const d=ALL[id].dur||0; sched[id]={start:x,dur:d,alt}; x+=d;}); return x-t0;};
+    tree.forEach(nd=>{
+      if(nd.t==='step'){ stops.push({t:tc,id:nd.id}); tc+=runSeq([nd.id],tc,false); return; }
+      const first=(nd.branches.find(b=>b.length)||[])[0]; stops.push({t:tc,id:first||('blk:'+nd.id)});
+      if(nd.t==='par') tc+=Math.max(0,...nd.branches.map(br=>runSeq(br,tc,false)));
+      else if(nd.t==='if'){ const a=runSeq(nd.branches[0],tc,false); runSeq(nd.branches[1],tc,true); tc+=a; }
+      else { const a=runSeq(nd.branches[0],tc,false); tc+=a*Math.max(1,parseInt(nd.count)||1); } });
+    const TOT=Math.round(tc*10)/10, SC=Math.max(7,Math.ceil(TOT+0.5));
+    this._total=TOT; this._stops=stops;
+    let critId=null; Object.keys(sched).forEach(sid=>{ if(!sched[sid].alt&&sched[sid].dur>0&&(!critId||sched[sid].dur>sched[critId].dur)) critId=sid; });
+
+    // edges
+    const edges=[]; let prev=[];
+    const link=(from,to)=>from.forEach(f=>edges.push([f,to,0,from.length>1?1:0]));
+    tree.forEach(nd=>{
+      if(nd.t==='step'){ link(prev,nd.id); prev=isT(nd.id)?[]:[nd.id]; return; }
+      const hd='hd:'+nd.id, ex=[]; link(prev,hd);
+      nd.branches.forEach((br,bi)=>{const ids=br.length?br:[`ph:${nd.id}:${bi}`]; edges.push([hd,ids[0],nd.t==='if'?(bi?'nok':'ok'):0,0]);
+        for(let j=1;j<ids.length;j++) if(!isT(ids[j-1])) edges.push([ids[j-1],ids[j],0,0]); if(!ids.some(isT)) ex.push(ids[ids.length-1]);});
+      prev=ex; });
+    link(prev,'end'); this._edges=edges;
+
+    const cParams=c=>c.field==='pos'?[['Position',V[c.id+'.pos']]]:c.field==='num'?[[c.fieldLabel,V[c.id+'.v']+' '+c.unit]]:c.field==='sel'?[[c.fieldLabel,V[c.id+'.v']]]:[['Paramètres','Aucun']];
+    const t=S.simT;
+    const active=id=>{const s=sched[id]; return !!s&&!s.alt&&t!=null&&t>=s.start&&t<s.start+Math.max(s.dur,0.1);};
+    const params={
+      s1:[['Recette',V['s1.recette']],['Zone',V['s1.zone']]],
+      s2:[['Prendre à','Position trouvée'],['Outil',S.tool==='asp'?'Aspiration':'Pince']],
+      s3:[['Position',V['s3.pos']],['Soufflage',V['s3.blow']+' ms']],
+      s4:[['Programme',V['s4.prog'].split(' ·')[0]],['Force cible',V['s4.force']+' N'],['Course cible',V['s4.course']+' mm']],
+      s4b:[['Recette',V['s4b.recette']]],
+      s4c:[['Position',V['s4c.pos']],['Vitesse',V['s4c.speed']]],
+      s5:[['Force',`[${V['s5.fmin']} ; ${V['s5.fmax']}] N`],['Course',`[${V['s5.cmin']} ; ${V['s5.cmax']||'?'}] mm`,!V['s5.cmax']]],
+      s6a:[['Destination',V['s6a.pos']],['Compteur','Pièces OK +1']],
+      s6b:[['Destination',V['s6b.pos']]],
+      s6c:[['Compteur','Pièces NOK +1'],['Défaut après',V['s6c.lim']+' rebuts']]};
+    const card=id=>{const m=ALL[id], sel=S.selStep===id, err=!!stepErr[id], warn=!!(stepWarn[id]||deadWarn[id]), act=active(id), term=isT(id);
+      const before=dp.node===id&&dp.pos==='before', after=dp.node===id&&dp.pos==='after', drop=before||after;
+      return {id,n:m.n,title:m.title,icon:m.icon||(m.sub?'subdirectory_arrow_right':ICON[m.dev]),
+        dur:m.dur?fr(m.dur.toFixed(1))+' s':'instantané',
+        params:(params[id]||cParams(m)).map(p=>({k:p[0],v:p[1],fg:p[2]?'#c63c3c':'#1a1d21'})),
+        bg:act?'#f0f8f3':term?'#f6f7f9':'#fff',
+        border:drop?'#2563c9':act?'#1e8a4c':sel?'#2563c9':err?'#e09a9a':warn?'#ecc98a':term?'#8a929c':'#d9dde2',
+        shadow:sel?'0 0 0 3px rgba(37,99,201,.16)':act?'0 0 0 3px rgba(30,138,76,.15)':'0 1px 2px rgba(20,30,45,.05)',
+        numBg:err?'#fbe8e8':sel?'#e9f0fb':'#eef0f3',numFg:err?'#c63c3c':sel?'#2563c9':'#3b424b',
+        dropBefore:before,dropAfter:after,
+        state:before?'Insérer avant ↑':after?'Insérer après ↓':act?'En cours':id===critId?'Étape critique':'',stateFg:act&&!drop?'#1e7a45':'#2563c9',
+        hasErr:err,errMsg:stepErr[id],hasWarn:warn,warnMsg:stepWarn[id]||deadWarn[id],
+        onClick:()=>this.setState({selStep:id,stepTab:'step'}),
+        onDragStart:e=>{e.stopPropagation();e.dataTransfer.setData(MOVE,JSON.stringify({kind:'step',id}));e.dataTransfer.effectAllowed='move';},
+        onFix:e=>{e.preventDefault();e.stopPropagation();this.setState({selStep:id,stepTab:'step',focusKey:'s5.cmax'});}};};
+    const lc=s=>(s||'').charAt(0).toLowerCase()+(s||'').slice(1);
+    const rows=[];
+    tree.forEach(nd=>{
+      if(nd.t==='step'){ rows.push({node:nd.id,pad:'0',frame:'1px solid transparent',bg:'transparent',hasLabel:false,groups:[{col:LANECOL[ALL[nd.id].dev]||'4',cards:[card(nd.id)]}]}); return; }
+      const B=BLK[nd.t], bid=nd.id, selB=S.selStep==='blk:'+bid, hit=dp.node==='blk:'+bid, n=nd.branches.length;
+      let cols;
+      if(nd.t==='if') cols=['1 / 3','3 / 5']; else if(nd.t==='loop') cols=['1 / 5'];
+      else { cols=[]; const used=[];
+        nd.branches.forEach((br,bi)=>{const c=br.length&&LANECOL[ALL[br[0]].dev]; if(c&&!used.includes(c)){cols[bi]=c;used.push(c);}});
+        nd.branches.forEach((br,bi)=>{ if(!cols[bi]){const c=['1','2','3','4'].find(x=>!used.includes(x)); cols[bi]=c; used.push(c);} }); }
+      const bErr=!!blkErr[bid];
+      rows.push({node:'blk:'+bid,hdNode:'hd:'+bid,pad:'40px 0 16px',frame:(hit||selB)?'1.5px solid #2563c9':bErr?'1.5px dashed #c63c3c':'1.5px dashed '+B.border,bg:B.bg,hasLabel:true,
+        label:blkName(nd),labelIcon:B.icon,labelBorder:selB?'#2563c9':B.border,labelFg:B.fg,labelBg:selB?'#e9f0fb':'#fff',
+        labelSub:hit?(dp.pos==='before'?'· insérer avant le bloc':'· insérer après le bloc'):nd.t==='par'?`· attend la fin des ${n} branches`:nd.t==='if'?(bErr?'· condition indisponible ici':`· selon « ${nd.cond} »`):'',
+        canAddBranch:nd.t==='par'&&n<4,onAddBranch:e=>{e.stopPropagation();this.addBranch(bid);},
+        onClick:()=>this.setState({selStep:'blk:'+bid,stepTab:'step'}),
+        onDragStart:e=>{e.dataTransfer.setData(MOVE,JSON.stringify({kind:'block',id:bid}));e.dataTransfer.effectAllowed='move';},
+        groups:nd.branches.map((br,bi)=>{const ph=`ph:${bid}:${bi}`, ph_hit=dp.node===ph;
+          return {col:cols[bi],gNode:`grp:${bid}:${bi}`,hasLabel:nd.t==='if',label:bi?(nd.noLabel||'Sinon'):'Si '+lc(nd.cond),labelFg:bi?'#a83232':'#1e7a45',
+            cards:br.map(card),isEmpty:!br.length,phNode:ph,phBorder:ph_hit?'#2563c9':'#c3c9d0',phBg:ph_hit?'#eef4fd':'rgba(255,255,255,.7)',phFg:ph_hit?'#2563c9':'#8a929c'};})});
+    });
+    rows.push({node:'end',pad:'0',frame:'1px solid transparent',bg:'transparent',hasLabel:false,groups:[{col:'1 / 5',isEnd:true,cards:[]}]});
+
+    const edgeCol={'':'#9aa1aa',ok:'#1e8a4c',nok:'#c63c3c'}, mi={'':0,ok:1,nok:2};
+    const edgesSvg=h('svg',{style:{position:'absolute',left:0,top:0,width:'100%',height:'100%',overflow:'visible',pointerEvents:'none',zIndex:0}},
+      h('defs',null,['#9aa1aa','#1e8a4c','#c63c3c'].map((c,i)=>h('marker',{key:i,id:'msarr'+i,viewBox:'0 0 10 10',refX:8,refY:5,markerWidth:7,markerHeight:7,orient:'auto'},h('path',{d:'M0 1 L9 5 L0 9 z',fill:c})))),
+      S.paths.map((p,i)=>h('path',{key:i,d:p.d,fill:'none',stroke:edgeCol[p.kind],strokeWidth:1.5,markerEnd:`url(#msarr${mi[p.kind]})`})),
+      S.paths.filter(p=>p.kind).map((p,i)=>h('text',{key:'l'+i,x:p.lx+8,y:p.ly+14,fontSize:11,fontWeight:600,fill:edgeCol[p.kind],style:{paintOrder:'stroke',stroke:'#f4f5f7',strokeWidth:4}},p.kind==='ok'?'Oui':'Non')));
+
+    // step / block panel
+    const bsel=(typeof S.selStep==='string'&&S.selStep.startsWith('blk:'))?blocks[S.selStep.slice(4)]||null:null;
+    const id=bsel?null:(inTree.includes(S.selStep)?S.selStep:(inTree[0]||null)), id0=id||'s1', m=ALL[id0], posNames=S.positions.map(p=>p.name);
+    const F={
+      s1:[{t:'select',k:'s1.recette',label:'Recette pièce',opts:['Pignon 12T','Roue 24T','Pont de rouage']},{t:'select',k:'s1.zone',label:'Zone de recherche',opts:['Plateau complet','Moitié gauche','Moitié droite']},{t:'info',label:'Résultat fourni',v:'Position pièce (X, Y, angle)'}],
+      s2:[{t:'select',k:'s2.src',label:'Prendre à',opts:["Position trouvée par l'alimenteur",...posNames]},{t:'num',k:'s2.app',label:"Hauteur d'approche",unit:'mm',hint:'Hauteur au-dessus de la pièce avant la descente lente.'},{t:'select',k:'s2.chk',label:'Contrôler la présence de la pièce',opts:['Oui','Non']},{t:'select',k:'s2.ack',label:"Acquitter l'alimenteur",opts:['Automatiquement après la prise','Non']}],
+      s3:[{t:'select',k:'s3.pos',label:'Position de dépose',opts:posNames},{t:'num',k:'s3.blow',label:'Soufflage à la dépose',unit:'ms'}],
+      s4:[{t:'select',k:'s4.prog',label:'Programme de presse',opts:['n°1 · Chassage léger','n°2 · Rivetage','n°3 · Chassage pignon']},{t:'num',k:'s4.force',label:'Force cible',unit:'N',hint:'Maximum de la presse : 2 000 N'},{t:'num',k:'s4.course',label:'Course cible',unit:'mm'},{t:'select',k:'s4.curve',label:'Enregistrer la courbe force / course',opts:['Oui','Non']}],
+      s4b:[{t:'select',k:'s4b.recette',label:'Recette pièce',opts:['Pignon 12T','Roue 24T','Pont de rouage']}],
+      s4c:[{t:'select',k:'s4c.pos',label:'Position',opts:posNames},{t:'select',k:'s4c.speed',label:'Vitesse',opts:['Rapide','Lente']}],
+      s5:[{t:'range',label:'Force finale',kmin:'s5.fmin',kmax:'s5.fmax',unit:'N'},{t:'range',label:'Course finale',kmin:'s5.cmin',kmax:'s5.cmax',unit:'mm'},{t:'select',k:'s5.comb',label:'Pièce bonne si',opts:['Toutes les conditions sont vraies','Au moins une condition est vraie']},{t:'info',label:'Résultat produit',v:'Pièce bonne : oui / non'}],
+      s6a:[{t:'select',k:'s6a.sub',label:'Sous-process appelé',opts:['Évacuer pièce bonne','Évacuer en rebut']},{t:'select',k:'s6a.pos',label:'Destination',opts:posNames},{t:'info',label:'Compteur',v:'Pièces OK +1'}],
+      s6b:[{t:'select',k:'s6b.pos',label:'Destination',opts:posNames},{t:'select',k:'s6b.blow',label:'Soufflage à la dépose',opts:['Oui','Non']}],
+      s6c:[{t:'info',label:'Compteur',v:'Pièces NOK +1'},{t:'num',k:'s6c.lim',label:'Signaler un défaut après',unit:'rebuts consécutifs'}]}[id0]||(m.field==='pos'?[{t:'select',k:id0+'.pos',label:'Position',opts:posNames}]:m.field==='num'?[{t:'num',k:id0+'.v',label:m.fieldLabel,unit:m.unit}]:m.field==='sel'?[{t:'select',k:id0+'.v',label:m.fieldLabel,opts:m.opts}]:[{t:'info',label:'Paramètres',v:'Aucun paramètre pour cette action'}]);
+    const fields=F.map(f=>{const warn=!!f.k&&f.k.endsWith('.pos')&&V[f.k]==='Pose presse'&&!learnedPose;
+      const o={label:f.label,isSelect:f.t==='select',isNum:f.t==='num',isRange:f.t==='range',isInfo:f.t==='info',unit:f.unit||'',opts:f.opts||[],hasHint:!!f.hint&&!warn,hint:f.hint,hasErr:false};
+      if(f.t==='info') o.value=f.v;
+      if(f.k){ o.value=V[f.k]; o.onChange=e=>this.setVal(f.k,e.target.value); }
+      if(warn){ o.hasErr=true; o.errMsg='Position pas encore apprise sur la station. Le process pourra être simulé mais pas déployé tel quel.'; }
+      if(f.t==='range'){ o.minV=V[f.kmin]; o.maxV=V[f.kmax]; o.onMin=e=>this.setVal(f.kmin,e.target.value); o.onMax=e=>this.setVal(f.kmax,e.target.value);
+        const miss=!V[f.kmax]; o.maxBorder=miss?'#c63c3c':'#d9dde2'; o.maxRing=miss&&S.focusKey===f.kmax?'0 0 0 3px rgba(198,60,60,.18)':'none';
+        if(miss){o.hasErr=true;o.errMsg='Renseignez la course maximale admissible, par exemple 1,25 mm.';} }
+      return o;});
+    const fl=this.getFail(id0);
+    const failModes=[['retry','Réessayer'],['alarm','Alarme'],['cont','Continuer']].map(([k,l])=>({label:l,...(fl.mode===k?segOn:segOff),onClick:()=>this.setFail(id0,{mode:k})}));
+    const failHint={retry:"L'étape est relancée automatiquement, puis une alarme arrête la station.",alarm:"La station s'arrête et affiche une alarme à l'opérateur.",cont:"Le cycle continue ; la pièce est marquée comme rebut."}[fl.mode];
+    const blk=bsel?{n:bsel.n,title:blkName(bsel),icon:BLK[bsel.t].icon,isIf:bsel.t==='if',isPar:bsel.t==='par',isLoop:bsel.t==='loop',cond:bsel.cond,count:bsel.count,
+      condGroups:bsel.t==='if'?condInfo[bsel.id].groups:[],condSrc:bsel.t==='if'?(condInfo[bsel.id].src[bsel.cond]||''):'',
+      hasCondErr:!!blkErr[bsel.id],condErr:blkErr[bsel.id]||'',condMissing:bsel.t==='if'&&!condInfo[bsel.id].all.includes(bsel.cond),
+      nBranches:String(bsel.branches.length),addOp:bsel.branches.length<4?1:.4,remOp:(bsel.branches.length>2&&bsel.branches.some(b=>!b.length))?1:.4,
+      desc:{par:'Les branches démarrent ensemble. Le bloc se termine quand toutes les branches sont terminées.',if:'Exécute la branche « Si » quand la condition est vraie, sinon la branche « Sinon ».',loop:'Répète les étapes du bloc le nombre de fois indiqué.'}[bsel.t]}:{};
+
+    const vars=[
+      {group:"Résultats d'étape",items:[{name:'Position pièce trouvée',src:'Étape 1 · Trouver une pièce',val:'X 41,30 · Y 58,02 · 12,4°'},{name:'Force finale',src:'Étape 4a · Lancer pressage',val:'862 N'},{name:'Course finale',src:'Étape 4a · Lancer pressage',val:'1,18 mm'},{name:'Pièce bonne',src:'Étape 5 · Contrôler résultat',val:'Oui'}]},
+      {group:'Compteurs',items:[{name:'Pièces OK',src:'Étape 6a',val:'1 248'},{name:'Pièces NOK',src:'Étape 6c',val:'17'},{name:'Rebuts consécutifs',src:'Étape 6c',val:'0'}]},
+      {group:'Paramètres du process',items:[{name:'Force cible',src:'Étape 4a',val:V['s4.force']+' N'},{name:'Course cible',src:'Étape 4a',val:V['s4.course']+' mm'}]}];
+
+    const dragStart=(name,dev,group,icon)=>e=>{e.dataTransfer.setData(ADD,JSON.stringify({name,dev,group,icon}));e.dataTransfer.effectAllowed='copy';};
+    const palette=[
+      {name:'Robot XYZC',dev:'robot',icon:ICON.robot,items:[['Aller à'],['Prendre pièce'],['Poser pièce'],['Ouvrir pince',!pince],['Fermer pince',!pince],['Aspiration on / off',pince],['Soufflage',pince]]},
+      {name:'Alimenteur vision',dev:'feeder',icon:ICON.feeder,items:[['Trouver une pièce'],['Pièce prise']]},
+      {name:'Presse',dev:'press',icon:ICON.press,items:[['Charger programme'],['Lancer cycle de pressage'],['Lire force / course max'],['Se référencer']]},
+      {name:'Nid de dépose',dev:'logic',icon:ICON.nest,items:[['Pièce présente ?']]}]
+      .map(g=>({...g,items:g.items.map(a=>({name:a[0],icon:'',op:a[1]?.4:1,drag:!a[1],onDragStart:dragStart(a[0],g.dev,g.name,null),title:a[1]?"Outil non monté sur le robot (voir Station)":'Glisser dans la séquence'}))}));
+    palette.push({name:'Logique',icon:'alt_route',items:[['Attendre condition','hourglass_empty'],['Si / Sinon','call_split'],['Répéter N fois','repeat'],['En parallèle','view_week'],['Appeler sous-process','subdirectory_arrow_right'],['Signaler défaut','report'],['Fin de cycle','replay']].map(a=>({name:a[0],icon:a[1],op:1,drag:true,onDragStart:dragStart(a[0],'logic','Logique',a[1]),title:'Glisser dans la séquence'}))});
+
+    const tlRows=LANES.map(l=>({name:l.name,icon:l.icon,bars:Object.keys(sched).filter(sid=>!sched[sid].alt&&(LANECOL[ALL[sid].dev]?ALL[sid].dev===l.id:l.id==='logic')).map(sid=>{const st=sched[sid], crit=sid===critId, sel=S.selStep===sid, act=active(sid);
+      return {left:(st.start/SC*100)+'%',width:`max(6px, ${st.dur/SC*100}%)`,label:st.dur>=0.5?`${ALL[sid].n} ${ALL[sid].title}`:'',title:`${ALL[sid].n} · ${ALL[sid].title} · ${fr(st.dur.toFixed(1))} s`,
+        bg:act?'#1e8a4c':crit?'#2563c9':'#dbe3ef',fg:(act||crit)?'#fff':'#2a3442',ring:sel?'0 0 0 2px #fff, 0 0 0 3.5px #2563c9':'none',
+        onClick:()=>this.setState({selStep:sid,stepTab:'step'})};})}));
+    const ticks=Array.from({length:SC+1},(_,i)=>({left:(i/SC*100)+'%',label:i+' s'}));
+    const critLabel=critId?`${ALL[critId].n} · ${ALL[critId].title} · ${fr(sched[critId].dur.toFixed(1))} s (${Math.round(sched[critId].dur/(TOT||1)*100)} %)`:'—';
+
+    return {
+      isStation:S.screen==='station',isProcess:S.screen==='process',
+      tabStation:S.screen==='station'?segOn:segOff,tabProcess:S.screen==='process'?segOn:segOff,
+      goStation:()=>this.setState({screen:'station'}),goProcess:()=>this.setState({screen:'process',warnOpen:false}),
+      stationInd:nErr?{dot:'#c63c3c',label:'Configuration avec erreur'}:nWarn?{dot:'#d98a00',label:'Configuration incomplète'}:{dot:'#1e8a4c',label:'Configuration complète'},
+      devices,devCount:String(S.devices.length),synLines,dropBorder:S.dragOver?'#2563c9':'#e1e4e8',
+      onDragOver:e=>{e.preventDefault(); if(!S.dragOver) this.setState({dragOver:true});},
+      onDrop:e=>{e.preventDefault(); const type=e.dataTransfer.getData('text/plain'); if(!LIB.find(l=>l.type===type)){this.setState({dragOver:false});return;}
+        const r=e.currentTarget.getBoundingClientRect(), cx=Math.max(10,Math.min(90,(e.clientX-r.left)/r.width*100)), top=Math.max(8,Math.min(260,e.clientY-r.top-30));
+        const n=S.devices.filter(d=>d.type===type).length+1, id='dev'+Date.now(), name=`${LIBNAME[type]} ${String(n).padStart(2,'0')}`;
+        this.setState(s=>({dragOver:false,devices:[...s.devices,{id,type,name,model:'À configurer',cx,top,added:true}],selDev:id,rightTab:'props'})); this.flash(`« ${name} » ajouté à la station`);},
+      treeDevices:()=>this.setState({rightTab:'props'}),treePositions:()=>this.setState({lowerTab:'positions'}),
+      addPosition:()=>this.addPosition(),posCount:String(S.positions.length),
+      lowerPositions:()=>this.setState({lowerTab:'positions'}),lowerCaps:()=>this.setState({lowerTab:'caps',hlPos:null}),
+      lowerTabA:S.lowerTab==='positions'?tabOn:tabOff,lowerTabB:S.lowerTab==='caps'?tabOn:tabOff,
+      isPosTab:S.lowerTab==='positions',isCapTab:S.lowerTab==='caps',positions,caps,capCount:String(capCount),
+      rightProps:()=>this.setState({rightTab:'props'}),rightLib:()=>this.setState({rightTab:'lib'}),
+      rightTabA:S.rightTab==='props'?tabOn:tabOff,rightTabB:S.rightTab==='lib'?tabOn:tabOff,
+      showLib:S.rightTab==='lib',showProps:S.rightTab==='props',
+      lib:LIB.map(l=>({...l,icon:ICON[l.type],onDragStart:e=>{e.dataTransfer.setData('text/plain',l.type);e.dataTransfer.effectAllowed='copy';}})),
+      sel,isRobot,isOther:!isRobot,showVerify:selD.id==='press'&&!S.progVerified,
+      verifyProg:()=>{this.setState({progVerified:true});this.flash('Programme n°3 vérifié sur la presse');},
+      axes,isAsp:S.tool==='asp',isGrip:pince,toolA:S.tool==='asp'?segOn:segOff,toolB:pince?segOn:segOff,
+      setAsp:()=>this.setState({tool:'asp'}),setGrip:()=>this.setState({tool:'grip'}),
+      zSafe:S.zSafe,onZSafe:e=>this.setState({zSafe:e.target.value}),
+      vacOn:S.vacOn,vacEmpty:S.vacEmpty,onVacOn:e=>this.setState({vacOn:e.target.value}),onVacEmpty:e=>this.setState({vacEmpty:e.target.value}),
+      vacWarn,vacBox:{border:vacWarn?'#ecc98a':'#eef0f2',bg:vacWarn?'#fffaf0':'#fafbfc'},
+      mapping,conflict,mapBox:{bg:S.hl==='map'?'#fff9f9':'#fff'},
+      hasStErr:nErr>0,stErrLabel:`${nErr} erreur`,stWarnLabel:`${nWarn} avertissement${nWarn>1?'s':''}`,stWarnFg:nWarn?'#b26a00':'#8a929c',
+      warnChevron:S.warnOpen?'expand_more':'expand_less',warnOpen:S.warnOpen,toggleWarn:()=>this.setState({warnOpen:!S.warnOpen}),
+      stIssues,stClean:stIssues.length===0,
+
+      procInd,issuesOpen:S.issuesOpen,procIssues,procClean:procIssues.length===0,toggleIssues:()=>this.setState({issuesOpen:!S.issuesOpen}),
+      simulate:()=>this.simulate(),stepOnce:()=>this.stepOnce(),
+      simBtn:S.running?{label:'Arrêter',icon:'stop',bg:'#f0f8f3',fg:'#1e7a45'}:{label:'Simuler',icon:'play_arrow',bg:'#fff',fg:'#1a1d21'},
+      stepLabel:t!=null&&!S.running&&S.stepI!=null?`Pas à pas · ${S.stepI+1}/${stops.length}`:'Pas à pas',
+      deployBtn:{bg:pErr?'#9db0cf':'#2563c9'},
+      deploy:()=>pErr?this.flash(`Déploiement impossible : ${pl(pErr,'erreur')} à corriger`):Object.keys(stepWarn).length?this.flash('Déploiement bloqué : la position « Pose presse » doit être apprise'):this.flash('Process déployé sur Station Pressage 01'),
+      lanes:LANES,rows,seqRef:this.seqRef,edgesSvg,
+      endBorder:dp.node==='end'?'#2563c9':'#d9dde2',
+      seqDragOver:e=>{const ty=Array.from(e.dataTransfer.types||[]); if(!ty.includes(ADD)&&!ty.includes(MOVE)) return; e.preventDefault();
+        const el=e.target.closest?e.target.closest('[data-node]'):null; let node=el?el.getAttribute('data-node'):'end', pos='after';
+        if(node.startsWith('ph:')) pos='into';
+        else if(node.startsWith('hd:')){ node='blk:'+node.slice(3); pos='before'; }
+        else if(node.startsWith('grp:')){ const [,bid,bi]=node.split(':'), br=((blocks[bid]||{}).branches||[])[+bi]||[]; if(br.length){node=br[br.length-1];pos='after';} else {node=`ph:${bid}:${bi}`;pos='into';} }
+        else if(node!=='end'&&el){ const r=el.getBoundingClientRect(); pos=e.clientY<r.top+r.height/2?'before':'after'; }
+        if(dp.node!==node||dp.pos!==pos) this.setState({drop:{node,pos}});},
+      seqDragLeave:e=>{ if(!e.currentTarget.contains(e.relatedTarget)&&S.drop) this.setState({drop:null}); },
+      seqDrop:e=>{ e.preventDefault(); const d=S.drop; this.setState({drop:null}); if(!d) return;
+        const mv=e.dataTransfer.getData(MOVE), ac=e.dataTransfer.getData(ADD);
+        if(mv) this.moveItem(JSON.parse(mv),d); else if(ac) this.insertAction(JSON.parse(ac),d); },
+      deleteStep:()=>id&&this.deleteStep(id),
+      showTimeline:this.props.showTimeline??true,tlRows,ticks,hasPlayhead:t!=null,playLeft:((t||0)/SC*100)+'%',
+      critLabel,cadenceLabel:TOT?Math.round(3600/TOT)+' pièces/h':'—',cycleLabel:fr(TOT.toFixed(1))+' s',
+      tabStep:()=>this.setState({stepTab:'step'}),tabData:()=>this.setState({stepTab:'data'}),
+      stTabA:S.stepTab==='step'?tabOn:tabOff,stTabB:S.stepTab==='data'?tabOn:tabOff,
+      showStep:S.stepTab==='step'&&!!id,showBlock:S.stepTab==='step'&&!!bsel,showNoSel:S.stepTab==='step'&&!id&&!bsel,showData:S.stepTab==='data',
+      step:{n:m.n,title:m.title,icon:ICON[m.dev],devName:DEVNAME[m.dev],kind:m.kind,desc:m.desc},
+      fields,failModes,failRetry:fl.mode==='retry',failN:fl.n,onFailN:e=>this.setFail(id0,{n:e.target.value}),failHint,
+      timeout:fl.timeout,timeoutDef:DEFTO[m.dev],timeoutChanged:fl.timeout!==DEFTO[m.dev],
+      onTimeout:e=>this.setFail(id0,{timeout:e.target.value}),resetTimeout:e=>{e.preventDefault();this.setFail(id0,{timeout:DEFTO[m.dev]});},
+      blk,condOpts:CONDS,
+      onCond:e=>bsel&&this.updBlock(bsel.id,{cond:e.target.value,noLabel:null}),
+      onCount:e=>bsel&&this.updBlock(bsel.id,{count:e.target.value}),
+      onAddBranch:()=>bsel&&this.addBranch(bsel.id),onRemoveBranch:()=>bsel&&this.removeBranch(bsel.id),
+      onDeleteBlock:()=>bsel&&this.deleteBlock(bsel.id),
+      vars,palette,
+      hasToast:!!S.toast,toast:S.toast
+    };
+  }
+}
+</script>
+</body>
+</html>

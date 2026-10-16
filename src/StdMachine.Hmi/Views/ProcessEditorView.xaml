@@ -1,0 +1,308 @@
+<UserControl x:Class="StdMachine.Hmi.Views.ProcessEditorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:ed="clr-namespace:StdMachine.Hmi.Editor"
+             xmlns:dd="clr-namespace:StdMachine.Hmi.DragDrop"
+             xmlns:infra="clr-namespace:StdMachine.Hmi.Infrastructure"
+             xmlns:res="clr-namespace:StdMachine.Hmi.Resources"
+             Background="{StaticResource Bg.App}">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="44"/>
+        </Grid.RowDefinitions>
+
+        <!-- ===== Barre d'outils de page ===== -->
+        <Border Grid.Row="0" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,0,0,1">
+            <DockPanel Margin="16,0">
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="{Binding SavedText}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                    <Button c:Ui.Icon="undo" c:Ui.Variant="Ghost" Command="{Binding UndoCommand}" IsEnabled="{Binding CanUndo}" Width="48" Padding="0"/>
+                    <Button c:Ui.Icon="redo" c:Ui.Variant="Ghost" Command="{Binding RedoCommand}" IsEnabled="{Binding CanRedo}" Width="48" Padding="0" Margin="0,0,8,0"/>
+                    <c:StatusPill Tone="{Binding ValidationTone}" Text="{Binding ValidationSummary}" IconName="fact_check" Margin="0,0,12,0"/>
+                    <Button Content="Déployer" c:Ui.Variant="Primary" c:Ui.Icon="cloud_upload" Command="{Binding DeployCommand}" Height="44" MinHeight="44"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="Niveau" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,16,0">
+                        <Button Content="Machine" Command="{Binding GoMachineLevelCommand}" Height="44" MinHeight="44" Padding="14,0" Margin="0,0,-1,0">
+                            <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsStationLevel}" Value="False"><Setter Property="c:Ui.Variant" Value="Primary"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                        </Button>
+                        <Button Content="Station" Command="{Binding GoStationLevelCommand}" Height="44" MinHeight="44" Padding="14,0">
+                            <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsStationLevel}" Value="True"><Setter Property="c:Ui.Variant" Value="Primary"/></DataTrigger></Style.Triggers></Style></Button.Style>
+                        </Button>
+                    </StackPanel>
+                    <TextBlock Text="{Binding Title}" Style="{StaticResource Type.Title}" VerticalAlignment="Center"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="{StaticResource Size.Palette.Length}"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="{StaticResource Size.SidePanel.Length}"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ===== Palette ===== -->
+            <Border Grid.Column="0" Background="{StaticResource Bg.SurfaceAlt}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,0,1,0">
+                <DockPanel Margin="12,12,10,0">
+                    <c:TextField DockPanel.Dock="Top" Text="{Binding Query, Mode=TwoWay}" Placeholder="Rechercher une action" Label="Rechercher" MinWidth="0" Margin="0,0,0,8"/>
+                    <TextBlock DockPanel.Dock="Top" Text="Glissez une action par sa poignée sur une carte (trait bleu avant ou après), dans une zone vide, ou à la fin. Les cartes et blocs existants se déplacent aussi."
+                               Style="{StaticResource Type.Caption}" TextWrapping="Wrap" FontSize="12" Margin="2,0,0,10"/>
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Groups}" Focusable="False">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <StackPanel Margin="0,0,0,12">
+                                        <StackPanel Orientation="Horizontal" Margin="4,0,0,4">
+                                            <c:Icon Glyph="{Binding Icon}" FontSize="17" Foreground="{StaticResource Text.Secondary}" Margin="0,0,6,0"/>
+                                            <TextBlock Text="{Binding Name}" Style="{StaticResource Type.Caps}"/>
+                                        </StackPanel>
+                                        <ItemsControl ItemsSource="{Binding Items}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <Border x:Name="Item" Height="48" Margin="0,0,0,3" CornerRadius="8" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1"
+                                                            Opacity="{Binding ItemOpacity}" dd:Drag.Source="{Binding DragSource}" ToolTip="{Binding Reason}">
+                                                        <DockPanel>
+                                                            <Border DockPanel.Dock="Left" Width="38" Background="Transparent" dd:Drag.Handle="True">
+                                                                <c:Icon Glyph="drag_indicator" Foreground="{StaticResource Text.Tertiary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                                            </Border>
+                                                            <c:Icon DockPanel.Dock="Right" Glyph="{Binding Icon}" FontSize="20" Foreground="{StaticResource Text.Tertiary}" Margin="6,0,12,0" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{Binding Label}" FontSize="13.5" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                        </DockPanel>
+                                                    </Border>
+                                                    <DataTemplate.Triggers>
+                                                        <Trigger SourceName="Item" Property="dd:Drag.IsDragged" Value="True">
+                                                            <Setter TargetName="Item" Property="Opacity" Value="0.4"/>
+                                                        </Trigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </Border>
+
+            <!-- ===== Canevas ===== -->
+            <Grid Grid.Column="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <c:StationChipBar Grid.Row="0" DataContext="{Binding Chips}" Margin="12,8,12,0" Visibility="{Binding DataContext.IsStationLevel, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={x:Static infra:Conv.BoolToVis}}"/>
+                <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Disabled" PanningMode="HorizontalOnly" Background="{StaticResource Bg.Surface}" Margin="0,8,0,0">
+                    <ItemsControl ItemsSource="{Binding Tabs}" Focusable="False" Margin="12,6,12,6">
+                        <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Command="{Binding DataContext.SelectProcessCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}"
+                                        Content="{Binding Name}" Height="40" MinHeight="40" Padding="14,0" Margin="0,0,6,0" FontSize="14">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                            <Setter Property="c:Ui.Variant" Value="Ghost"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelected}" Value="True"><Setter Property="c:Ui.Variant" Value="Primary"/></DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+                <Border Grid.Row="1" Height="1" Background="{StaticResource Border.Default}" VerticalAlignment="Bottom"/>
+
+                <Grid Grid.Row="2">
+                    <ed:ProcessCanvasView x:Name="CanvasView" DataContext="{Binding Canvas}"/>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,24,16">
+                        <Button c:Ui.Icon="remove" Command="{Binding ZoomOutCommand}" Width="48" Padding="0" Margin="0,0,6,0" Effect="{StaticResource Shadow.Raised}"/>
+                        <Button Content="100 %" Command="{Binding ZoomResetCommand}" Margin="0,0,6,0" Effect="{StaticResource Shadow.Raised}"/>
+                        <Button Content="Ajuster" Command="{Binding ZoomFitCommand}" Margin="0,0,6,0" Effect="{StaticResource Shadow.Raised}"/>
+                        <Button c:Ui.Icon="add" Command="{Binding ZoomInCommand}" Width="48" Padding="0" Effect="{StaticResource Shadow.Raised}"/>
+                    </StackPanel>
+                </Grid>
+                <Border Grid.Row="3" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,1,0,0" Padding="16,6"
+                        Visibility="{Binding ChronogramText, Converter={x:Static infra:Conv.NotEmptyToVis}}">
+                    <StackPanel Orientation="Horizontal">
+                        <TextBlock Text="Chronogramme estimé" FontWeight="SemiBold" FontSize="13" Margin="0,0,14,0"/>
+                        <TextBlock Text="{Binding ChronogramText}" Style="{StaticResource Type.Caption}"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- ===== Panneau de droite ===== -->
+            <Border Grid.Column="2" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="1,0,0,0">
+                <DockPanel>
+                    <ListBox DockPanel.Dock="Top" Style="{StaticResource Tabs}" SelectedIndex="{Binding PanelTab, Mode=TwoWay}" Margin="8,0">
+                        <ListBoxItem Content="Étape"/>
+                        <ListBoxItem Content="Données"/>
+                        <ListBoxItem Content="Table compilée"/>
+                    </ListBox>
+                    <Grid>
+                        <!-- Étape -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer.Style>
+                                <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers><DataTrigger Binding="{Binding PanelTab}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                                </Style>
+                            </ScrollViewer.Style>
+                            <Grid>
+                                <c:EmptyState IconName="touch_app" Title="Aucune étape sélectionnée" Message="Touchez une carte pour voir et régler ses paramètres."
+                                              Visibility="{Binding HasSelection, Converter={x:Static infra:Conv.InvBoolToVis}}" Margin="0,80,0,0"/>
+                                <StackPanel Visibility="{Binding HasSelection, Converter={x:Static infra:Conv.BoolToVis}}">
+                                    <StackPanel Margin="18,16,18,12">
+                                        <DockPanel>
+                                            <c:Icon DockPanel.Dock="Right" Glyph="{Binding PanelIcon}" FontSize="24" Foreground="{StaticResource Text.Secondary}"/>
+                                            <Border DockPanel.Dock="Left" MinWidth="26" Height="24" CornerRadius="12" Background="{StaticResource Accent.Bg}" Margin="0,0,10,0" Padding="7,0" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding PanelNumber}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource Accent}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                            <TextBlock Text="{Binding PanelTitle}" Style="{StaticResource Type.Title}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                        </DockPanel>
+                                        <TextBlock Margin="0,8,0,0" Style="{StaticResource Type.Caption}"><Run Text="{Binding PanelObject, Mode=OneWay}"/><Run Text="  ·  "/><Run Text="{Binding PanelKind, Mode=OneWay}"/></TextBlock>
+                                        <TextBlock Text="{Binding PanelDescription}" FontSize="12.5" Foreground="{StaticResource Neutral.Text}" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                    </StackPanel>
+                                    <Rectangle Height="1" Fill="{StaticResource Border.Divider}"/>
+
+                                    <StackPanel Margin="18,14,18,14" Visibility="{Binding Params.Count, Converter={x:Static infra:Conv.PositiveToVis}}">
+                                        <TextBlock Text="Paramètres" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                                        <ItemsControl ItemsSource="{Binding Params}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,0,0,10">
+                                                        <TextBlock Text="{Binding Label}" FontSize="12.5" Foreground="{StaticResource Neutral.Text}" Margin="0,0,0,4"/>
+                                                        <Button x:Name="Btn" Command="{Binding EditCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" HorizontalContentAlignment="Stretch" Height="48" Padding="12,0">
+                                                            <DockPanel>
+                                                                <c:Icon DockPanel.Dock="Right" Glyph="chevron_right" FontSize="20" Foreground="{StaticResource Text.Tertiary}"/>
+                                                                <TextBlock x:Name="Val" Text="{Binding Value}" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                            </DockPanel>
+                                                        </Button>
+                                                    </StackPanel>
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                            <Setter TargetName="Btn" Property="BorderBrush" Value="{StaticResource Err.Dot}"/>
+                                                            <Setter TargetName="Val" Property="Foreground" Value="{StaticResource Err.Text}"/>
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="18,0,18,14" Visibility="{Binding IsBlock, Converter={x:Static infra:Conv.BoolToVis}}">
+                                        <TextBlock Text="{Binding BlockInfo}" FontSize="12.5" Foreground="{StaticResource Neutral.Text}" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button Content="+ Branche" Command="{Binding AddBranchCommand}" IsEnabled="{Binding CanAddBranch}" Margin="0,0,8,0"/>
+                                            <Button Content="− Branche" Command="{Binding RemoveBranchCommand}" IsEnabled="{Binding CanRemoveBranch}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="18,0,18,14" Visibility="{Binding ShowFail, Converter={x:Static infra:Conv.BoolToVis}}">
+                                        <Rectangle Height="1" Fill="{StaticResource Border.Divider}" Margin="-18,0,-18,14"/>
+                                        <TextBlock Text="En cas d'échec" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                                        <ListBox Style="{StaticResource Segmented}" SelectedIndex="{Binding FailIndex, Mode=TwoWay}" HorizontalAlignment="Left">
+                                            <ListBoxItem Content="Arrêter"/>
+                                            <ListBoxItem Content="Refaire"/>
+                                            <ListBoxItem Content="Mauvaise"/>
+                                            <ListBoxItem Content="Ignorer"/>
+                                        </ListBox>
+                                        <DockPanel Margin="0,10,0,0" Visibility="{Binding ShowRetries, Converter={x:Static infra:Conv.BoolToVis}}">
+                                            <TextBlock Text="Nombre d'essais" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                            <c:NumberField Value="{Binding Retries, Mode=TwoWay}" Minimum="1" Maximum="5" Step="1" Decimals="0" Label="Nombre d'essais" Width="100" HorizontalAlignment="Left"/>
+                                        </DockPanel>
+                                    </StackPanel>
+
+                                    <StackPanel Margin="18,0,18,14" Visibility="{Binding ShowTimeout, Converter={x:Static infra:Conv.BoolToVis}}">
+                                        <Rectangle Height="1" Fill="{StaticResource Border.Divider}" Margin="-18,0,-18,14"/>
+                                        <TextBlock Text="Délai maximal" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                                        <c:NumberField Value="{Binding Timeout, Mode=TwoWay}" Unit="s" Minimum="0.1" Maximum="600" Step="0.5" Decimals="1" Label="Délai maximal" Width="140" HorizontalAlignment="Left"/>
+                                    </StackPanel>
+
+                                    <Rectangle Height="1" Fill="{StaticResource Border.Divider}"/>
+                                    <StackPanel Orientation="Horizontal" Margin="18,14">
+                                        <Button Content="Dupliquer" c:Ui.Icon="content_copy" Command="{Binding DuplicateSelectedCommand}" Margin="0,0,10,0"/>
+                                        <c:HoldButton Content="Supprimer" c:Ui.Variant="Danger" c:Ui.Icon="delete" Command="{Binding DeleteSelectedCommand}" MinWidth="0" Width="190" Height="56"/>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Grid>
+                        </ScrollViewer>
+
+                        <!-- Données du process -->
+                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                            <ScrollViewer.Style>
+                                <Style TargetType="ScrollViewer" BasedOn="{StaticResource {x:Type ScrollViewer}}">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers><DataTrigger Binding="{Binding PanelTab}" Value="1"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                                </Style>
+                            </ScrollViewer.Style>
+                            <StackPanel Margin="18,16">
+                                <TextBlock Text="Variables de station" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <ItemsControl ItemsSource="{Binding Station.Variables}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Height="44">
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding Type}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="Medium" VerticalAlignment="Center"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <TextBlock Text="Données de pièce lues et écrites" FontWeight="SemiBold" Margin="0,18,0,8"/>
+                                <TextBlock Text="Verdict · Force finale (écrite par « Exécuter recette »)" Style="{StaticResource Type.Caption}" TextWrapping="Wrap"/>
+                                <TextBlock Text="Paramètres d'opération" FontWeight="SemiBold" Margin="0,18,0,8"/>
+                                <TextBlock Text="1 · Recette de presse (n° 3 à Pressage pignon, n° 5 à Sertissage)" Style="{StaticResource Type.Caption}" TextWrapping="Wrap"/>
+                            </StackPanel>
+                        </ScrollViewer>
+
+                        <!-- Table compilée -->
+                        <Grid>
+                            <Grid.Style>
+                                <Style TargetType="Grid">
+                                    <Setter Property="Visibility" Value="Collapsed"/>
+                                    <Style.Triggers><DataTrigger Binding="{Binding PanelTab}" Value="2"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
+                                </Style>
+                            </Grid.Style>
+                            <c:EmptyState IconName="list_alt" Title="Table compilée" Message="Le listing des instructions apparaît ici avec le compilateur (phase 3). La carte sélectionnée y sera surlignée."/>
+                        </Grid>
+                    </Grid>
+                </DockPanel>
+            </Border>
+        </Grid>
+
+        <!-- ===== Barre de validation ===== -->
+        <Border Grid.Row="2" Background="{StaticResource Bg.Surface}" BorderBrush="{StaticResource Border.Default}" BorderThickness="0,1,0,0">
+            <DockPanel Margin="16,0">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding ValidationSummary}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center"/>
+                <ItemsControl ItemsSource="{Binding Issues}" Focusable="False" VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel><ItemsPanelTemplate><StackPanel Orientation="Horizontal"/></ItemsPanelTemplate></ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding DataContext.SelectIssueCommand, RelativeSource={RelativeSource AncestorType=UserControl}}" CommandParameter="{Binding}" c:Ui.Variant="Ghost"
+                                    Height="36" MinHeight="36" Padding="8,0" Margin="0,0,10,0" MaxWidth="560">
+                                <StackPanel Orientation="Horizontal">
+                                    <c:Icon x:Name="Ico" Glyph="warning" FontSize="18" Foreground="{StaticResource Warn.Dot}" Margin="0,0,6,0"/>
+                                    <TextBlock Text="{Binding Message}" FontSize="12.5" TextTrimming="CharacterEllipsis" MaxWidth="480" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding Severity}" Value="Error">
+                                    <Setter TargetName="Ico" Property="Glyph" Value="error"/>
+                                    <Setter TargetName="Ico" Property="Foreground" Value="{StaticResource Err.Dot}"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </DockPanel>
+        </Border>
+    </Grid>
+</UserControl>

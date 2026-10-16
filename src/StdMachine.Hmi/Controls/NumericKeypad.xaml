@@ -1,0 +1,47 @@
+<UserControl x:Class="StdMachine.Hmi.Controls.NumericKeypad"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:res="clr-namespace:StdMachine.Hmi.Resources">
+    <Border Background="{StaticResource Bg.Surface}" CornerRadius="{StaticResource Radius.XL}" BorderBrush="{StaticResource Border.Default}"
+            BorderThickness="1" Padding="16" Effect="{StaticResource Shadow.Overlay}" Width="352">
+        <StackPanel>
+            <TextBlock x:Name="TitleText" Style="{StaticResource Type.Caps}" Margin="0,0,0,8"/>
+            <Border Background="{StaticResource Bg.Sunken}" CornerRadius="{StaticResource Radius.M}" Height="72" Padding="16,0">
+                <Grid>
+                    <TextBlock x:Name="UnitText" Style="{StaticResource Type.Caption}" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,8,0,0"/>
+                    <TextBlock x:Name="ValueText" Style="{StaticResource Type.Value}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <TextBlock x:Name="BoundsText" Style="{StaticResource Type.Caption}" Margin="2,6,0,0"/>
+            <TextBlock x:Name="ErrorText" Foreground="{StaticResource Err.Text}" FontWeight="Medium" Margin="2,2,0,0" MinHeight="20"/>
+            <UniformGrid Columns="4" Rows="4" Margin="0,4,0,0">
+                <Button Style="{StaticResource KeyButton}" Content="7" Tag="7" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="8" Tag="8" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="9" Tag="9" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButtonAlt}" c:Ui.Icon="backspace" Click="Back_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="4" Tag="4" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="5" Tag="5" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="6" Tag="6" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButtonAlt}" Content="C" Click="Clear_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="1" Tag="1" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="2" Tag="2" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="3" Tag="3" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButtonAlt}" Click="StepDown_Click" x:Name="StepDownButton"/>
+                <Button Style="{StaticResource KeyButtonAlt}" Content="±" Click="Sign_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="0" Tag="0" Click="Digit_Click"/>
+                <Button Style="{StaticResource KeyButton}" Content="," Click="Decimal_Click"/>
+                <Button Style="{StaticResource KeyButtonAlt}" Click="StepUp_Click" x:Name="StepUpButton"/>
+            </UniformGrid>
+            <Grid Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="8"/>
+                    <ColumnDefinition Width="2*"/>
+                </Grid.ColumnDefinitions>
+                <Button Grid.Column="0" Content="{res:T Common.Cancel}" Click="Cancel_Click" Height="56"/>
+                <Button Grid.Column="2" Content="{res:T Common.Validate}" c:Ui.Variant="Primary" c:Ui.Icon="check" Click="Validate_Click" Height="56"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

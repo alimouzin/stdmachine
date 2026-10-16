@@ -1,0 +1,138 @@
+<UserControl x:Class="StdMachine.Hmi.Views.ComponentsInputView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="clr-namespace:StdMachine.Hmi.Controls"
+             xmlns:core="clr-namespace:StdMachine.Core;assembly=StdMachine.Core"
+             xmlns:th="clr-namespace:StdMachine.Hmi.Theme"
+             xmlns:res="clr-namespace:StdMachine.Hmi.Resources"
+             Background="{StaticResource Bg.App}">
+    <UserControl.Resources>
+        <Style x:Key="Section" TargetType="Border">
+            <Setter Property="Background" Value="{StaticResource Bg.Surface}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource Border.Default}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="{StaticResource Radius.L}"/>
+            <Setter Property="Padding" Value="20"/>
+            <Setter Property="Margin" Value="0,0,16,16"/>
+            <Setter Property="VerticalAlignment" Value="Top"/>
+        </Style>
+        <Style x:Key="Row" TargetType="StackPanel">
+            <Setter Property="Orientation" Value="Horizontal"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+    </UserControl.Resources>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="32,24,16,24">
+            <TextBlock Text="{res:T Gallery.TitleInput}" Style="{StaticResource Type.PageTitle}"/>
+            <TextBlock Text="{res:T Gallery.HelpInput}" Style="{StaticResource Type.Body}" Foreground="{StaticResource Text.Secondary}" Margin="0,4,0,20"/>
+
+            <WrapPanel Orientation="Horizontal">
+
+                <!-- Champs -->
+                <Border Style="{StaticResource Section}" Width="540">
+                    <StackPanel>
+                        <TextBlock Text="{res:T Gallery.Fields}" Style="{StaticResource Type.Caps}" Margin="0,0,0,12"/>
+                        <StackPanel Style="{StaticResource Row}">
+                            <c:NumberField Value="{Binding NumberValue, Mode=TwoWay}" Unit="mm" Minimum="-60" Maximum="0" Decimals="2" Step="0.5" Label="Position Z" Width="150" Margin="0,0,10,0"/>
+                            <c:NumberField Value="{Binding ForceValue, Mode=TwoWay}" Unit="N" Minimum="0" Maximum="2000" Step="10" Label="Force finale" Width="150" Margin="0,0,10,0"/>
+                            <c:NumberField Value="1000" Unit="N" IsInvalid="True" Width="150"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Row}">
+                            <c:TextField Text="{Binding TextValue, Mode=TwoWay}" Placeholder="Numéro d'OF" Label="Numéro d'OF" Width="235" Margin="0,0,10,0"/>
+                            <c:TextField Text="" Placeholder="Référence produit" Width="235"/>
+                        </StackPanel>
+                        <StackPanel Style="{StaticResource Row}">
+                            <c:NumberField Value="42" Unit="%" IsEnabled="False" Width="150" Margin="0,0,10,0"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Balises -->
+                <Border Style="{StaticResource Section}" Width="540">
+                    <StackPanel>
+                        <TextBlock Text="{res:T Gallery.Beacons}" Style="{StaticResource Type.Caps}" Margin="0,0,0,12"/>
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Margin="0,0,20,0"><c:Beacon Lights="Green" Margin="0,0,0,6"/><TextBlock Text="Execute" Style="{StaticResource Type.Caption}"/></StackPanel>
+                            <StackPanel Margin="0,0,20,0"><c:Beacon Lights="Green" Blinking="Green" Margin="0,0,0,6"/><TextBlock Text="Idle" Style="{StaticResource Type.Caption}"/></StackPanel>
+                            <StackPanel Margin="0,0,20,0"><c:Beacon Lights="Orange" Margin="0,0,0,6"/><TextBlock Text="Held" Style="{StaticResource Type.Caption}"/></StackPanel>
+                            <StackPanel Margin="0,0,20,0"><c:Beacon Lights="Red" Blinking="Red" Margin="0,0,0,6"/><TextBlock Text="Aborted" Style="{StaticResource Type.Caption}"/></StackPanel>
+                            <StackPanel Margin="0,0,20,0"><c:Beacon Lights="Green, Red" Blinking="Red" Margin="0,0,0,6"/><TextBlock Text="Station" Style="{StaticResource Type.Caption}"/></StackPanel>
+                            <StackPanel Margin="0,0,20,0"><c:Beacon Lights="Green, Blue" Margin="0,0,0,6"/><TextBlock Text="Maint." Style="{StaticResource Type.Caption}"/></StackPanel>
+                            <StackPanel Margin="0,0,20,0"><c:Beacon Lights="Green, Blue" Blinking="Blue" Margin="0,0,0,6"/><TextBlock Text="Opérateur" Style="{StaticResource Type.Caption}"/></StackPanel>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                            <c:Beacon Size="Small" Lights="Green" Margin="0,0,14,0"/>
+                            <c:Beacon Size="Small" Lights="Orange" Blinking="Orange" Margin="0,0,14,0"/>
+                            <c:Beacon Size="Small" Lights="Red" Blinking="Red" Margin="0,0,14,0"/>
+                            <c:Beacon Size="Small" Lights="Blue" Margin="0,0,14,0"/>
+                            <c:Beacon Size="Small"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Progression -->
+                <Border Style="{StaticResource Section}" Width="540">
+                    <StackPanel>
+                        <TextBlock Text="{res:T Gallery.Progress}" Style="{StaticResource Type.Caps}" Margin="0,0,0,12"/>
+                        <c:ProgressStrip Good="0.675" Bad="0.012" Active="0.01" Margin="0,0,0,12"/>
+                        <c:ProgressStrip Value="0.4" BarHeight="8" Margin="0,0,0,12"/>
+                        <c:ProgressStrip IsIndeterminate="True" BarHeight="8" Margin="0,0,0,16"/>
+                        <StackPanel Orientation="Horizontal">
+                            <c:ProgressRing RingSize="24" Value="0.25" Margin="0,0,14,0"/>
+                            <c:ProgressRing RingSize="24" Value="0.6" Margin="0,0,14,0"/>
+                            <c:ProgressRing RingSize="24" Value="0.85" Margin="0,0,14,0"/>
+                            <c:ProgressRing RingSize="40" Value="0.5" Margin="0,0,14,0"/>
+                            <c:ProgressRing RingSize="40" Value="0.9" Margin="0,0,14,0"/>
+                            <c:ProgressRing RingSize="40" IsIndeterminate="True"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Pavé numérique -->
+                <Border Style="{StaticResource Section}" Width="400">
+                    <StackPanel>
+                        <TextBlock Text="{res:T Gallery.Keypad}" Style="{StaticResource Type.Caps}" Margin="0,0,0,12"/>
+                        <ContentControl x:Name="KeypadHost"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Clavier -->
+                <Border Style="{StaticResource Section}" Width="1030">
+                    <StackPanel>
+                        <TextBlock Text="{res:T Gallery.Keyboard}" Style="{StaticResource Type.Caps}" Margin="0,0,0,12"/>
+                        <ContentControl x:Name="KeyboardHost"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- États vides, verrouillage, notifications, tiroir -->
+                <Border Style="{StaticResource Section}" Width="620">
+                    <StackPanel>
+                        <TextBlock Text="{res:T Gallery.Empty}" Style="{StaticResource Type.Caps}" Margin="0,0,0,12"/>
+                        <c:EmptyState IconName="monitoring" Title="Statistiques de production"
+                                      Message="À définir. Les données d'OF et de traçabilité sont déjà enregistrées." ActionText="Voir les OF" Margin="0,0,0,16"/>
+                        <Grid Height="64">
+                            <Button Content="Déployer sur le PLC" c:Ui.Variant="Primary" c:Ui.Icon="cloud_upload" HorizontalAlignment="Left" Width="400" Height="64"/>
+                            <c:LockOverlay Message="Niveau Ingénieur process requis" Width="400" HorizontalAlignment="Left"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <Border Style="{StaticResource Section}" Width="620">
+                    <StackPanel>
+                        <TextBlock Text="{res:T Gallery.Overlays}" Style="{StaticResource Type.Caps}" Margin="0,0,0,12"/>
+                        <WrapPanel>
+                            <Button Content="Toast succès" c:Ui.Icon="check_circle" Command="{Binding ShowToastCommand}" CommandParameter="Success" Margin="0,0,10,10"/>
+                            <Button Content="Toast info" c:Ui.Icon="info" Command="{Binding ShowToastCommand}" CommandParameter="Info" Margin="0,0,10,10"/>
+                            <Button Content="Toast avertissement" c:Ui.Icon="warning" Command="{Binding ShowToastCommand}" CommandParameter="Warning" Margin="0,0,10,10"/>
+                            <Button Content="Toast erreur" c:Ui.Icon="error" Command="{Binding ShowToastCommand}" CommandParameter="Error" Margin="0,0,10,10"/>
+                            <Button Content="Tiroir" c:Ui.Icon="chevron_left" Command="{Binding OpenDrawerCommand}" Margin="0,0,10,10"/>
+                            <Button Content="Dialogue" c:Ui.Icon="help" Command="{Binding ConfirmCommand}" Margin="0,0,10,10"/>
+                        </WrapPanel>
+                    </StackPanel>
+                </Border>
+
+            </WrapPanel>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
