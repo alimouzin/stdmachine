@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>StdMachine.Persistence</RootNamespace>
+    <AssemblyName>StdMachine.Persistence</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\StdMachine.Core\StdMachine.Core.csproj" />
+  </ItemGroup>
+</Project>

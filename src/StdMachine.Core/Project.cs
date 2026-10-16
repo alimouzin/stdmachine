@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace StdMachine.Core;
 
 // Projet machine (docs/07 § 3.1), version minimale pour la maquette : stations, objets, fonctions, positions,
@@ -27,7 +29,9 @@ public sealed class PlanarConfig
     public int Movers { get; set; } = 6;
     public int Slots { get; set; } = 1;
     public double MoverMm { get; set; } = 113;
+    [JsonIgnore]
     public double WidthMm => Columns * TileMm;
+    [JsonIgnore]
     public double HeightMm => Rows * TileMm;
 }
 
@@ -82,7 +86,11 @@ public sealed class PartDataDef
 
 public sealed class ParamValue
 {
+    /// <summary>N° du paramètre dans le catalogue (P1..P24) ; 0 pour un paramètre de démonstration sans numéro.</summary>
+    public int No { get; set; }
     public string Name { get; set; } = string.Empty;
+    /// <summary>Valeur numérique (booléens 0/1, énumérations : index) ; absente pour un paramètre libre.</summary>
+    public double? Number { get; set; }
     public string Value { get; set; } = string.Empty;
     public string? Unit { get; set; }
 }
@@ -97,6 +105,13 @@ public sealed class ObjectNode
     public bool Simulated { get; set; }
     public bool Disabled { get; set; }
     public double OverridePercent { get; set; } = 100;
+    /// <summary>Raccordements des signaux S1..S8 à l'image E/S (docs/06 § 1).</summary>
+    public List<SignalBinding> Signals { get; } = new List<SignalBinding>();
+    /// <summary>Élément du pool matériel (axe NC, esclave EtherCAT, réseau, planaire), si le type en demande un.</summary>
+    public int? DeviceIndex { get; set; }
+    public List<SpeedDef> Speeds { get; } = new List<SpeedDef>();
+    /// <summary>Timeouts propres à cet objet (0 ou absent = défaut du catalogue).</summary>
+    public List<TimeoutOverride> Timeouts { get; } = new List<TimeoutOverride>();
     public List<ParamValue> Params { get; } = new List<ParamValue>();
     public List<ObjectNode> Children { get; } = new List<ObjectNode>();
     /// <summary>Position dans la vue de dessus (mm dans la zone de travail de la station).</summary>
@@ -110,6 +125,119 @@ public sealed class ObjectNode
             foreach (var d in c.SelfAndDescendants())
                 yield return d;
     }
+}
+
+public sealed record SignalBinding(int No, Guid? ChannelId);
+
+public sealed record SpeedDef(int No, string Name, double Percent);
+
+public sealed record TimeoutOverride(int ActionNo, int Ms);
+
+public enum IoKind
+{
+    DI,
+    DO,
+    AI,
+    AO,
+}
+
+/// <summary>Voie de l'image E/S (importée du CSV TwinCAT) : index dans le tableau de son type.</summary>
+public sealed class IoChannel
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public IoKind Kind { get; set; }
+    public int Index { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Terminal { get; set; }
+}
+
+public enum HardwareKind
+{
+    Axis,
+    EtherCat,
+    Network,
+    Planar,
+}
+
+/// <summary>Élément d'un pool matériel (docs/04 § 5) : axe NC, esclave EtherCAT, connexion réseau, groupe planaire.</summary>
+public sealed class HardwareItem
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public HardwareKind Kind { get; set; }
+    public int Index { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public enum PressTarget
+{
+    Stroke,
+    Force,
+}
+
+public sealed class PressSegmentConfig
+{
+    public PressTarget Target { get; set; }
+    public double TargetValue { get; set; }
+    public double SpeedPercent { get; set; } = 50;
+    public double ForceMin { get; set; }
+    public double ForceMax { get; set; }
+    public double StrokeMin { get; set; }
+    public double StrokeMax { get; set; }
+}
+
+/// <summary>Recette de presse (16 au plus par presse, 8 segments au plus).</summary>
+public sealed class PressRecipeConfig
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ObjectId { get; set; }
+    public int No { get; set; }
+    public string Name { get; set; } = string.Empty;
+    /// <summary>Vérifiée sur la presse réelle (V102 sinon).</summary>
+    public bool Verified { get; set; }
+    public List<PressSegmentConfig> Segments { get; } = new List<PressSegmentConfig>();
+}
+
+public sealed class Interlock
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ObjectId { get; set; }
+    /// <summary>Actions verrouillées ; vide si <see cref="AllMotion"/>.</summary>
+    public List<int> Actions { get; } = new List<int>();
+    public bool AllMotion { get; set; }
+    public Condition Condition { get; set; } = new Condition();
+    /// <summary>Généré par un module (robot : Z en sécurité), non modifiable.</summary>
+    public bool Generated { get; set; }
+}
+
+/// <summary>Seuils d'une portée de la surveillance des rebuts (docs/10 § 5) ; 0 désactive un seuil.</summary>
+public sealed class QualityRule
+{
+    public int ConsecWarn { get; set; }
+    public int ConsecAction { get; set; }
+    public int Window { get; set; }
+    public int MinSample { get; set; }
+    public double RateWarnPercent { get; set; }
+    public double RateActionPercent { get; set; }
+}
+
+public sealed class QualityRuleOverride
+{
+    /// <summary>Station ou fonction concernée.</summary>
+    public Guid TargetId { get; set; }
+    public QualityRule Rule { get; set; } = new QualityRule();
+}
+
+public sealed class QualityConfig
+{
+    public QualityRule StationObserved { get; set; } = new QualityRule { ConsecWarn = 2, ConsecAction = 3, Window = 50, MinSample = 20, RateWarnPercent = 5, RateActionPercent = 10 };
+    public QualityRule StationImputed { get; set; } = new QualityRule { ConsecWarn = 3, ConsecAction = 5, Window = 50, MinSample = 20, RateWarnPercent = 5, RateActionPercent = 10 };
+    public QualityRule Function { get; set; } = new QualityRule { ConsecAction = 5, Window = 100, MinSample = 30, RateWarnPercent = 4, RateActionPercent = 8 };
+    public QualityRule Mover { get; set; } = new QualityRule { ConsecWarn = 2, ConsecAction = 3, Window = 20, MinSample = 10, RateWarnPercent = 10, RateActionPercent = 20 };
+    public QualityRule Machine { get; set; } = new QualityRule { ConsecWarn = 3, ConsecAction = 5, Window = 200, MinSample = 50, RateWarnPercent = 3, RateActionPercent = 5 };
+    public double OrderBudgetWarnPercent { get; set; } = 80;
+    public double OrderBudgetActionPercent { get; set; } = 100;
+    public List<QualityRuleOverride> StationOverrides { get; } = new List<QualityRuleOverride>();
+    public List<QualityRuleOverride> FunctionOverrides { get; } = new List<QualityRuleOverride>();
 }
 
 public sealed class NamedPosition
@@ -149,6 +277,8 @@ public sealed class StationConfig
     public List<StationVariable> Variables { get; } = new List<StationVariable>();
     public List<ProcessDefinition> Processes { get; } = new List<ProcessDefinition>();
     public List<CustomFunction> CustomFunctions { get; } = new List<CustomFunction>();
+    public List<PressRecipeConfig> PressRecipes { get; } = new List<PressRecipeConfig>();
+    public List<Interlock> Interlocks { get; } = new List<Interlock>();
 
     public IEnumerable<ObjectNode> AllObjects() => Objects.SelectMany(o => o.SelfAndDescendants());
 
@@ -164,10 +294,20 @@ public sealed class MachineConfig
     public int NoStationDelaySeconds { get; set; } = 60;
     public List<PartDataDef> PartData { get; } = new List<PartDataDef>();
     public List<ObjectNode> MachineObjects { get; } = new List<ObjectNode>();
+    public List<IoChannel> IoImage { get; } = new List<IoChannel>();
+    public List<HardwareItem> HardwarePools { get; } = new List<HardwareItem>();
+    public QualityConfig Quality { get; } = new QualityConfig();
 }
 
 public sealed class MachineProject
 {
+    /// <summary>Version courante du schéma du fichier projet ; une migration par version (docs/07 § 5.1).</summary>
+    public const int CurrentSchemaVersion = 1;
+
+    public int SchemaVersion { get; set; } = CurrentSchemaVersion;
+    public int CatalogVersion { get; set; } = 1;
+    public DateTime CreatedAt { get; set; }
+    public DateTime ModifiedAt { get; set; }
     public Guid Id { get; set; } = Guid.NewGuid();
     public string Name { get; set; } = string.Empty;
     public MachineConfig Machine { get; } = new MachineConfig();
@@ -200,5 +340,6 @@ public sealed class CustomFunction
     public Sequence Body { get; set; } = new Sequence();
 
     /// <summary>Identifiant utilisé dans <see cref="FunctionStep.FunctionId"/>.</summary>
+    [JsonIgnore]
     public string FunctionId => "custom:" + Id.ToString("N");
 }

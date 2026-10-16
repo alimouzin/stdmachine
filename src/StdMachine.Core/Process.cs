@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace StdMachine.Core;
 
 // Modèle de process de docs/07 § 3.2 : arbre d'étapes et de blocs édité par l'éditeur de process.
@@ -136,6 +138,19 @@ public sealed class Sequence
     }
 }
 
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "step")]
+[JsonDerivedType(typeof(ActionStep), "action")]
+[JsonDerivedType(typeof(FunctionStep), "function")]
+[JsonDerivedType(typeof(WaitConditionStep), "waitCondition")]
+[JsonDerivedType(typeof(WaitTimeStep), "waitTime")]
+[JsonDerivedType(typeof(CallStep), "call")]
+[JsonDerivedType(typeof(SetStep), "set")]
+[JsonDerivedType(typeof(AlarmStep), "alarm")]
+[JsonDerivedType(typeof(EndStep), "end")]
+[JsonDerivedType(typeof(RouteStep), "route")]
+[JsonDerivedType(typeof(ParallelBlock), "parallel")]
+[JsonDerivedType(typeof(IfBlock), "if")]
+[JsonDerivedType(typeof(RepeatBlock), "repeat")]
 public abstract class Step
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -297,13 +312,16 @@ public sealed class RouteStep : Step
 /// <summary>Bloc de logique : contient des branches d'étapes.</summary>
 public abstract class Block : Step
 {
+    [JsonIgnore]
     public abstract IReadOnlyList<Sequence> Sequences { get; }
 }
 
 public sealed class ParallelBlock : Block
 {
-    public List<Sequence> Branches { get; } = new List<Sequence> { new Sequence(), new Sequence() };
+    [JsonObjectCreationHandling(JsonObjectCreationHandling.Replace)]
+    public List<Sequence> Branches { get; set; } = new List<Sequence> { new Sequence(), new Sequence() };
 
+    [JsonIgnore]
     public override IReadOnlyList<Sequence> Sequences => Branches;
 
     public override Step Clone()
@@ -323,6 +341,7 @@ public sealed class IfBlock : Block
     public Sequence Else { get; set; } = new Sequence();
     public string? ElseLabel { get; set; }
 
+    [JsonIgnore]
     public override IReadOnlyList<Sequence> Sequences => new[] { Then, Else };
 
     public override Step Clone()
@@ -341,6 +360,7 @@ public sealed class RepeatBlock : Block
     public int Max { get; set; } = 10;
     public Sequence Body { get; set; } = new Sequence();
 
+    [JsonIgnore]
     public override IReadOnlyList<Sequence> Sequences => new[] { Body };
 
     public override Step Clone()
