@@ -1,5 +1,7 @@
 # PoC HMI : état et reprise (phases 0 et 1)
 
+> **Mise à jour du 2026-10-16 (soir)** : le PoC a été validé sur l'écran réel et les phases 2 à 4 (et une partie des phases 5 et 8) ont avancé en session distante : voir `REPRISE-PHASES-2-A-5.md`.
+
 Dernière mise à jour : 2026-10-16. Branche `develop`, aucun remote, aucun `git push`. Dernier commit : « feat: accès plus visibles aux fonctions personnalisées ».
 
 ## Contexte à relire en début de session
