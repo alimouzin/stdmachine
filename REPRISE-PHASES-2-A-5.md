@@ -1,23 +1,38 @@
-# Reprise : phases 2 à 5 (session distante, sans Windows)
+# Reprise : phases 2 à 5 — instructions pour la session Windows
 
-Dernière mise à jour : 2026-10-16. Branche `develop`. Tout ce qui est décrit ici est dans les projets `Core`, `Persistence`, `Simulation` et `Plant` et est couvert par des tests : 7 + 62 + 7 + 81 = 157 tests verts, **sous .NET 8 et aussi sous .NET Framework 4.8 (Mono 6.8 + xunit.console, `-parallel none`)**. La HMI (WPF) **compile** sans avertissement sur Linux (`dotnet build src/StdMachine.Hmi -p:EnableWindowsTargeting=true`) mais n'a **jamais été lancée** : son branchement au simulateur (`--simulator`) est à vérifier sur ton poste.
+Dernière mise à jour : 2026-10-16. Branche `develop` (remote `origin`). Ce fichier est écrit pour **Claude Code lancé sur le poste Windows** après un `git pull`. Lis d'abord `CLAUDE.md`, `POC-NET48.md` (net48 prime sur .NET 10 pour le PoC), puis ce fichier. Décisions : `docs/09-journal-des-decisions.md` (D49 à D66 viennent de cette session). Commits en français (Conventional Commits) avec le trailer habituel ; pas de `git push` sans demande explicite de l'utilisateur.
 
-## À faire en premier sur le poste Windows
-1. `powershell -File tools\build.ps1 -Restore` : doit compiler les 3 nouveaux projets et la HMI (nouvelles références : `StdMachine.Persistence`, `StdMachine.Plant`, paquet `System.Text.Json` via `Core`). En cas d'erreur de restauration NuGet : voir `POC-NET48.md`.
-2. Tests : `dotnet test` n'existe pas sur le poste (pas de SDK) ; ouvrir la solution dans Visual Studio, Explorateur de tests (xunit, net48). Les projets de tests visent net48 sous Windows.
-3. Lancer `src\StdMachine.Hmi\bin\Debug\net48\StdMachine.Hmi.exe --simulator --windowed` : la machine démarre arrêtée ; Réarmer puis Démarrer dans la barre du haut.
-4. Captures : `StdMachine.Hmi.exe --simulator --scenario running --screenshot-all artifacts\screens` (un dossier `sim-<scénario>` par scénario ; scénarios : idle, running, station-aborted, step-mode, manual, validation-errors, quality-hold, forced).
-5. Journal de messages : `StdMachine.Hmi.exe --simulator --plant-log` écrit des fichiers JSON Lines dans `%ProgramData%\StdMachine\plant-log`.
+## Contexte
+Une session distante Linux (sans Windows ni WPF en exécution) a écrit les phases 2, 3, 4 et une partie des phases 5 et 8. Elle a vérifié : 160 tests verts sous .NET 8 **et** sous .NET Framework 4.8 (Mono 6.8, `xunit.console -parallel none`), et la compilation de la HMI (`dotnet build src/StdMachine.Hmi -p:EnableWindowsTargeting=true`, 0 avertissement). **La HMI n'a jamais été lancée**, ni les captures d'écran produites : c'est ton travail ici.
 
-## Ce qui est fait
-- **Phase 2** : `catalog/catalog.json` (28 types, 2 modules), modèle complété (E/S, matériel, recettes de presse, verrouillages, qualité), `samples/MX-4.stdm.json` (produit par `SampleProject`, régénéré avec `STDM_UPDATE_SAMPLES=1` sous les tests de persistance), JSON versionné avec migrations, validation V001 à V113.
-- **Phase 3** : `ProjectCompiler` → `CompiledTables` (cartes, blocs, fonctions de module dépliées, conditions, textes, variables cachées, verrouillages générés, carte de compilation, listing `Listing.Of`, empreinte SHA-256, compilation de MX-4 en quelques ms).
-- **Phase 4** : `MachineSim` (PackML machine et stations, interpréteur à contextes, objets simulés, séquenceur général, routage, movers, pièces, traces, OF, Hold/Stop/Abort/Clear, station hors production, mover hors service, états déclarés), surveillance des rebuts (`QualityMonitor`), pas à pas, canal manuel, scénarios.
-- **Phase 8 (partielle)** : `StdMachine.Plant` (contrats, 14 schémas, passerelle, canal Journal, réglages avec secrets chiffrés, seq persistant) ; droits, niveaux, PBKDF2 et session dans `Core/Security`. Les pages Utilisateurs et Communications de la HMI utilisent encore les données de démonstration.
-- **Phase 5 (partielle)** : `SimulatedPlcClient` publie les instantanés ; `--simulator` branche la HMI dessus.
+## À faire, dans l'ordre
+1. **Compiler** : `powershell -File tools\build.ps1 -Restore`. Doit donner 0 erreur, 0 avertissement dans `Core`, `Persistence`, `Simulation`, `Plant`. Nouveaux paquets NuGet : `System.Text.Json` 8.0.5 (via `Core`), `xunit` 2.9.2, `Microsoft.NET.Test.Sdk` 17.11.1, `xunit.runner.visualstudio` 2.8.2 (tests). Si la restauration échoue : le signaler, ne pas changer de paquet sans demander. Nouvelles références du projet HMI : `StdMachine.Persistence`, `StdMachine.Plant`.
+2. **Tests** : ouvrir `StdMachine.sln` dans Visual Studio (Explorateur de tests) ou lancer `vstest.console.exe` sur les 4 DLL `tests\StdMachine.*.Tests\bin\Debug\net48\*.Tests.dll`. Attendu : Core 62, Persistence 7, Plant 7, Simulation 83, tous verts. Un échec « samples/MX-4.stdm.json n'est plus à jour » se corrige avec la variable d'environnement `STDM_UPDATE_SAMPLES=1` (le fichier est produit par `SampleProject`), mais d'abord comprendre pourquoi il diffère (sur Linux net8 et net48 il est identique octet pour octet).
+3. **Lancer le simulateur** : `src\StdMachine.Hmi\bin\Debug\net48\StdMachine.Hmi.exe --simulator --windowed` (autres options : `--scenario <nom>`, `--plant-log`, `--page <clé>`, `--topmost`). Le catalogue et le projet d'exemple sont copiés à côté de l'exe (`catalog\catalog.json`, `samples\MX-4.stdm.json`). Machine arrêtée au départ : Réarmer, puis Démarrer dans la barre du haut. Vérifier que les movers circulent, que les cartes de « Presser pignon » s'allument dans l'ordre, qu'un Abort de station laisse l'autre presse produire, que Clear → Reset → Start réintègre la station.
+4. **Captures** : `StdMachine.Hmi.exe --simulator --scenario <nom> --screenshot-all artifacts\screens` pour chacun des scénarios `idle`, `running`, `station-aborted`, `step-mode`, `manual`, `validation-errors`, `quality-hold`, `forced` (dossier `sim-<scénario>`). **Regarder les images** et les comparer à `docs/08` et à la maquette (règle de `CLAUDE.md`).
+5. **Corriger ce qui casse.** Points à surveiller en priorité (écrits sans pouvoir exécuter) :
+   - Page **Qualité** (fenêtres en `0`/`1`, `Machine` toujours présent), page **Station** (cartes, contextes, historique vide en mode simulateur), page **Machine** (movers en mm), **Forçages**, **OF**, **Alarmes** (les erreurs traitées par « Refaire » apparaissent comme informations déjà levées).
+   - **Déploiement** : compile le projet réel puis appelle `SimulatedPlcClient.Deploy` ; refusé si la machine n'est pas Stopped.
+   - Onglet **Table compilée** de l'éditeur de process (listing en police `Font.Mono`).
+   - Page **Manuel** : les fonctions de module (« Aller à »…) répondent « Action inconnue » sur le simulateur ; les actions de base marchent. À corriger (le simulateur doit déplier la fonction ; la page envoie aujourd'hui des arguments par défaut, pas la position choisie).
+   - Pages encore en données de démonstration : Utilisateurs, Communications, Système, historique de la page Station.
+6. Mettre à jour ce fichier et `POC-REPRISE.md`, ajouter les décisions au journal, committer.
 
-## Écarts et reste à faire (voir aussi `docs/09`, D49 à D63)
-- Non implémentés : V014, V106, V114, V201 ; SQLite (utilisateurs, OF persistants, journal) ; services d'exploitation (AlarmService, TraceService en base) ; courbes de presse ; sécurités simulées (`SetSafetyCircuit`) ; collisions et trajets du planaire (lignes droites interpolées).
-- La HMI affiche encore des données de démonstration dans plusieurs pages (Studio, Déploiement, Utilisateurs, Communications, Système) ; le Studio édite le projet en mémoire et `Déployer` appelle `SimulatedPlcClient.Deploy` (machine à l'arrêt).
-- `PlcCommands`, pages Manuel et Forçages : utilisent déjà `IPlcClient` ; leur comportement sur le simulateur n'est pas vérifié visuellement.
-- Phase 6 (Studio complet), 7 (Manuel, pas à pas, forçages en pages réelles) et 8 (utilisateurs, droits, communications) : non commencées.
+## Ce qui est fait (rappel)
+- **Phase 2** : `catalog/catalog.json` (28 types, 2 modules, fonctions du robot en arbre d'étapes) ; modèle complété (E/S, matériel, recettes de presse, verrouillages, qualité) ; `samples/MX-4.stdm.json` et `samples/MX-4.validation-errors.stdm.json` ; JSON versionné avec migrations (`StdMachine.Persistence`) ; validation V001 à V113 (`Core/Validation`).
+- **Phase 3** : `ProjectCompiler` → `CompiledTables` (`Core/Compiler`) : cartes, blocs, fonctions de module dépliées, conditions, textes, variables cachées, verrouillages générés, carte de compilation, `Listing.Of`, empreinte SHA-256.
+- **Phase 4** : `StdMachine.Simulation/Engine` (`MachineSim`, `StationSim`, `SimObject`, `QualityMonitor`) et `SimulatedPlcClient` ; scénarios dans `SimScenarios`. Détail : D59 à D63.
+- **Phase 5 (partielle)** : instantanés réels dans la HMI via `--simulator`.
+- **Phase 8 (partielle)** : `StdMachine.Plant` (14 schémas, passerelle, canal Journal de messages, réglages avec secrets chiffrés, `seq` persistant ; D64, D65) ; droits, niveaux, PBKDF2 et session dans `Core/Security` (D66).
+
+## Pièges connus
+- `Directory.Build.props` impose `TreatWarningsAsErrors` à Core, Simulation, Persistence, Plant.
+- Les projets de tests visent net48 sous Windows et net8.0 ailleurs (sources liées) ; un fichier de test ne doit pas dépendre de la plateforme.
+- Le fichier projet doit rester identique sur toutes les plateformes : les réels sont écrits par `ShortestDoubleConverter` (sans lui, .NET Framework écrit `0.10000000000000001`).
+- `ObjectStatus`, `QualityTrack`, etc. : la HMI de la maquette attend des instantanés complets dès le démarrage (ex. `tracks.First(Machine)` dans la page Qualité).
+- Un objet ne peut pas être commandé par deux contextes à la fois (le second est refusé, code 3) : le cycle de fond de l'exemple n'utilise donc pas la vision.
+
+## Reste à faire (hors vérification)
+- **Phase 6** (Studio complet branché sur le projet réel, enregistrement automatique, chronogramme estimé), **phase 7** (page Manuel complète, pas à pas, Forçages en pages réelles), **phase 8** (utilisateurs/droits dans la HMI, page Communications branchée sur `PlantGateway`, SQLite — paquet `Microsoft.Data.Sqlite` à demander avant ajout), phases 9 et 10 sur demande seulement.
+- Règles de validation non implémentées faute de modèle : V014, V106, V114, V201.
+- Pas de collisions ni de trajets planaires (lignes droites), pas de courbes de presse, pas de sécurités simulées.
