@@ -101,6 +101,8 @@ public static class ProjectCompiler
                 for (int i = 0; i < pos.Count && queue.Count < 4; i++) if (pos[i].StationId == s.Id && pos[i].Kind == PlanarPositionKind.Queue) queue.Add(i + 1);
                 m.Stations.Add(new CStationCfg(s.Name, gm, work, queue, s.OverrideDefault));
             }
+            foreach (var pd in _p.Machine.PartData) m.PartData.Add(new CPartData(pd.Name, pd.Type, pd.Reserved));
+            m.VerdictIndex = _p.Machine.PartData.FindIndex(x => x.Reserved && x.Name == "Verdict") + 1;
             m.Quality = _p.Machine.Quality;
             foreach (var cfg in ObjectConfigs(_p.Machine.MachineObjects, out _)) m.Objects.Add(cfg);
         }
@@ -327,7 +329,7 @@ public static class ProjectCompiler
                 {
                     case ActionStep a: Card(step, id, () => EmitAction(a, id)); break;
                     case FunctionStep f: Card(step, id, () => EmitFunction(f, id)); break;
-                    case WaitConditionStep w: Card(step, id, () => Emit(Op.WaitCond, id, args: new[] { ConditionIndex(w.Condition) }, stepGuid: step.Id)); break;
+                    case WaitConditionStep w: Card(step, id, () => Emit(Op.WaitCond, id, args: new[] { ConditionIndex(w.Condition) }, stepGuid: step.Id).TimeoutMs = TimeoutMs(w.TimeoutSeconds)); break;
                     case WaitTimeStep t: Card(step, id, () => Emit(Op.WaitTime, id, ps: new[] { new CValue(ValueSource.Const, 0, Math.Round(t.DurationSeconds * 1000)) }, stepGuid: step.Id)); break;
                     case CallStep c: Card(step, id, () => Emit(Op.Call, id, args: new[] { TableNo.TryGetValue(c.ProcessId, out var t) ? t : throw new CompileException(Where + " : sous-process introuvable.") }, stepGuid: step.Id)); break;
                     case SetStep s: Card(step, id, () => EmitSet(s, id)); break;

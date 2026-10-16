@@ -144,6 +144,8 @@ public sealed class StationData
     public List<COpMap> OpMap { get; } = new List<COpMap>();
 }
 
+public sealed record CPartData(string Name, string Type, bool Reserved);
+
 public sealed record CGroup(string Name, GroupRole Role, uint StationMask, int Operations, int Priority);
 
 public sealed record CStationCfg(string Name, uint GroupMask, int WorkPos, IReadOnlyList<int> QueuePos, double Override);
@@ -158,6 +160,10 @@ public sealed class MachineData
     public int Slots { get; set; }
     public int RejectGroup { get; set; }
     public int NoStationDelayMs { get; set; }
+    /// <summary>Données de pièce dans l'ordre du projet (n° = rang + 1) ; l'identifiant et le verdict sont réservés.</summary>
+    public List<CPartData> PartData { get; } = new List<CPartData>();
+    /// <summary>N° de la donnée « Verdict » (0 non défini, 1 bon, 2 mauvais), 0 si le projet n'en déclare pas.</summary>
+    public int VerdictIndex { get; set; }
     public List<CGroup> Groups { get; } = new List<CGroup>();
     public List<CStationCfg?> Stations { get; } = new List<CStationCfg?>();
     public List<CPlanarPos> PlanarPositions { get; } = new List<CPlanarPos>();

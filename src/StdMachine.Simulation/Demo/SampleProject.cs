@@ -84,6 +84,14 @@ public static class SampleProject
             p2.Number = -45; p2.Value = "-45";
         }
 
+        // Axes du robot cartésien : composante et course de MX-4 (docs/01 : X 0 à 320, Y 0 à 180, Z −60 à 0 mm).
+        if (type.Code == "LinearAxis" && node.ChildRole != null)
+        {
+            var (comp, min, max) = node.ChildRole == "AxisX" ? (0, 0.0, 320.0) : node.ChildRole == "AxisY" ? (1, 0.0, 180.0) : (2, -60.0, 0.0);
+            void Set(int no, double v) { var pv = node.Params.First(x => x.No == no); pv.Number = v; pv.Value = v.ToString("0.###", CultureInfo.InvariantCulture); }
+            Set(13, comp); Set(5, min); Set(6, max);
+        }
+
         node.Speeds.Clear();
         if (type.Id == 11 || type.Id == 12)
         {
@@ -144,6 +152,36 @@ public static class SampleProject
             Insert(p.Station(n)!, "Presser pignon", "nest", "DigitalInput", 1);
         Insert(p.Station(DemoProject.Controle)!, "Contrôler", "iv", "KeyenceIV", 2);
         Insert(p.Station(DemoProject.Rebut)!, "Évacuer", "full", "DigitalInput", 1, true);
+
+        // Le cycle de fond ne se sert pas de la vision : l'opération la commande déjà (deux contextes sur un même objet se refusent mutuellement).
+        foreach (var st in p.Stations)
+        {
+            var visions = st.AllObjects().Where(o => o.TypeCode == "AsyrilEyePlus").Select(o => o.Id).ToHashSet();
+            foreach (var bg in st.Processes.Where(x => x.Kind == ProcessKind.Background))
+                bg.Body.Steps.RemoveAll(x => x is ActionStep a && visions.Contains(a.ObjectId));
+        }
+
+        // « Obtenir pièce » (vision) range la position trouvée dans la variable de position de la station (docs/06 § 5.6 : r1→Var1).
+        foreach (var st in p.Stations)
+        {
+            var posVar = st.Variables.FirstOrDefault(v => v.Type == "Position");
+            var visions = st.AllObjects().Where(o => o.TypeCode == "AsyrilEyePlus").Select(o => o.Id).ToHashSet();
+            if (posVar == null) continue;
+            foreach (var a in st.Processes.SelectMany(x => x.AllSteps()).OfType<ActionStep>().Where(a => visions.Contains(a.ObjectId) && a.ActionNo == 4 && a.Bindings.Count == 0))
+                a.Bindings.Add(new ResultBinding(1, BindTarget.Var, posVar.Id));
+        }
+
+        // Table d'initialisation : référencement du robot (module) puis initialisation des visions.
+        foreach (var st in p.Stations)
+        {
+            var init = st.Processes.FirstOrDefault(x => x.Kind == ProcessKind.Init);
+            if (init == null || init.Body.Steps.Count > 0) continue;
+            var robot = st.AllObjects().FirstOrDefault(o => o.TypeCode == "CartesianRobot");
+            if (robot != null)
+                init.Body.Steps.Add(new FunctionStep { Id = DemoIds.Of("step/" + st.Number + "/init/reference"), ModuleObjectId = robot.Id, FunctionId = "Reference" });
+            foreach (var vision in st.AllObjects().Where(o => o.TypeCode == "AsyrilEyePlus"))
+                init.Body.Steps.Add(new ActionStep { Id = DemoIds.Of("step/" + st.Number + "/init/" + vision.Id.ToString("N")), ObjectId = vision.Id, ActionNo = 1 });
+        }
 
         foreach (var st in p.Stations)
         {
