@@ -171,6 +171,13 @@ public sealed class StationSim
         _faultText ??= text;
     }
 
+    /// <summary>Abort forcé depuis le simulateur (essai) : une alarme de défaut de station et la station passe Aborted.</summary>
+    public void ForceAbort(string text)
+    {
+        _alarms.Raise(Number, null, 1, 0, text, AlarmSeverity.StationFault, _now(), Name);
+        RaiseFault(text);
+    }
+
     public bool Offer(OpRequest req)
     {
         if (Pack.State != PackMlState.Execute || _holdRequested || _ctx[1].Status != CtxStatus.Free || _op != null) return false;

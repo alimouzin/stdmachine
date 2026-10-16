@@ -492,7 +492,7 @@ public sealed class SimulatedPlcClient : IPlcClient, ISimulatorControl, ISimulat
 
     public void ForceStationAbort(int station)
     {
-        lock (_gate) _sim.StationByNumber(station)?.RaiseFault("Abort forcé (essai)");
+        lock (_gate) _sim.StationByNumber(station)?.ForceAbort("Abort forcé (essai)");
     }
 
     public void InjectObjectError(int station, Guid objectId, int errorCode, int subCode = 0)

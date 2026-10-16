@@ -173,4 +173,91 @@ public class ClientTests
         Assert.InRange(count, 5, 26);
         Assert.True(c.Snapshot.ScenarioSeconds > 5, "échelle ×4 : plus de 5 s simulées en 2 s : " + c.Snapshot.ScenarioSeconds);
     }
+
+    private static SimulatedPlcClient Scenario(string name)
+    {
+        var cat = Catalog();
+        var c = new SimulatedPlcClient(SampleProject.Build(cat), cat, 1);
+        SimScenarios.Apply(c, name);
+        return c;
+    }
+
+    [Fact]
+    public void Scenario_idle_is_a_stopped_machine()
+    {
+        var s = Scenario("idle").Snapshot;
+        Assert.Equal(PackMlState.Stopped, s.Machine.State);
+        Assert.All(s.Movers, m => Assert.Empty(m.Parts));
+    }
+
+    [Fact]
+    public void Scenario_running_has_been_producing_for_30_seconds()
+    {
+        var s = Scenario("running").Snapshot;
+        Assert.Equal(PackMlState.Execute, s.Machine.State);
+        Assert.Contains(s.Movers, m => m.Parts.Count > 0);
+        Assert.Contains(s.Stations, st => st.Operation != null);
+    }
+
+    [Fact]
+    public void Scenario_station_aborted_keeps_production_on_the_other_press()
+    {
+        var c = Scenario("station-aborted");
+        var s = c.Snapshot;
+        Assert.Equal(PackMlState.Aborted, s.Station(DemoProject.Pressage01)!.State);
+        Assert.Equal(PackMlState.Execute, s.Machine.State);
+        Assert.Equal(PackMlState.Execute, s.Station(DemoProject.Pressage02)!.State);
+        Assert.Contains(s.Alarms, a => a.Severity == AlarmSeverity.StationFault && a.State == AlarmState.Active);
+    }
+
+    [Fact]
+    public void Scenario_step_mode_stops_station_2_in_maintenance_with_a_pending_card()
+    {
+        var s = Scenario("step-mode").Snapshot;
+        var st = s.Station(DemoProject.Pressage02)!;
+        Assert.Equal(MachineMode.Maintenance, st.Mode);
+        Assert.Contains(st.Steps, r => r.State == StepRunState.StepPending);
+        Assert.Contains(st.Steps, r => r.State == StepRunState.Done);
+    }
+
+    [Fact]
+    public void Scenario_manual_has_station_1_idle_in_maintenance()
+    {
+        var s = Scenario("manual").Snapshot;
+        Assert.Equal(MachineMode.Maintenance, s.Machine.Mode);
+        Assert.Equal(PackMlState.Idle, s.Station(DemoProject.Pressage01)!.State);
+    }
+
+    [Fact]
+    public void Scenario_validation_errors_shows_the_faulty_project_but_deploys_the_valid_one()
+    {
+        var cat = Catalog();
+        var shown = SimScenarios.ProjectFor("validation-errors", cat);
+        var issues = StdMachine.Core.Validation.ProjectValidator.Validate(shown, cat);
+        Assert.Contains(issues, i => i.Code == "V001");
+        Assert.Contains(issues, i => i.Code == "V004");
+        Assert.Equal(PackMlState.Execute, Scenario("validation-errors").Snapshot.Machine.State);
+    }
+
+    [Fact]
+    public void Scenario_quality_hold_holds_press_2_while_press_1_works()
+    {
+        var s = Scenario("quality-hold").Snapshot;
+        Assert.True(s.Station(DemoProject.Pressage02)!.QualityHold);
+        Assert.Equal(PackMlState.Held, s.Station(DemoProject.Pressage02)!.State);
+        Assert.Equal(PackMlState.Execute, s.Station(DemoProject.Pressage01)!.State);
+        Assert.Contains(s.Quality.Tracks, t => t.Locked);
+    }
+
+    [Fact]
+    public void Scenario_forced_declares_a_blocking_state_and_removes_station_and_mover_from_production()
+    {
+        var s = Scenario("forced").Snapshot;
+        Assert.True(s.Forces.StartBlocked);
+        Assert.Equal(DeclaredState.CorrectiveMaintenance, s.Forces.Declared);
+        Assert.True(s.Station(DemoProject.Pressage01)!.OutOfProduction);
+        Assert.Equal(PackMlState.Execute, s.Station(DemoProject.Pressage02)!.State);
+        Assert.Equal(2, s.Forces.Entries.Count);
+        Assert.Equal(PackMlState.Execute, s.Machine.State);
+    }
 }
