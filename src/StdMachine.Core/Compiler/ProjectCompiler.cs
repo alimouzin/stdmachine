@@ -35,6 +35,19 @@ public static class StepIds
 /// </summary>
 public static class ProjectCompiler
 {
+    /// <summary>
+    /// Déplie une fonction du catalogue en étapes sur les objets du module : même dépliage que la compilation,
+    /// utilisé par le mode manuel du simulateur pour exécuter « Aller à », « Prendre pièce »…
+    /// </summary>
+    public static IReadOnlyList<Step> ExpandModuleFunction(CatalogDocument catalog, ObjectNode module, FunctionStep call)
+    {
+        var def = catalog.Modules.FirstOrDefault(m => m.Code == module.TypeCode)
+            ?? throw new CompileException("« " + module.TypeCode + " » n'est pas un module.");
+        var fn = def.Functions.FirstOrDefault(x => x.Id == call.FunctionId)
+            ?? throw new CompileException("Fonction « " + call.FunctionId + " » inconnue pour " + def.Name + ".");
+        return new ModuleExpander(catalog, module, def, fn, call, module.Name).Expand();
+    }
+
     public static CompileResult Compile(MachineProject project, CatalogDocument catalog)
     {
         var issues = ProjectValidator.Validate(project, catalog);

@@ -102,6 +102,72 @@ public class ClientTests
         Assert.Equal(2, after.Values[0]);
     }
 
+    private static (Guid Robot, Guid AxisX, Guid AxisY) RobotOf(SimulatedPlcClient c, int station)
+    {
+        var all = c.Project.Station(station)!.AllObjects().ToList();
+        return (all.First(x => x.TypeCode == "CartesianRobot").Id, all.First(x => x.ChildRole == "AxisX").Id, all.First(x => x.ChildRole == "AxisY").Id);
+    }
+
+    private static ManualResult RunManual(SimulatedPlcClient c, ManualActionRequest request)
+    {
+        var task = c.ExecuteManualAsync(request, default);
+        for (int i = 0; i < 400 && !task.IsCompleted; i++) { c.Advance(100); Thread.Sleep(5); }
+        Assert.True(task.IsCompleted, "l'action manuelle ne se termine pas");
+        return task.Result;
+    }
+
+    [Fact]
+    public void Manual_module_function_goto_is_unfolded_and_moves_the_robot_axes()
+    {
+        var c = NewClient();
+        Assert.True(c.SetModeAsync(MachineMode.Maintenance, default).Result.Accepted);
+        c.Advance(100);
+        var (robot, axisX, axisY) = RobotOf(c, DemoProject.Pressage01);
+
+        // Les axes doivent être référencés avant tout mouvement (sinon « non initialisé »).
+        Assert.True(RunManual(c, new ManualActionRequest(DemoProject.Pressage01, robot, "Référencer", new double[0])).Accepted);
+
+        // « Aller à » : position (X, Y, Z, C) puis vitesse rapide V2.
+        var r = RunManual(c, new ManualActionRequest(DemoProject.Pressage01, robot, "Aller à", new[] { 210.0, 120.0, -24.8, 0.0, 2.0 }));
+
+        Assert.True(r.Accepted, r.Reason);
+        var s = c.Snapshot;
+        Assert.Equal(210.0, s.Objects.First(o => o.ObjectId == axisX).Values[0], 1);
+        Assert.Equal(120.0, s.Objects.First(o => o.ObjectId == axisY).Values[0], 1);
+    }
+
+    [Fact]
+    public void Manual_module_function_pick_runs_its_base_actions_including_the_tool()
+    {
+        var c = NewClient();
+        c.SetModeAsync(MachineMode.Maintenance, default).Wait();
+        c.Advance(100);
+        var (robot, axisX, _) = RobotOf(c, DemoProject.Pressage01);
+
+        Assert.True(RunManual(c, new ManualActionRequest(DemoProject.Pressage01, robot, "Référencer", new double[0])).Accepted);
+
+        // « Prendre pièce » : position, hauteur d'approche, vitesse.
+        var r = RunManual(c, new ManualActionRequest(DemoProject.Pressage01, robot, "Prendre pièce", new[] { 95.0, 140.0, -31.6, 0.0, 10.0, 2.0 }));
+
+        Assert.True(r.Accepted, r.Reason);
+        Assert.Equal(95.0, c.Snapshot.Objects.First(o => o.ObjectId == axisX).Values[0], 1);
+    }
+
+    [Fact]
+    public void Manual_module_function_is_refused_outside_maintenance_and_unknown_functions_are_reported()
+    {
+        var c = NewClient();
+        var (robot, _, _) = RobotOf(c, DemoProject.Pressage01);
+        var refused = c.ExecuteManualAsync(new ManualActionRequest(DemoProject.Pressage01, robot, "Aller à", new[] { 0.0, 0.0, 0.0, 0.0, 2.0 }), default).Result;
+        Assert.False(refused.Accepted);
+
+        c.SetModeAsync(MachineMode.Maintenance, default).Wait();
+        c.Advance(100);
+        var unknown = c.ExecuteManualAsync(new ManualActionRequest(DemoProject.Pressage01, robot, "Danser", new double[0]), default).Result;
+        Assert.False(unknown.Accepted);
+        Assert.Contains("inconnue", unknown.Reason);
+    }
+
     [Fact]
     public void Release_quality_and_out_of_production_flow_through_the_client()
     {

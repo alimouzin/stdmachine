@@ -62,8 +62,12 @@ public sealed partial class ManualViewModel : ViewModelBase
             Positions.Add(new PositionRow(p.Id, p.Name, p.Taught, p.Taught ? DisplayFormat.Number(p.X, 2) : "—", p.Taught ? DisplayFormat.Number(p.Y, 2) : "—",
                 p.Taught ? DisplayFormat.Number(p.Z, 2) : "—", p.Taught ? DisplayFormat.Number(p.C, 2) : "—", p.X * MapScale + 30, p.Y * MapScale + 30, p.Taught));
         }
-        Journal.Add(new JournalRow(DisplayFormat.ClockShort(DateTime.Now.AddMinutes(-4)), "Axe Z · Move absolu", true));
-        Journal.Add(new JournalRow(DisplayFormat.ClockShort(DateTime.Now.AddMinutes(-9)), "Aspiration · Aspirer", true));
+        // Les lignes de démonstration n'existent que sur la maquette ; avec le simulateur, le journal part vide.
+        if (AppServices.Plc is DemoPlcClient)
+        {
+            Journal.Add(new JournalRow(DisplayFormat.ClockShort(DateTime.Now.AddMinutes(-4)), "Axe Z · Move absolu", true));
+            Journal.Add(new JournalRow(DisplayFormat.ClockShort(DateTime.Now.AddMinutes(-9)), "Aspiration · Aspirer", true));
+        }
         Select(Objects.FirstOrDefault(o => o.Node.TypeCode == "CartesianRobot") ?? Objects[0]);
         OnSnapshots((_, s) => Refresh(s));
         Refresh(AppServices.Snapshots.Current);
@@ -196,19 +200,26 @@ public sealed partial class ManualViewModel : ViewModelBase
     private async Task StopStation()
         => await AppServices.Commands.SendStationAsync(_station.Number, StateCommand.Stop);
 
+    /// <summary>Action sans feuille de paramètres : valeurs par défaut du catalogue.</summary>
     [RelayCommand]
-    private async Task RunAction(ManualActionButton button)
+    private Task RunAction(ManualActionButton button)
+        => RunWithArgsAsync(button, (button.Action?.Params ?? button.Function?.Params ?? new List<ParamDef>()).SelectMany(DefaultValues).ToList());
+
+    /// <summary>Valeurs envoyées au PLC pour un paramètre : une position occupe quatre valeurs (X, Y, Z, C), le reste une seule.</summary>
+    private IEnumerable<double> DefaultValues(ParamDef d)
+    {
+        if (d.Type == "Position")
+        {
+            var p = _station.Positions.FirstOrDefault(x => x.Taught);
+            return p == null ? new double[] { 0, 0, 0, 0 } : new[] { p.X, p.Y, p.Z, p.C };
+        }
+        return new[] { d.Default };
+    }
+
+    private async Task RunWithArgsAsync(ManualActionButton button, IReadOnlyList<double> args)
     {
         if (_selected == null) return;
         if (!Available) { AppServices.Toast.Show("Manuel indisponible : " + (!ModeOk ? "passez en Maintenance." : !StateOk ? "arrêtez la station." : "droit Régleur requis."), ToastKind.Warning); return; }
-        var args = new List<double>();
-        var defs = button.Action?.Params ?? button.Function?.Params;
-        if (defs != null)
-            foreach (var d in defs)
-            {
-                if (d.Type == "Position" || d.Type == "Speed" || d.Type == "Bool" || d.Type == "Text") { args.Add(d.Default); continue; }
-                args.Add(d.Default);
-            }
         Running = true;
         LastResult = "En cours…";
         var r = await AppServices.Plc.ExecuteManualAsync(new ManualActionRequest(_station.Number, _selected.Node.Id, button.Name, args), CancellationToken.None);
@@ -225,9 +236,12 @@ public sealed partial class ManualViewModel : ViewModelBase
         bool ok = await AppServices.Dialogs.ConfirmAsync("Aller à « " + row.Name + " »", "Le robot va se déplacer à la position " + row.Name + ".", "Aller");
         if (!ok) return;
         var robot = Objects.First(o => o.Node.TypeCode == "CartesianRobot");
-        var r = await AppServices.Plc.ExecuteManualAsync(new ManualActionRequest(_station.Number, robot.Node.Id, "Aller à", new[] { 0.0 }), CancellationToken.None);
+        var target = _station.Positions.First(p => p.Id == row.Id);
+        // « Aller à » : position (X, Y, Z, C) puis vitesse rapide V2.
+        var r = await AppServices.Plc.ExecuteManualAsync(new ManualActionRequest(_station.Number, robot.Node.Id, "Aller à", new[] { target.X, target.Y, target.Z, target.C, 2.0 }), CancellationToken.None);
         Journal.Insert(0, new JournalRow(DisplayFormat.ClockShort(DateTime.Now), "Robot XYZC · Aller à " + row.Name, r.Accepted));
-        AppServices.Toast.Show("Position " + row.Name + " atteinte.", ToastKind.Success);
+        if (r.Accepted) AppServices.Toast.Show("Position " + row.Name + " atteinte.", ToastKind.Success);
+        else AppServices.Toast.Show("Déplacement refusé : " + r.Reason, ToastKind.Warning);
     }
 
     [RelayCommand]
@@ -260,24 +274,72 @@ public sealed partial class ManualViewModel : ViewModelBase
         if (!b.HasParams) { RunActionCommand.Execute(b); return; }
         var root = new StackPanel { Margin = new Thickness(24, 0, 24, 24) };
         var defs = b.Action?.Params ?? b.Function?.Params ?? new List<ParamDef>();
+        // Un lecteur par paramètre : ses valeurs au moment de l'appui sur « Exécuter ».
+        var readers = new List<Func<IEnumerable<double>>>();
         foreach (var d in defs)
         {
             if (d.Type == "Position")
             {
-                var f = new TextField { Label = d.Name, Text = _station.Positions.FirstOrDefault()?.Name ?? "", Margin = new Thickness(0, 0, 0, 10) };
-                root.Children.Add(f);
+                var current = _station.Positions.FirstOrDefault(x => x.Taught);
+                var field = new Button { Content = PositionLabel(d, current), HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 10) };
+                Ui.SetVariant(field, ButtonVariant.Secondary);
+                Ui.SetIcon(field, "place");
+                field.Click += async (_, _) =>
+                {
+                    var items = _station.Positions.Select(p => new PickItem(p.Name, p.Taught ? "apprise" : "non apprise", p, p.Taught)).ToList();
+                    if (await Pickers.PickAsync(field, d.Name, items, current) is NamedPosition chosen)
+                    {
+                        if (!chosen.Taught) { AppServices.Toast.Show("Position non apprise : apprenez-la d'abord.", ToastKind.Warning); return; }
+                        current = chosen;
+                        field.Content = PositionLabel(d, current);
+                    }
+                };
+                root.Children.Add(field);
+                readers.Add(() => current == null ? new double[] { 0, 0, 0, 0 } : new[] { current.X, current.Y, current.Z, current.C });
             }
-            else if (d.Type == "Speed") root.Children.Add(new TextField { Label = d.Name, Text = "Rapide (V2)", Margin = new Thickness(0, 0, 0, 10) });
-            else if (d.Type == "Bool") root.Children.Add(new CheckBox { Content = d.Name, IsChecked = d.Default != 0, Margin = new Thickness(0, 0, 0, 10), Height = 44 });
-            else root.Children.Add(new NumberField { Label = d.Name, Value = d.Default, Unit = d.Unit ?? "", Minimum = d.Min ?? -100000, Maximum = d.Max ?? 100000, Step = 1, Decimals = d.Type == "Int" ? 0 : 2, Margin = new Thickness(0, 0, 0, 10) });
+            else if (d.Type == "Speed")
+            {
+                double speed = d.Default >= 1 && d.Default <= 3 ? d.Default : 2;
+                string[] names = { "", "Lente (V1)", "Rapide (V2)", "Approche (V3)" };
+                var field = new Button { Content = d.Name + " : " + names[(int)speed], HorizontalAlignment = HorizontalAlignment.Stretch, HorizontalContentAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 10) };
+                Ui.SetVariant(field, ButtonVariant.Secondary);
+                Ui.SetIcon(field, "speed");
+                field.Click += async (_, _) =>
+                {
+                    var items = new List<PickItem> { new PickItem("Lente", "V1", 1.0), new PickItem("Rapide", "V2", 2.0), new PickItem("Approche", "V3", 3.0) };
+                    if (await Pickers.PickAsync(field, d.Name, items, speed) is double s) { speed = s; field.Content = d.Name + " : " + names[(int)speed]; }
+                };
+                root.Children.Add(field);
+                readers.Add(() => new[] { speed });
+            }
+            else if (d.Type == "Bool")
+            {
+                var box = new CheckBox { Content = d.Name, IsChecked = d.Default != 0, Margin = new Thickness(0, 0, 0, 10), Height = 44 };
+                root.Children.Add(box);
+                readers.Add(() => new[] { box.IsChecked == true ? 1.0 : 0.0 });
+            }
+            else
+            {
+                var number = new NumberField { Label = d.Name, Value = d.Default, Unit = d.Unit ?? "", Minimum = d.Min ?? -100000, Maximum = d.Max ?? 100000, Step = 1, Decimals = d.Type == "Int" ? 0 : 2, Margin = new Thickness(0, 0, 0, 10) };
+                root.Children.Add(number);
+                readers.Add(() => new[] { number.Value });
+            }
         }
+        OverlayHandle? sheet = null;
         var run = new Button { Content = "Exécuter", HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 10, 0, 0) };
         Ui.SetVariant(run, ButtonVariant.Primary);
         Ui.SetIcon(run, "play_arrow");
-        run.Click += (_, _) => RunActionCommand.Execute(b);
+        run.Click += (_, _) =>
+        {
+            var args = readers.SelectMany(r => r()).ToList();
+            sheet?.Dispose();
+            _ = RunWithArgsAsync(b, args);
+        };
         root.Children.Add(run);
-        AppServices.Drawer.Show(b.Name, root);
+        sheet = AppServices.Drawer.Show(b.Name, root);
     }
+
+    private static string PositionLabel(ParamDef d, NamedPosition? p) => d.Name + " : " + (p?.Name ?? "aucune position apprise");
 }
 
 public sealed record JournalRow(string Time, string Text, bool Ok);

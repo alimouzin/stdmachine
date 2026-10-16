@@ -265,7 +265,7 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
 
     public async Task<ManualResult> ExecuteManualAsync(ManualActionRequest request, CancellationToken ct)
     {
-        SimObject obj; StationSim st; CatalogAction def; ActParams p;
+        SimObject obj; StationSim st;
         lock (_gate)
         {
             st = _sim.StationByNumber(request.Station)!;
@@ -273,13 +273,35 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
             if (!st.ManualAllowed(out var why)) return new ManualResult(false, why);
             obj = FindObject(request.Station, request.ObjectId)!;
             if (obj == null) return new ManualResult(false, "Objet inconnu.");
-            var type = _catalog.Type(obj.TypeCode);
-            def = type?.Actions.FirstOrDefault(a => a.Name == request.Action)!;
-            if (def == null) return new ManualResult(false, "Action inconnue : " + request.Action);
-            p = ManualParams(def, request.Args);
-            var r = st.ManualStart(obj.LocalId, def.No, p);
-            if (r != StartResult.Ok) return new ManualResult(false, "Refusée : " + r);
         }
+        var def = _catalog.Type(obj.TypeCode)?.Actions.FirstOrDefault(a => a.Name == request.Action);
+        if (def == null) return await ExecuteFunctionAsync(request, st, obj, ct).ConfigureAwait(false);
+        lock (_gate)
+        {
+            var r = st.ManualStart(obj.LocalId, def.No, ManualParams(def, request.Args));
+            if (r != StartResult.Ok) return new ManualResult(false, RefusalText(r));
+        }
+        return await WaitActionAsync(obj, def, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Raison d'un refus de démarrage d'action, en français pour l'opérateur.</summary>
+    private static string RefusalText(StartResult r) => r switch
+    {
+        StartResult.NotInitialized => "Objet non initialisé : lancez d'abord « Référencer » (ou « Power on / Init »).",
+        StartResult.Busy => "Objet occupé : attendez la fin de l'action en cours.",
+        StartResult.Disabled => "Objet désactivé.",
+        StartResult.NotConfigured => "Objet non configuré.",
+        StartResult.InvalidParam => "Paramètre invalide.",
+        StartResult.Interlocked => "Verrouillage actif.",
+        StartResult.InError => "Objet en erreur : acquittez d'abord l'erreur.",
+        StartResult.UnknownAction => "Action inconnue pour ce type.",
+        StartResult.ManualOnly => "Action réservée au mode manuel.",
+        _ => "Refusée : " + r,
+    };
+
+    /// <summary>Attend la fin d'une action déjà démarrée sur l'objet et en rend le résultat.</summary>
+    private async Task<ManualResult> WaitActionAsync(SimObject obj, CatalogAction def, CancellationToken ct)
+    {
         double waited = 0;
         while (waited < 60_000)
         {
@@ -301,6 +323,112 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
             waited += 20 * TimeScale;
         }
         return new ManualResult(false, "Délai dépassé.");
+    }
+
+    /// <summary>
+    /// Fonction de module en manuel (« Aller à », « Prendre pièce »…) : dépliée comme à la compilation (docs/06 § 5.2), puis ses actions de base
+    /// sont lancées l'une après l'autre sur le canal manuel (les branches en parallèle ensemble). Les arguments sont ceux de la HMI,
+    /// dans l'ordre des paramètres de la fonction : une position occupe quatre valeurs (X, Y, Z, C).
+    /// </summary>
+    private async Task<ManualResult> ExecuteFunctionAsync(ManualActionRequest request, StationSim st, SimObject obj, CancellationToken ct)
+    {
+        IReadOnlyList<Step> steps;
+        var literals = new Dictionary<Guid, Pos>();
+        lock (_gate)
+        {
+            var module = _catalog.Modules.FirstOrDefault(m => m.Code == obj.TypeCode);
+            var fn = module?.Functions.FirstOrDefault(f => f.Name == request.Action || f.Id == request.Action);
+            if (fn == null) return new ManualResult(false, "Action inconnue : " + request.Action);
+            var node = _project.Stations.First(s => s.Number == request.Station).FindObject(obj.Cfg.Id)!;
+            var call = new FunctionStep { ModuleObjectId = node.Id, FunctionId = fn.Id };
+            int ai = 0;
+            foreach (var prm in fn.Params)
+            {
+                if (ai >= request.Args.Count) break; // le reste prend la valeur par défaut du catalogue
+                if (prm.Type == "Position")
+                {
+                    if (ai + 3 >= request.Args.Count) return new ManualResult(false, "Position incomplète pour « " + prm.Name + " ».");
+                    var id = Guid.NewGuid();
+                    literals[id] = new Pos(request.Args[ai], request.Args[ai + 1], request.Args[ai + 2], request.Args[ai + 3]);
+                    call.Args.Add(ValueRef.NamedPos(id));
+                    ai += 4;
+                }
+                else if (prm.Type == "Speed") call.Args.Add(ValueRef.Speed((int)request.Args[ai++]));
+                else call.Args.Add(ValueRef.Const(request.Args[ai++]));
+            }
+            try { steps = ProjectCompiler.ExpandModuleFunction(_catalog, node, call); }
+            catch (CompileException ex) { return new ManualResult(false, ex.Message); }
+        }
+        return await RunStepsAsync(st, request.Station, steps, literals, ct).ConfigureAwait(false);
+    }
+
+    private async Task<ManualResult> RunStepsAsync(StationSim st, int station, IReadOnlyList<Step> steps, Dictionary<Guid, Pos> literals, CancellationToken ct)
+    {
+        foreach (var step in steps)
+        {
+            ManualResult r;
+            switch (step)
+            {
+                case ActionStep a: r = await RunActionStepAsync(st, station, a, literals, ct).ConfigureAwait(false); break;
+                case ParallelBlock block:
+                    var all = await Task.WhenAll(block.Branches.Select(b => RunStepsAsync(st, station, b.Steps, literals, ct))).ConfigureAwait(false);
+                    r = all.FirstOrDefault(x => !x.Accepted) ?? new ManualResult(true, null);
+                    break;
+                default: r = new ManualResult(false, "Étape non prise en charge en mode manuel."); break;
+            }
+            if (!r.Accepted) return r;
+        }
+        return new ManualResult(true, null, new List<ConditionTermRuntime>());
+    }
+
+    private async Task<ManualResult> RunActionStepAsync(StationSim st, int station, ActionStep a, Dictionary<Guid, Pos> literals, CancellationToken ct)
+    {
+        SimObject obj; CatalogAction def;
+        lock (_gate)
+        {
+            obj = FindObject(station, a.ObjectId)!;
+            if (obj == null) return new ManualResult(false, "Objet inconnu.");
+            def = _catalog.Type(obj.TypeCode)?.Action(a.ActionNo)!;
+            if (def == null) return new ManualResult(false, "Action inconnue pour " + obj.TypeCode + ".");
+            var r = st.ManualStart(obj.LocalId, def.No, StepParams(station, a, literals));
+            if (r != StartResult.Ok) return new ManualResult(false, RefusalText(r));
+        }
+        return await WaitActionAsync(obj, def, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Paramètres d'une action de base déduite d'une fonction : constantes, vitesses, positions de la HMI ou positions nommées apprises.</summary>
+    private ActParams StepParams(int station, ActionStep a, Dictionary<Guid, Pos> literals)
+    {
+        var p = new ActParams();
+        var cfg = _project.Stations.First(s => s.Number == station);
+        for (int k = 0; k < a.Args.Count && k < 8; k++)
+        {
+            var v = a.Args[k];
+            switch (v.Kind)
+            {
+                case ValueKind.NamedPos:
+                    {
+                        Pos pos;
+                        if (v.Ref is Guid g && literals.TryGetValue(g, out var lit)) pos = lit;
+                        else
+                        {
+                            var np = cfg.Positions.FirstOrDefault(x => x.Id == v.Ref);
+                            if (np == null) break;
+                            pos = new Pos(np.X, np.Y, np.Z, np.C, np.Frame);
+                        }
+                        p.Kind[k] = ParamKind.Position; p.Pos = pos; p.HasPos = true; p.Real[k] = v.Offset;
+                        break;
+                    }
+                case ValueKind.Speed:
+                    if (v.Index > 0) { p.Kind[k] = ParamKind.SpeedIndex; p.Real[k] = v.Index; }
+                    else { p.Kind[k] = ParamKind.SpeedPercent; p.Real[k] = v.Number; }
+                    break;
+                case ValueKind.Const:
+                    p.Kind[k] = ParamKind.Real; p.Real[k] = v.Number + v.Offset;
+                    break;
+            }
+        }
+        return p;
     }
 
     private static ActParams ManualParams(CatalogAction def, IReadOnlyList<double> args)
