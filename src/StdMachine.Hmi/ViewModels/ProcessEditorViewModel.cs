@@ -101,6 +101,7 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
 
     [ObservableProperty] private string _query = string.Empty;
     [ObservableProperty] private int _panelTab;
+    [ObservableProperty] private string _compiledListing = string.Empty;
     [ObservableProperty] private string _validationSummary = string.Empty;
     [ObservableProperty] private Tone _validationTone = Tone.Ok;
     [ObservableProperty] private string _chronogramText = string.Empty;
@@ -297,7 +298,6 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
 
     // ---------------------------------------------------------------- panneau Étape
 
-    partial void OnPanelTabChanged(int value) { }
 
     public void OnSelectionChanged() => UpdatePanel();
 
@@ -558,8 +558,29 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
 
     // ---------------------------------------------------------------- validation et chronogramme
 
+    partial void OnPanelTabChanged(int value)
+    {
+        if (value == 2) RefreshListing();
+    }
+
+    /// <summary>Onglet « Table compilée » : listing des instructions de la table du process affiché (docs/06 § 5.6).</summary>
+    private void RefreshListing()
+    {
+        var result = AppServices.Compilation.Compile(_project);
+        if (result == null) { CompiledListing = "Le catalogue (catalog/catalog.json) n'est pas disponible : le listing ne peut pas être produit."; return; }
+        if (!result.Succeeded)
+        {
+            CompiledListing = "Compilation impossible : corrigez d'abord les erreurs de validation.\n\n" + string.Join("\n",
+                result.Issues.Where(i => i.Severity == StdMachine.Core.Validation.Severity.Error).Take(12).Select(i => i.Code + "  " + i.Message));
+            return;
+        }
+        try { CompiledListing = StdMachine.Core.Compiler.Listing.Of(result.Project!, Station?.Number ?? 0, Process.Name); }
+        catch (ArgumentException) { CompiledListing = "Ce process n'a pas de table compilée."; }
+    }
+
     private void RefreshValidation()
     {
+        if (PanelTab == 2) RefreshListing();
         Issues.Clear();
         int st = Station?.Number ?? 0;
         var mine = AppServices.Project.Issues.Where(i => i.Station == null || i.Station == st || (Level == ProcessLevel.Machine)).ToList();

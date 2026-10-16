@@ -271,7 +271,9 @@
                                     <Style.Triggers><DataTrigger Binding="{Binding PanelTab}" Value="2"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers>
                                 </Style>
                             </Grid.Style>
-                            <c:EmptyState IconName="list_alt" Title="Table compilée" Message="Le listing des instructions apparaît ici avec le compilateur (phase 3). La carte sélectionnée y sera surlignée."/>
+                            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" PanningMode="Both">
+                                <TextBlock Text="{Binding CompiledListing}" FontFamily="{StaticResource Font.Mono}" Style="{StaticResource Type.Caption}" TextWrapping="NoWrap" Margin="12"/>
+                            </ScrollViewer>
                         </Grid>
                     </Grid>
                 </DockPanel>

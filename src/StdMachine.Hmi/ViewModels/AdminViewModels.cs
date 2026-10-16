@@ -108,6 +108,20 @@ public sealed partial class DeployViewModel : ViewModelBase
     {
         if (Deploying || Finished) return;
         if (!AllConditionsOk) { AppServices.Toast.Show("Conditions de déploiement non réunies.", ToastKind.Warning); return; }
+        // Compilation réelle du projet : empreinte et nombre d'instructions envoyés au PLC (le substitut de la maquette sinon).
+        var payload = new CompiledProject("A1B2C3D4E5F60718", 412);
+        var compiled = AppServices.Compilation.Compile(AppServices.Project.Project);
+        if (compiled != null)
+        {
+            if (!compiled.Succeeded)
+            {
+                ResultText = "Compilation impossible : " + string.Join(" ; ", compiled.Issues.Where(i => i.Severity == StdMachine.Core.Validation.Severity.Error).Take(3).Select(i => i.Code + " " + i.Message));
+                AppServices.Toast.Show("Le projet ne se compile pas.", ToastKind.Error);
+                return;
+            }
+            var tables = compiled.Project!;
+            payload = new CompiledProject(tables.Hash.Substring(0, 16).ToUpperInvariant(), tables.Stations.Sum(x => x.Instructions.Count) + tables.Machine.Instructions.Count);
+        }
         Deploying = true;
         var progress = new Progress<DeployProgress>(p =>
         {
@@ -115,7 +129,7 @@ public sealed partial class DeployViewModel : ViewModelBase
                 if (p.Block.StartsWith(b.Name.Substring(0, Math.Min(8, b.Name.Length)), StringComparison.OrdinalIgnoreCase) || (b.Name == "Stations 1 à 6" && p.Block.StartsWith("Station")))
                 { b.Fraction = p.Fraction; b.Done = p.Fraction >= 1; }
         });
-        var r = await AppServices.Plc.DeployAsync(new CompiledProject("A1B2C3D4E5F60718", 412), progress, CancellationToken.None);
+        var r = await AppServices.Plc.DeployAsync(payload, progress, CancellationToken.None);
         Deploying = false;
         Finished = true;
         foreach (var b in Blocks) { b.Fraction = 1; b.Done = true; }

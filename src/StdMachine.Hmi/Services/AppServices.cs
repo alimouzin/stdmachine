@@ -32,10 +32,14 @@ public sealed class ProjectService : ObservableObject
 {
     private IReadOnlyList<ValidationIssue> _issues = new ValidationIssue[0];
 
-    public ProjectService() : this(DemoProject.Build()) { }
+    private readonly bool _realValidation;
 
-    public ProjectService(MachineProject project)
+    public ProjectService() : this(DemoProject.Build(), false) { }
+
+    /// <param name="realValidation">Vrai : la barre de validation utilise les règles V001 à V113 de <c>ProjectValidator</c> (projet complet, mode simulateur) ; faux : validation de démonstration.</param>
+    public ProjectService(MachineProject project, bool realValidation)
     {
+        _realValidation = realValidation;
         Project = project;
         Undo = new UndoService();
         Undo.Changed += (_, _) => Revalidate();
@@ -77,9 +81,19 @@ public sealed class ProjectService : ObservableObject
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
+    private IReadOnlyList<ValidationIssue> RealIssues(StdMachine.Core.Catalog.CatalogDocument catalog)
+    {
+        string PageOf(string page) => page == "ProcessEditor" ? "Éditeur" : page == "StationConfig" ? "Studio station" : page == "MachineConfig" ? "Studio machine" : page == "Quality" ? "Qualité" : page;
+        return StdMachine.Core.Validation.ProjectValidator.Validate(Project, catalog)
+            .Select(i => new ValidationIssue(i.Code,
+                i.Severity == StdMachine.Core.Validation.Severity.Error ? ValidationSeverity.Error : i.Severity == StdMachine.Core.Validation.Severity.Warning ? ValidationSeverity.Warning : ValidationSeverity.Information,
+                i.Message, i.Link.StationNumber, i.Link.StepId, PageOf(i.Link.Page)))
+            .OrderBy(i => i.Severity).ThenBy(i => i.Code).ToList();
+    }
+
     public void Revalidate()
     {
-        Issues = MockValidator.Validate(Project);
+        Issues = _realValidation && AppServices.Compilation.Catalog != null ? RealIssues(AppServices.Compilation.Catalog) : MockValidator.Validate(Project);
         OnPropertyChanged(nameof(ErrorCount));
         OnPropertyChanged(nameof(WarningCount));
     }

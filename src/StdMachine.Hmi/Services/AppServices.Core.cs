@@ -8,6 +8,7 @@ namespace StdMachine.Hmi.Services;
 public static partial class AppServices
 {
     public static ProjectService Project { get; private set; } = null!;
+    public static CompilationService Compilation { get; private set; } = null!;
     public static IPlcClient Plc { get; private set; } = null!;
     public static SnapshotStore Snapshots { get; private set; } = null!;
     public static SessionService Session { get; private set; } = null!;
@@ -18,18 +19,19 @@ public static partial class AppServices
     /// <summary>Services de la maquette : projet de démonstration, <see cref="DemoPlcClient"/>, instantané, session, navigation.</summary>
     public static void Initialize(Dispatcher dispatcher, NavigationService navigation, bool simulator = false, string? scenario = null)
     {
+        Compilation = new CompilationService(CompilationService.TryLoadCatalog());
         IPlcClient client;
         if (simulator)
         {
             // Simulateur fidèle (phases 4 et 5) : le projet d'exemple MX-4 compilé et exécuté par SimulatedPlcClient.
             string dir = AppDomain.CurrentDomain.BaseDirectory;
-            var catalog = StdMachine.Core.Catalog.CatalogLoader.Load(System.IO.Path.Combine(dir, "catalog", "catalog.json"));
+            var catalog = Compilation.Catalog ?? StdMachine.Core.Catalog.CatalogLoader.Load(System.IO.Path.Combine(dir, "catalog", "catalog.json"));
             string samplePath = System.IO.Path.Combine(dir, "samples", "MX-4.stdm.json");
             Func<MachineProject> load = () => System.IO.File.Exists(samplePath)
                 ? StdMachine.Persistence.ProjectSerializer.Load(samplePath)
                 : StdMachine.Simulation.Demo.SampleProject.Build(catalog);
             var shown = scenario == "validation-errors" ? StdMachine.Simulation.SimScenarios.ProjectFor(scenario, catalog) : load();
-            Project = new ProjectService(shown);
+            Project = new ProjectService(shown, true);
             var sim = new StdMachine.Simulation.SimulatedPlcClient(scenario == "validation-errors" ? load() : shown, catalog);
             if (scenario != null) StdMachine.Simulation.SimScenarios.Apply(sim, scenario);
             client = sim;

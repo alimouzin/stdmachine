@@ -72,6 +72,7 @@
     <Color x:Key="Beacon.Blue.Color">#2F6FED</Color>
 
     <!-- ===== 2.5 Typographie ===== -->
+    <FontFamily x:Key="Font.Mono">Consolas, Courier New</FontFamily>
     <FontFamily x:Key="Font.Sans">pack://application:,,,/Fonts/#IBM Plex Sans</FontFamily>
     <FontFamily x:Key="Font.Icons">pack://application:,,,/Fonts/#Material Symbols Outlined</FontFamily>
 
