@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Windows : net48. Ailleurs : net8.0 avec les sources liées (voir StdMachine.Core.Tests). -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <TargetFramework>net48</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <TargetFramework>net8.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>StdMachine.Plant.Tests</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(OS)' == 'Windows_NT'">
+    <ProjectReference Include="..\..\src\StdMachine.Core\StdMachine.Core.csproj" />
+    <ProjectReference Include="..\..\src\StdMachine.Plant\StdMachine.Plant.csproj" />
+    <ProjectReference Include="..\..\src\StdMachine.Simulation\StdMachine.Simulation.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(OS)' != 'Windows_NT'">
+    <PackageReference Include="System.Text.Json" Version="8.0.5" />
+    <Compile Include="..\..\src\StdMachine.Core\**\*.cs" Exclude="..\..\src\StdMachine.Core\obj\**;..\..\src\StdMachine.Core\bin\**" LinkBase="Core" />
+    <Compile Include="..\..\src\StdMachine.Plant\**\*.cs" Exclude="..\..\src\StdMachine.Plant\obj\**;..\..\src\StdMachine.Plant\bin\**" LinkBase="Plant" />
+    <Compile Include="..\..\src\StdMachine.Simulation\**\*.cs" Exclude="..\..\src\StdMachine.Simulation\obj\**;..\..\src\StdMachine.Simulation\bin\**" LinkBase="Simulation" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="..\..\catalog\catalog.json" Link="catalog\catalog.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

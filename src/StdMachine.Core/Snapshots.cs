@@ -243,7 +243,10 @@ public sealed record ObjectStatus(
     IReadOnlyList<double> Values,
     string? ActionText,
     double ActionProgress,
-    string? ErrorText);
+    string? ErrorText,
+    long ActionCount = 0,
+    long ErrorCount = 0,
+    double MotionHours = 0);
 
 public sealed record AlarmInfo(
     int Id,

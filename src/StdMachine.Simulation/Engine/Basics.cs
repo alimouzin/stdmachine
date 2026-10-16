@@ -52,7 +52,7 @@ public sealed class Part
     }
 }
 
-public sealed record PartOp(int Station, int Group, int VerdictAfter);
+public sealed record PartOp(int Station, int Group, int VerdictAfter, double StartMs = 0, double EndMs = 0, int Operation = 0);
 
 /// <summary>Générateur pseudo-aléatoire reproductible (graine fixe : les tests et les captures sont stables).</summary>
 public sealed class SimRandom

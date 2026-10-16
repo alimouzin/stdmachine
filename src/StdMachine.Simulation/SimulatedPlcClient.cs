@@ -20,7 +20,7 @@ public interface ISimulatorTools
 /// Client PLC simulé (docs/06 § 7–8) : un <see cref="MachineSim"/> piloté par le temps réel (échelle réglable), qui publie des instantanés
 /// à 10 Hz au plus. Il exécute le projet compilé ; il ne contient aucune logique propre à une machine.
 /// </summary>
-public sealed class SimulatedPlcClient : IPlcClient, ISimulatorControl, ISimulatorTools
+public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulatorControl, ISimulatorTools
 {
     private readonly object _gate = new object();
     private readonly CatalogDocument _catalog;
@@ -88,6 +88,8 @@ public sealed class SimulatedPlcClient : IPlcClient, ISimulatorControl, ISimulat
     private bool _dirty;
 
     public event EventHandler<PlcSnapshot>? SnapshotUpdated;
+
+    public event EventHandler<PartRecord>? PartClosed;
 
     // ------------------------------------------------------------------ cycle de vie
 
@@ -162,6 +164,7 @@ public sealed class SimulatedPlcClient : IPlcClient, ISimulatorControl, ISimulat
             int number = s.Number;
             s.StepEvent += (st, id, begin) => tracker.On(id, begin);
         }
+        _sim.PartClosed += OnPartClosed;
         _lastStationState.Clear(); _stationSince.Clear(); _lastMachineState = PackMlState.Stopped; _stateSinceMachine = 0;
         _epoch = DateTime.Now;
     }
@@ -172,6 +175,31 @@ public sealed class SimulatedPlcClient : IPlcClient, ISimulatorControl, ISimulat
         var map = req == null ? null : s.Data.OpMap.FirstOrDefault(m => m.Group == req.Group && m.OperationNo == req.Operation);
         int table = s.Contexts[1].Table > 0 ? s.Contexts[1].Table : map?.Table ?? 0;
         return table > 0 ? s.Data.Tables[table - 1].Name : string.Empty;
+    }
+
+    private void OnPartClosed(MachineSim.ClosedPart c)
+    {
+        var part = c.Part;
+        var ops = new List<PartOpRecord>();
+        for (int i = 0; i < part.Ops.Count; i++)
+        {
+            var o = part.Ops[i];
+            var st = _sim.StationByNumber(o.Station);
+            var map = st?.Data.OpMap.FirstOrDefault(m => m.Group == o.Group && m.OperationNo == o.Operation);
+            string op = map != null && st != null ? st.Data.Tables[map.Table - 1].Name : "Opération " + o.Operation;
+            var data = new Dictionary<string, double>();
+            if (i == part.Ops.Count - 1)
+                for (int k = 0; k < _compiled.Machine.PartData.Count; k++)
+                {
+                    var pd = _compiled.Machine.PartData[k];
+                    if (!pd.Reserved && part.Data[k + 1] != 0) data[pd.Name] = part.Data[k + 1];
+                }
+            ops.Add(new PartOpRecord(_compiled.Machine.Groups[o.Group - 1].Name, op, st?.Name ?? "Station " + o.Station, At(o.StartMs), At(o.EndMs),
+                o.VerdictAfter == 1 ? Verdict.Good : o.VerdictAfter == 2 ? Verdict.Bad : Verdict.Undefined, data));
+        }
+        var state = part.Status == PartStatus.Exited ? PartState.Exited : part.Status == PartStatus.Rejected ? PartState.Rejected : PartState.Removed;
+        var rec = new PartRecord(part.Id, c.Order, c.Reference, At(part.CreatedMs), At(c.ClosedMs), state, VerdictOf(part), c.Mover, c.Slot, ops);
+        PartClosed?.Invoke(this, rec);
     }
 
     private void Observe()
@@ -699,7 +727,7 @@ public sealed class SimulatedPlcClient : IPlcClient, ISimulatorControl, ISimulat
                     ObjState.Error => ObjectState.Error, _ => ObjectState.Disabled,
                 };
                 string? action = o.State == ObjState.Busy ? o.ActionName(o.Action) : null;
-                list.Add(new ObjectStatus(s.Number, o.Cfg.Id, state, o.Values.ToArray(), action, o.Progress, o.State == ObjState.Error ? o.ErrorTextOf(o.ErrorCode) : null));
+                list.Add(new ObjectStatus(s.Number, o.Cfg.Id, state, o.Values.ToArray(), action, o.Progress, o.State == ObjState.Error ? o.ErrorTextOf(o.ErrorCode) : null, o.ActionCount, o.ErrorCount));
             }
         foreach (var o in _compiled.Machine.Objects)
             list.Add(new ObjectStatus(0, o.Id, o.Disabled ? ObjectState.Disabled : ObjectState.Ready, new double[4], null, 0, null));

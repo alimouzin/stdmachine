@@ -120,3 +120,15 @@ public interface ISimulatorControl
     double TimeScale { get; set; }
     void ForceStationAbort(int station);
 }
+
+/// <summary>Une opération réalisée sur une pièce (traçabilité, docs/11 § 4.3).</summary>
+public sealed record PartOpRecord(string Function, string Operation, string Station, DateTime Start, DateTime End, Verdict VerdictAfter, IReadOnlyDictionary<string, double> Data);
+
+/// <summary>Pièce clôturée (sortie, rebutée ou retirée) avec son historique d'opérations.</summary>
+public sealed record PartRecord(string PartId, string? Order, string? Reference, DateTime CreatedAt, DateTime ClosedAt, PartState FinalState, Verdict Verdict, int Mover, int Slot, IReadOnlyList<PartOpRecord> Operations);
+
+/// <summary>Source des clôtures de pièces (le simulateur aujourd'hui, le PLC par ADS plus tard) : alimente la traçabilité et la passerelle usine.</summary>
+public interface IPartEventSource
+{
+    event EventHandler<PartRecord>? PartClosed;
+}

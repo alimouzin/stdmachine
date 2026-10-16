@@ -145,6 +145,11 @@ public sealed class MachineSim
 
     public event Action<string>? EventRaised;
 
+    /// <summary>Une pièce vient d'être clôturée (avant la remise à zéro de l'emplacement).</summary>
+    public event Action<ClosedPart>? PartClosed;
+
+    public sealed record ClosedPart(Part Part, int Mover, int Slot, double ClosedMs, string? Order, string? Reference);
+
     public sealed record OperationResult(int StationIndex, int Station, int GroupIndex, int Mover, string PartId, bool Bad, bool Closed, bool ClosedBad, double TimeMs, int AlarmCode);
 
     private int VerdictIndex => _c.Machine.VerdictIndex;
@@ -829,7 +834,7 @@ public sealed class MachineSim
             if (!part.Present) continue;
             if (failed && VerdictIndex > 0) part.Data[VerdictIndex] = 2;
             int verdict = VerdictIndex > 0 ? (int)part.Data[VerdictIndex] : 0;
-            part.Ops.Add(new PartOp(st.Number, m.TargetGroup, verdict));
+            part.Ops.Add(new PartOp(st.Number, m.TargetGroup, verdict, started, NowMs, m.TargetOp));
             bool bad = verdict == 2;
             // Surveillance des rebuts (docs/10 § 9) : un verdict déjà mauvais à l'arrivée ne compte pas pour cette station.
             if (!part.BadAtArrival)
@@ -859,7 +864,11 @@ public sealed class MachineSim
             }
             AddTrace(m, si, st, m.TargetGroup, m.TargetOp, part, started, verdict, resp.ErrorCode);
             OperationFinished?.Invoke(new OperationResult(stationIdx, st.Number, m.TargetGroup, m.Number, part.Id, bad, closed, closedBad, NowMs - started, resp.ErrorCode));
-            if (closed) part.Clear();
+            if (closed)
+            {
+                PartClosed?.Invoke(new ClosedPart(part, m.Number, si + 1, NowMs, Order?.Number, Order?.Reference));
+                part.Clear();
+            }
         }
 
         // 7. Avancer le PC (le mover vide d'une opération de sortie ou de rebut repart au début du process)

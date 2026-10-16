@@ -10,11 +10,11 @@
     <ArtifactsRoot>$(MSBuildThisFileDirectory)</ArtifactsRoot>
   </PropertyGroup>
   <!-- Avertissements traités comme erreurs dans Core et Simulation (CLAUDE.md) -->
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'StdMachine.Core' Or '$(MSBuildProjectName)' == 'StdMachine.Simulation' Or '$(MSBuildProjectName)' == 'StdMachine.Persistence'">
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'StdMachine.Core' Or '$(MSBuildProjectName)' == 'StdMachine.Simulation' Or '$(MSBuildProjectName)' == 'StdMachine.Persistence' Or '$(MSBuildProjectName)' == 'StdMachine.Plant'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <!-- Shims net48 (IsExternalInit, RequiredMember...) : un seul fichier, partagé par lien -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' == 'StdMachine.Core' Or '$(MSBuildProjectName)' == 'StdMachine.Simulation' Or '$(MSBuildProjectName)' == 'StdMachine.Persistence'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'StdMachine.Core' Or '$(MSBuildProjectName)' == 'StdMachine.Simulation' Or '$(MSBuildProjectName)' == 'StdMachine.Persistence' Or '$(MSBuildProjectName)' == 'StdMachine.Plant'">
     <Compile Include="$(MSBuildThisFileDirectory)src\StdMachine.Hmi\Compatibility.cs" Link="Compatibility.cs" />
   </ItemGroup>
 </Project>
