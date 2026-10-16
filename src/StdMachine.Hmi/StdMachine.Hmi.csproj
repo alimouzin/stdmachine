@@ -13,7 +13,7 @@
     <Resource Include="..\..\assets\fonts\*.ttf" Link="Fonts\%(Filename)%(Extension)" />
   </ItemGroup>
   <ItemGroup>
-    <!-- Catalogue et projet d'exemple : lus au démarrage par le mode --simulator -->
+    <!-- Catalogue et projet d'exemple : lus au démarrage par le mode simulateur -->
     <Content Include="..\..\catalog\catalog.json" Link="catalog\catalog.json" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="..\..\samples\MX-4.stdm.json" Link="samples\MX-4.stdm.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
