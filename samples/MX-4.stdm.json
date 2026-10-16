@@ -3358,7 +3358,18 @@
                             "offset": 0
                           }
                         ],
-                        "bindings": [],
+                        "bindings": [
+                          {
+                            "resultNo": 1,
+                            "target": "var",
+                            "ref": "42f314e8-b647-a4e7-7d2d-fb10f70335ca"
+                          },
+                          {
+                            "resultNo": 2,
+                            "target": "partData",
+                            "ref": "26bf1abc-c5b1-6839-330c-90513853e30b"
+                          }
+                        ],
                         "fail": {
                           "kind": "stopStation",
                           "retries": 0
@@ -3766,7 +3777,12 @@
                     "offset": 0
                   }
                 ],
-                "bindings": [],
+                "bindings": [
+                  {
+                    "resultNo": 1,
+                    "target": "verdict"
+                  }
+                ],
                 "fail": {
                   "kind": "stopStation",
                   "retries": 0
@@ -5417,7 +5433,18 @@
                             "offset": 0
                           }
                         ],
-                        "bindings": [],
+                        "bindings": [
+                          {
+                            "resultNo": 1,
+                            "target": "var",
+                            "ref": "91ea9c8e-656b-c6f5-5129-8364c02105c5"
+                          },
+                          {
+                            "resultNo": 2,
+                            "target": "partData",
+                            "ref": "26bf1abc-c5b1-6839-330c-90513853e30b"
+                          }
+                        ],
                         "fail": {
                           "kind": "stopStation",
                           "retries": 0
@@ -5825,7 +5852,12 @@
                     "offset": 0
                   }
                 ],
-                "bindings": [],
+                "bindings": [
+                  {
+                    "resultNo": 1,
+                    "target": "verdict"
+                  }
+                ],
                 "fail": {
                   "kind": "stopStation",
                   "retries": 0
@@ -6592,7 +6624,17 @@
                 "objectId": "df518e5d-cb1a-b83b-49b2-bae19c2561c0",
                 "actionNo": 1,
                 "args": [],
-                "bindings": [],
+                "bindings": [
+                  {
+                    "resultNo": 1,
+                    "target": "partData",
+                    "ref": "15120734-1337-e447-43b1-7a17bd9fa581"
+                  },
+                  {
+                    "resultNo": 2,
+                    "target": "verdict"
+                  }
+                ],
                 "fail": {
                   "kind": "stopStation",
                   "retries": 0

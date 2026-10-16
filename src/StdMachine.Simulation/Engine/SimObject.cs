@@ -132,6 +132,9 @@ public sealed class SimObject
 
     public bool Simulated => Cfg.Simulated;
 
+    // Pour la presse (jugement mauvais), l'aspiration (pièce absente) et la vision (aucune pièce), le taux d'échec est un taux de résultat, pas une erreur d'objet.
+    private bool FailureRateIsInternal => TypeCode == "Press" || TypeCode == "VacuumBlow" || TypeCode == "AsyrilEyePlus";
+
     public bool NeedsInit => TypeCode == "LinearAxis" || TypeCode == "RotaryAxis" || TypeCode == "AsyrilEyePlus" || TypeCode == "ExternalRobot";
 
     public bool IsMotion(int action) => _type?.Action(action)?.Motion ?? false;
@@ -170,7 +173,7 @@ public sealed class SimObject
         Params = p; Action = action; Manual = manual;
         Results.Count = 0; Results.HasPos = false; Results.PosResult = 0; Results.TextResult = 0; Results.Text = string.Empty;
         Array.Clear(Results.Real, 0, 8);
-        ElapsedMs = 0; Progress = 0; _halted = false; _indefinite = false; _complete = null;
+        ElapsedMs = 0; Progress = 0; _progressMs = 0; _durationMs = 0; _halted = false; _indefinite = false; _complete = null;
         ErrorCode = 0; SubCode = 0;
         ActionCount++;
         TimeoutMs = EffectiveTimeout(def, p);
@@ -223,7 +226,7 @@ public sealed class SimObject
         if (_progressMs >= _durationMs)
         {
             Progress = 1;
-            if (FailureRate > 0 && _rng.Chance(FailureRate)) { Fail(100, Action); return; }
+            if (FailureRate > 0 && !FailureRateIsInternal && _rng.Chance(FailureRate)) { Fail(100, Action); return; }
             _complete?.Invoke();
             if (State == ObjState.Error) return;
             Status = ActStatus.Done;

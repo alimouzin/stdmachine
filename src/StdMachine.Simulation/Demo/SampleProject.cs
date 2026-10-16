@@ -161,6 +161,32 @@ public static class SampleProject
                 bg.Body.Steps.RemoveAll(x => x is ActionStep a && visions.Contains(a.ObjectId));
         }
 
+        // Résultats des mesures et de la presse (docs/06 § 5.6 : r1→Var2, r2→PartData2 ; le contrôle juge la pièce, le sertissage aussi).
+        foreach (var st in p.Stations)
+        {
+            var judgementVar = st.Variables.FirstOrDefault(v => v.Name == "JugementPresse");
+            foreach (var proc in st.Processes)
+                foreach (var a in proc.AllSteps().OfType<ActionStep>().Where(a => a.Bindings.Count == 0))
+                {
+                    var obj = st.FindObject(a.ObjectId);
+                    if (obj == null) continue;
+                    if (obj.TypeCode == "Press" && a.ActionNo == 1)
+                    {
+                        if (proc.Name == "Presser pignon" && judgementVar != null)
+                        {
+                            a.Bindings.Add(new ResultBinding(1, BindTarget.Var, judgementVar.Id));
+                            a.Bindings.Add(new ResultBinding(2, BindTarget.PartData, DemoProject.ForceFinaleId));
+                        }
+                        else a.Bindings.Add(new ResultBinding(1, BindTarget.Verdict));
+                    }
+                    else if (obj.TypeCode == "KeyenceGT2" && a.ActionNo == 1)
+                    {
+                        a.Bindings.Add(new ResultBinding(1, BindTarget.PartData, DemoIds.Of("part/hauteur")));
+                        a.Bindings.Add(new ResultBinding(2, BindTarget.Verdict));
+                    }
+                }
+        }
+
         // « Obtenir pièce » (vision) range la position trouvée dans la variable de position de la station (docs/06 § 5.6 : r1→Var1).
         foreach (var st in p.Stations)
         {
