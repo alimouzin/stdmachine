@@ -81,7 +81,7 @@ public enum TableKind
     GeneralSub = 11,
 }
 
-public sealed record TableDir(string Name, TableKind Kind, int Start, int Length);
+public sealed record TableDir(string Name, TableKind Kind, int Start, int Length, Guid ProcessId = default);
 
 public enum Cmp
 {
@@ -103,6 +103,8 @@ public sealed record CSignalRef(IoKind Kind, int Index);
 
 public sealed class CObjConfig
 {
+    /// <summary>Identifiant de l'objet dans le projet (la HMI s'en sert pour relier l'état publié à ses vues).</summary>
+    public Guid Id { get; set; }
     public int Type { get; set; }
     public int LocalId { get; set; }
     public int ParentId { get; set; }
@@ -121,7 +123,7 @@ public sealed class CObjConfig
     public uint[] TimeoutMs { get; set; } = new uint[16];
 }
 
-public sealed record CNamedPos(double X, double Y, double Z, double C, int Frame, double Approach, bool Taught);
+public sealed record CNamedPos(double X, double Y, double Z, double C, int Frame, double Approach, bool Taught, Guid Id = default);
 
 public sealed record CVarInit(string Type, double Value);
 

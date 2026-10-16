@@ -146,7 +146,7 @@ public static class ProjectCompiler
                 var module = type == null ? _c.Modules.FirstOrDefault(x => x.Code == o.TypeCode) : null;
                 var cfg = new CObjConfig
                 {
-                    Type = type?.Id ?? module?.Id ?? 0, LocalId = local[o.Id], ParentId = parent.TryGetValue(o.Id, out var pr) ? pr : 0,
+                    Id = o.Id, Type = type?.Id ?? module?.Id ?? 0, LocalId = local[o.Id], ParentId = parent.TryGetValue(o.Id, out var pr) ? pr : 0,
                     Name = o.Name, Simulated = o.Simulated, Disabled = o.Disabled, Override = o.OverridePercent, Device = o.DeviceIndex ?? 0,
                 };
                 foreach (var cp in (IEnumerable<CatalogParam>?)type?.Params ?? module?.Params ?? new List<CatalogParam>())
@@ -173,7 +173,7 @@ public static class ProjectCompiler
             var configs = ObjectConfigs(s.Objects, out var local);
             foreach (var cfg in configs) data.Objects.Add(cfg);
             if (data.Objects.Count > PlcLimits.ObjectsPerStation) throw new CompileException("Station " + s.Name + " : " + data.Objects.Count + " objets pour une limite de " + PlcLimits.ObjectsPerStation + ".");
-            foreach (var pos in s.Positions) data.Positions.Add(new CNamedPos(pos.X, pos.Y, pos.Z, pos.C, pos.Frame, pos.Approach ?? 0, pos.Taught));
+            foreach (var pos in s.Positions) data.Positions.Add(new CNamedPos(pos.X, pos.Y, pos.Z, pos.C, pos.Frame, pos.Approach ?? 0, pos.Taught, pos.Id));
             foreach (var v in s.Variables) data.Variables.Add(new CVarInit(v.Type, double.TryParse(v.Initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : 0));
 
             var ctx = new Ctx(_p, _c, s, data, local, _out, s.Number);
@@ -308,7 +308,7 @@ public static class ProjectCompiler
                 _d.Instructions[instr - 1].FailTarget = idx;
             }
             int length = Next - start;
-            _d.Tables.Add(new TableDir(proc.Name, kind, start, length));
+            _d.Tables.Add(new TableDir(proc.Name, kind, start, length, proc.Id));
             if (_d.Instructions.Count > 512) throw new CompileException(Where + " : " + _d.Instructions.Count + " instructions pour une limite de 512.");
         }
 

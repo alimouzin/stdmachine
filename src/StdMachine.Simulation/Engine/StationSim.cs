@@ -206,6 +206,44 @@ public sealed class StationSim
 
     public void Step() { _stepSeq++; }
 
+    // ------------------------------------------------------------------ canal manuel (docs/05 § 7)
+
+    /// <summary>Le canal manuel accepte une demande si la station est Stopped et en mode Maintenance (le droit est contrôlé par la HMI).</summary>
+    public bool ManualAllowed(out string reason)
+    {
+        reason = string.Empty;
+        if (Mode != MachineMode.Maintenance) { reason = "Le mode manuel demande le mode Maintenance."; return false; }
+        if (Pack.State != PackMlState.Stopped) { reason = "La station doit être à l'arrêt (Stopped) : état " + Pack.State + "."; return false; }
+        return true;
+    }
+
+    public StartResult ManualStart(int localObject, int action, ActParams p)
+    {
+        var obj = Object(localObject);
+        if (obj == null) return StartResult.NotConfigured;
+        return obj.Start(action, p, true);
+    }
+
+    public void ManualAbort(int localObject) => Object(localObject)?.Abort();
+
+    /// <summary>Apprentissage : position actuelle des axes indiqués (X, Y, Z, C) ; les composantes sans axe restent à 0.</summary>
+    public Pos ReadPosition(int axisX, int axisY, int axisZ, int axisC)
+    {
+        double V(int local) => local > 0 && Object(local) is { } o ? o.Values[0] : 0;
+        return new Pos(V(axisX), V(axisY), V(axisZ), V(axisC));
+    }
+
+    public void StoreTaughtPosition(Guid positionId, Pos pos)
+    {
+        int i = Data.Positions.FindIndex(x => x.Id == positionId);
+        if (i < 0) return;
+        var old = Data.Positions[i];
+        Data.Positions[i] = old with { X = pos.X, Y = pos.Y, Z = pos.Z, C = pos.C, Taught = true };
+    }
+
+    /// <summary>Pas à pas : la station attend-elle un pas ?</summary>
+    public bool WaitingForStep => _ctx.Any(c => c.Status == CtxStatus.WaitStep);
+
     // ------------------------------------------------------------------ un cycle
 
     public void Cycle(double dtMs)
@@ -259,6 +297,7 @@ public sealed class StationSim
             case PackMlState.Resetting:
                 foreach (var o in Objects) o.Ack();
                 _faultText = null;
+                ClearStationAlarms();
                 StartKind(TableKind.Init, 1);
                 break;
             case PackMlState.Execute:
@@ -284,6 +323,7 @@ public sealed class StationSim
             case PackMlState.Clearing:
                 foreach (var o in Objects) o.Ack();
                 _faultText = null;
+                ClearStationAlarms();
                 _holdRequested = false;
                 StartKind(TableKind.Clear, 1);
                 break;
@@ -632,7 +672,14 @@ public sealed class StationSim
 
     private void RaiseObjectAlarm(SimObject obj, int code, AlarmSeverity severity)
     {
-        _alarms.Raise(Number, obj.Name, code, obj.SubCode, ErrorText(obj, code), severity, _now(), "Station " + Number);
+        var a = _alarms.Raise(Number, obj.Name, code, obj.SubCode, ErrorText(obj, code), severity, _now(), Name);
+        // Une erreur traitée par la politique d'échec (refaire, ignorer…) n'est plus qu'une information : elle ne reste pas active.
+        if (severity == AlarmSeverity.Information) _alarms.Clear(a, _now());
+    }
+
+    private void ClearStationAlarms()
+    {
+        foreach (var a in _alarms.ActiveOf(Number).Where(a => a.Severity != AlarmSeverity.Quality).ToList()) _alarms.Clear(a, _now());
     }
 
     private string ErrorText(SimObject obj, int code) => obj.ErrorTextOf(code);
