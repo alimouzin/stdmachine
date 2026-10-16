@@ -164,7 +164,10 @@ public class PlantTests : IDisposable
         Assert.Equal(PlantChannelState.Planned, mqtt.Status.State);
         Assert.False(mqtt.TestAsync(settings.For("mqtt"), default).Result.Success);
         Assert.Equal("broker.local", gw.Settings.For("mqtt").Values["host"]);
-        settings.For("log").Values["directory"] = Path.Combine(_dir, "interdit", "\0invalide");
+        // Un dossier « sous un fichier » ne peut pas être créé
+        string blocker = Path.Combine(_dir, "bloqueur");
+        File.WriteAllText(blocker, "x");
+        settings.For("log").Values["directory"] = Path.Combine(blocker, "sous-dossier");
         Assert.False(log.TestAsync(settings.For("log"), default).Result.Success);
     }
 

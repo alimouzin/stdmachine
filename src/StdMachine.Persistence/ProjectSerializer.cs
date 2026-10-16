@@ -18,7 +18,7 @@ public static class ProjectSerializer
         PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
         PreferredObjectCreationHandling = JsonObjectCreationHandling.Populate,
-        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase) },
+        Converters = { new JsonStringEnumConverter(JsonNamingPolicy.CamelCase), new ShortestDoubleConverter() },
     };
 
     public static string Serialize(MachineProject project)
@@ -50,6 +50,21 @@ public static class ProjectSerializer
     }
 
     public static MachineProject Load(string path) => Deserialize(File.ReadAllText(path));
+}
+
+/// <summary>
+/// Écrit les réels dans leur forme la plus courte qui revient à la même valeur (« 0,1 » et non « 0,10000000000000001 » sur .NET Framework) :
+/// le fichier projet est identique sur toutes les plateformes et se compare proprement dans Git.
+/// </summary>
+internal sealed class ShortestDoubleConverter : JsonConverter<double>
+{
+    public override double Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) => reader.GetDouble();
+
+    public override void Write(Utf8JsonWriter writer, double value, JsonSerializerOptions options)
+    {
+        if (double.IsNaN(value) || double.IsInfinity(value)) { writer.WriteNumberValue(value); return; }
+        writer.WriteRawValue(value.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+    }
 }
 
 /// <summary>Une migration par version de schéma : <c>Upgrade</c> applique celles qui manquent, dans l'ordre.</summary>

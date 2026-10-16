@@ -1,17 +1,19 @@
 # Reprise : phases 2 à 5 (session distante, sans Windows)
 
-Dernière mise à jour : 2026-10-16. Branche `develop`. Tout ce qui est décrit ici est dans les projets `Core`, `Persistence` et `Simulation` et est couvert par des tests (`dotnet test StdMachine.sln` : 7 + 53 + 81 tests verts, sous .NET 8 sur Linux). **Rien n'a été compilé en WPF** : le branchement de la HMI (`--simulator`) est à vérifier sur ton poste.
+Dernière mise à jour : 2026-10-16. Branche `develop`. Tout ce qui est décrit ici est dans les projets `Core`, `Persistence`, `Simulation` et `Plant` et est couvert par des tests : 7 + 62 + 7 + 81 = 157 tests verts, **sous .NET 8 et aussi sous .NET Framework 4.8 (Mono 6.8 + xunit.console, `-parallel none`)**. La HMI (WPF) **compile** sans avertissement sur Linux (`dotnet build src/StdMachine.Hmi -p:EnableWindowsTargeting=true`) mais n'a **jamais été lancée** : son branchement au simulateur (`--simulator`) est à vérifier sur ton poste.
 
 ## À faire en premier sur le poste Windows
-1. `powershell -File tools\build.ps1` : doit compiler les 3 nouveaux projets et la HMI (nouvelles références : `StdMachine.Persistence`, paquet `System.Text.Json` via `Core`). En cas d'erreur de restauration NuGet : voir `POC-NET48.md`.
+1. `powershell -File tools\build.ps1 -Restore` : doit compiler les 3 nouveaux projets et la HMI (nouvelles références : `StdMachine.Persistence`, `StdMachine.Plant`, paquet `System.Text.Json` via `Core`). En cas d'erreur de restauration NuGet : voir `POC-NET48.md`.
 2. Tests : `dotnet test` n'existe pas sur le poste (pas de SDK) ; ouvrir la solution dans Visual Studio, Explorateur de tests (xunit, net48). Les projets de tests visent net48 sous Windows.
 3. Lancer `src\StdMachine.Hmi\bin\Debug\net48\StdMachine.Hmi.exe --simulator --windowed` : la machine démarre arrêtée ; Réarmer puis Démarrer dans la barre du haut.
-4. Captures : `StdMachine.Hmi.exe --simulator --scenario running --screenshot-all artifacts\screens` (un dossier `sim-<scénario>` par scénario).
+4. Captures : `StdMachine.Hmi.exe --simulator --scenario running --screenshot-all artifacts\screens` (un dossier `sim-<scénario>` par scénario ; scénarios : idle, running, station-aborted, step-mode, manual, validation-errors, quality-hold, forced).
+5. Journal de messages : `StdMachine.Hmi.exe --simulator --plant-log` écrit des fichiers JSON Lines dans `%ProgramData%\StdMachine\plant-log`.
 
 ## Ce qui est fait
 - **Phase 2** : `catalog/catalog.json` (28 types, 2 modules), modèle complété (E/S, matériel, recettes de presse, verrouillages, qualité), `samples/MX-4.stdm.json` (produit par `SampleProject`, régénéré avec `STDM_UPDATE_SAMPLES=1` sous les tests de persistance), JSON versionné avec migrations, validation V001 à V113.
 - **Phase 3** : `ProjectCompiler` → `CompiledTables` (cartes, blocs, fonctions de module dépliées, conditions, textes, variables cachées, verrouillages générés, carte de compilation, listing `Listing.Of`, empreinte SHA-256, compilation de MX-4 en quelques ms).
 - **Phase 4** : `MachineSim` (PackML machine et stations, interpréteur à contextes, objets simulés, séquenceur général, routage, movers, pièces, traces, OF, Hold/Stop/Abort/Clear, station hors production, mover hors service, états déclarés), surveillance des rebuts (`QualityMonitor`), pas à pas, canal manuel, scénarios.
+- **Phase 8 (partielle)** : `StdMachine.Plant` (contrats, 14 schémas, passerelle, canal Journal, réglages avec secrets chiffrés, seq persistant) ; droits, niveaux, PBKDF2 et session dans `Core/Security`. Les pages Utilisateurs et Communications de la HMI utilisent encore les données de démonstration.
 - **Phase 5 (partielle)** : `SimulatedPlcClient` publie les instantanés ; `--simulator` branche la HMI dessus.
 
 ## Écarts et reste à faire (voir aussi `docs/09`, D49 à D63)
