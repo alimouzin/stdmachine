@@ -37,6 +37,9 @@ La HMI affiche encore des utilisateurs de démonstration (tout PIN à 4 chiffres
 ### 0. Fin des pièces en cours (spécifiée le 2026-10-17, D77, pas codée)
 Mode d'arrêt « Finir les pièces » : plus de chargement, les pièces engagées finissent, puis Stop automatique. Spécification : `docs/02` § 8, `docs/05` § 5.7. À faire : commandes `DrainStart` / `DrainCancel` dans le contrat (`PlcSnapshot`, `IPlcClient`), indicateur `bDrain` et compte des pièces en cours dans le simulateur (réutiliser le verrou de la fin d'OF dans `MachineSim`), bouton, bandeau et toast dans la page Machine, scénario de capture, tests (arrêt automatique quand la dernière pièce est sortie ; annulation ; Stop et Abort lèvent le mode ; un mover à vider retient la fin). Chantier court : à faire en premier.
 
+### 0 bis. Préparation d'une opération (spécifiée, D78, pas codée)
+Étape « Mover requis » : ce qui la précède tourne dès la réservation de la position de travail. Spécification : `docs/02` § 5.1–5.2, `docs/05` § 4.1–4.2 bis, `docs/06` (`WaitMover`, `bPrepare`). À faire : modèle (`WaitMoverStep`), compilation, validation V021 / V022 / V116, simulateur (demande à la réservation, statut `Preparing`, reprise après Pause, perte au Stop), éditeur (carte séparateur, zone teintée, sélecteurs sans données de pièce), chronogramme, scénario et tests (gain de cycle mesuré en simulation accélérée).
+
 **Ensuite** (non planifié) : Studio complet branché sur le projet réel avec enregistrement automatique et chronogramme (phase 6) ; détail des différences au déploiement (aujourd'hui seulement l'empreinte) ; PLC réel et ADS (phase 9, sur demande explicite) ; interface usine MQTT (phase 10).
 
 ## Points ouverts et dettes connues

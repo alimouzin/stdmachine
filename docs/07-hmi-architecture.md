@@ -99,6 +99,7 @@ Step (abstrait) : Id (Guid), StepId (uint), Label?, Comment?
 ├─ WaitTimeStep : DurationMs (ValueRef)
 ├─ CallStep : ProcessId
 ├─ SetStep : Target (Var | PartData | Verdict | PartRemoved), Operation (= | += | −=), Value
+├─ WaitMoverStep                                              (séparateur préparation / avec mover)
 ├─ AlarmStep : Message, Severity, AlarmNo
 ├─ EndStep
 ├─ RouteStep : GroupId, OperationNo, Slot, Args               (niveau machine)
@@ -212,6 +213,8 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V018 | Erreur | Une station appartient à plus de 8 fonctions, ou a plus de 32 couples (fonction, opération) |
 | V019 | Erreur | Règle qualité incohérente (avertissement ≥ action, échantillon minimal > fenêtre, fenêtre hors 1..255) |
 | V020 | Erreur | Une variable de process est utilisée dans un autre process que le sien |
+| V021 | Erreur | Étape Mover requis dans un bloc, un sous-process, un process qui n'est pas une opération, ou en plusieurs exemplaires |
+| V022 | Erreur | Une étape avant Mover requis lit ou écrit une donnée de pièce, le verdict, l'identifiant ou l'emplacement |
 | V101 | Avertissement | Objet en simulation |
 | V102 | Avertissement | Recette de presse non vérifiée sur la presse |
 | V103 | Avertissement | Aucun chemin ne traite le verdict mauvais et aucune fonction de rebut n'existe |
@@ -227,6 +230,7 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V113 | Avertissement | Fonction qui impute ses rebuts sans fonction amont de rôle Travail |
 | V115 | Avertissement | Variable de process lue sur un chemin où elle n'est pas écrite avant (elle garde la valeur du passage précédent) |
 | V114 | Avertissement | Arrêt qualité réglé sur une station seule dans une de ses fonctions (sa pause bloque la fonction) |
+| V116 | Avertissement | Étape Mover requis sans aucune étape avant elle (elle n'apporte rien) ou en première position après des étapes qui ne servent qu'à attendre |
 | V201 | Information | Le PLC n'a pas le projet courant (déploiement nécessaire) |
 
 ## 5. Persistance (StdMachine.Persistence)

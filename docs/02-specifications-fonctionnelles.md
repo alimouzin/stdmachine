@@ -136,14 +136,26 @@ Si l'ingénieur process ne dessine pas de process d'initialisation, le compilate
 
 16 process au plus par station, 512 instructions compilées au plus par station.
 
+**Trois niveaux de travail dans une station** (pour gagner du temps de cycle) :
+
+| Niveau | Quand | Exemple (Pressage 01) |
+| --- | --- | --- |
+| Cycle de fond | En boucle tant que la station est en Execute, sans mover | Chercher une pièce dans l'Asyril et ranger sa position dans une variable |
+| Préparation | Dès que la position de travail est réservée à un mover, avant son arrivée | Prendre la pièce à la position trouvée par le fond |
+| Avec le mover | Quand le mover est en position de travail | Déposer la pièce dans le nid, presser, contrôler |
+
+La préparation n'est pas un type de process : c'est le début d'une opération, séparé de la suite par l'étape **Mover requis**. Sans cette étape, toute l'opération attend le mover (comportement inchangé).
+
 ### 5.2 Étapes disponibles (palette niveau station)
 
 | Groupe de palette | Étapes |
 | --- | --- |
 | Un groupe par objet ou module de premier niveau | Ses actions de base, celles de ses enfants, et ses fonctions de module (et fonctions personnalisées) |
-| Logique | Attendre condition, Si / Sinon, Répéter N fois, En parallèle, Appeler sous-process, Définir variable, Signaler défaut, Fin |
+| Logique | Mover requis, Attendre condition, Si / Sinon, Répéter N fois, En parallèle, Appeler sous-process, Définir variable, Signaler défaut, Fin |
 
 - Une étape a des paramètres (ceux de l'action), des liaisons de résultats (chaque résultat, appelé sortie de l'étape, peut être rangé dans une variable de process, une variable de station, une donnée de pièce, le verdict ou l'identifiant ; l'éditeur crée la variable à la demande), un timeout (défaut du catalogue) et une politique d'échec.
+- Mover requis : séparateur d'une opération. Les étapes qui le précèdent forment la préparation : elles ne peuvent lire ni écrire les données de la pièce (Verdict, Identifiant, « pièce retirée », données de pièce), ni désigner l'emplacement ; elles peuvent utiliser les variables, les positions, les paramètres d'opération et tous les objets de la station. Une seule étape Mover requis par opération, au premier niveau de la séquence (ni dans un bloc, ni dans un sous-process), et seulement dans une opération.
+- À l'arrêt (Stop), la préparation déjà faite est perdue : le process d'Arrêt doit remettre la station en état (par exemple reposer la pièce prise). En pause (Pause), la préparation va jusqu'à l'étape Mover requis et attend.
 - En parallèle : 2 à 4 branches ; les branches s'attendent à la fin du bloc. Deux branches ne peuvent pas utiliser le même objet (erreur de validation). Blocs imbriqués autorisés jusqu'à 3 niveaux, dans la limite de 8 contextes d'exécution par station.
 - Si / Sinon : une condition, deux branches (Alors, Sinon) ; la branche Sinon peut être vide.
 - Répéter N fois : N de 1 à 1000, ou tant qu'une condition est vraie, avec un maximum.

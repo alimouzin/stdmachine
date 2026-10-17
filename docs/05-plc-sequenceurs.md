@@ -222,17 +222,20 @@ TYPE ST_OpRequest : STRUCT
     nOperation : USINT;           // n° de l'opération dans la fonction ; la station trouve sa table par aOpMap
     nMover     : USINT;
     nSlot      : USINT;           // emplacement visé, 0 = tous
+    bMoverAtStation : BOOL;       // vrai quand le mover est en position de travail (préparation : posée avant)
     aParam     : ARRAY[1..8] OF LREAL;  // paramètres d'opération
 END_STRUCT END_TYPE
 
 TYPE ST_OpResponse : STRUCT
     nReqId     : UDINT;           // recopie de la demande traitée
-    eStatus    : (Idle, Running, Done, Failed, Aborted) USINT;
+    eStatus    : (Idle, Running, Done, Failed, Aborted, Preparing) USINT;   // Preparing : avant WaitMover
     nErrorCode : UINT;
 END_STRUCT END_TYPE
 ```
 
-Le séquenceur général ne pose une demande que si la station est en Execute, sans opération en cours et le mover en position de travail. La station répond `Running` au cycle suivant, puis `Done` ou `Failed` (opération terminée par un échec traité, la pièce est mauvaise) ou `Aborted` (la station est passée Aborted).
+Le séquenceur général ne pose une demande que si la station est en Execute et sans opération en cours. Deux cas :
+- **Sans préparation** (le couple (fonction, opération) n'a pas d'instruction `WaitMover`, `bPrepare = FALSE` dans `aOpMap`) : la demande est posée quand le mover est en position de travail, comme décrit ci-dessus.
+- **Avec préparation** : la demande est posée dès que la position de travail est réservée au mover (§ 5.4, étape 4, et promotion depuis la file, § 5.5) avec `bMoverAtStation = FALSE`. La station répond `Preparing` et exécute les instructions jusqu'à `WaitMover`. Quand le mover est arrivé, le séquenceur général met `bMoverAtStation := TRUE` ; `WaitMover` laisse alors passer (attache le mover et l'emplacement, recopie `nSlot`) et la station répond `Running`. Avant `WaitMover`, aucune instruction ne peut lire ni écrire de donnée de pièce (le compilateur et la validation le garantissent). Si la préparation finit avant l'arrivée, le contexte attend sur `WaitMover` (`WaitCond`) ; si le mover arrive avant, il n'attend rien. La station répond `Running` au cycle suivant, puis `Done` ou `Failed` (opération terminée par un échec traité, la pièce est mauvaise) ou `Aborted` (la station est passée Aborted).
 
 ### 4.2 Comportement par état
 
@@ -249,6 +252,10 @@ Le séquenceur général ne pose une demande que si la station est en Execute, s
 | Clearing | `Ack()` de tous les objets ; lancer la table Vidage (si elle existe) sur le contexte 1 | Interpréteur | Table Vidage finie (ou absente) et tous les objets acquittés |
 
 **Défaut** (`bFault` de la station) : un objet en erreur avec la politique `StopStation`, une instruction `Alarm` de gravité défaut, un circuit de sécurité de la station ouvert, une commande Abort. Une erreur pendant Resetting ou Clearing fait aussi passer Aborted.
+
+### 4.2 bis Instruction WaitMover
+
+`WaitMover` : si `bMoverAtStation` de la demande est vrai, attacher le mover et l'emplacement au contexte et avancer ; sinon rester en `WaitCond` (statut publié « attend le mover »). Hold : une préparation continue jusqu'à `WaitMover` et y attend (`Holding`) ; au Start elle reprend. Stop : le contexte 1 en préparation est tué (la table Arrêt est lancée ensuite), la demande est rendue `Aborted` avec le code « préparation annulée », et le séquenceur général remet le mover à `Ready` à son PC (il sera re-routé au prochain Start, la préparation recommence). Abort : § 4.4.
 
 ### 4.3 Hold et Stop : finir l'opération en cours
 
@@ -319,7 +326,7 @@ END_STRUCT END_TYPE
 | État du mover | Traitement |
 | --- | --- |
 | `Ready` | Exécuter les instructions instantanées (`Jump`, `JumpIfFalse`, `SetVar` sur données de pièce, `LoopInit`, `LoopNext`, `Call`, `Return`, `Alarm`) jusqu'à une instruction `Route`, `WaitCond` ou `End`. `Route` → routage (§ 5.4). `End` → le mover recommence à l'étape 1 (les pièces encore présentes lèvent l'avertissement 910 « Pièce présente en fin de process »). |
-| `Routing` | Attendre l'arrivée (fournie par le gestionnaire de movers). Arrivé en file → `Queued` ; arrivé en position de travail → poser la demande d'opération → `AtStation` ; arrivé en tampon → `Buffered`. |
+| `Routing` | Attendre l'arrivée (fournie par le gestionnaire de movers). Si l'opération visée a une préparation et que la position de travail est réservée à ce mover : poser la demande dès la réservation (préparation, § 4.1).  Arrivé en file → `Queued` ; arrivé en position de travail → poser la demande d'opération → `AtStation` ; arrivé en tampon → `Buffered`. |
 | `Queued` | Quand la position de travail de la station se libère et que c'est son tour : déplacer vers la position de travail → `Routing`. Ordre de la file : priorité de la fonction visée par chaque mover (la plus haute d'abord), puis ordre d'arrivée. |
 | `Buffered` | Réessayer le routage à chaque cycle (§ 5.4). |
 | `AtStation` | Lire la réponse de la station. `Done` ou `Failed` → § 5.5. `Aborted` → § 6.4. |
