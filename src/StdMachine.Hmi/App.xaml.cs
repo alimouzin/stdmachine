@@ -35,7 +35,8 @@ public partial class App : Application
             return;
         }
         AnimationPolicy.Capture = options.IsScreenshot;
-        Editor.EditorSettings.FlowLayout = string.Equals(options.Layout, "flow", StringComparison.OrdinalIgnoreCase);
+        // Les captures sont reproductibles : couloirs par défaut, sans tenir compte du choix enregistré.
+        if (options.Layout != null || options.IsScreenshot) Editor.EditorSettings.Override(string.Equals(options.Layout, "flow", StringComparison.OrdinalIgnoreCase));
 
         FreezeResources();
         TouchSettings.RegisterGlobalHandlers();
