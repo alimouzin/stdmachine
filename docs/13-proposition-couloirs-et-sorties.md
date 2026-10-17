@@ -67,7 +67,7 @@ Une **sortie** est un nom, un type (nombre, entier, booléen, position, jugement
 
 ### Ordre de réalisation proposé
 
-1. **Variables nommées sur les résultats existants** : liaisons de résultats sur `FunctionStep` ; création à la demande d'une variable nommée à partir d'une sortie (Asyril position, Keyence IV jugement et valeur) ; variables de process (modèle, compilation, onglet Données, sélecteurs) ; règle de validation de la valeur périmée. Démontrable de bout en bout avec le simulateur : « Obtenir pièce » écrit `PosPignon`, « Prendre pièce » la lit.
+1. **Variables nommées sur les résultats existants** : interface des liaisons de résultats des actions (absente aujourd'hui) ; création à la demande d'une variable nommée à partir d'une sortie (Asyril position, Keyence IV jugement et valeur) ; variables de process (modèle, compilation, onglet Données, sélecteurs) ; règle de validation de la valeur périmée. Démontrable de bout en bout avec le simulateur : « Obtenir pièce » écrit `PosPignon`, « Prendre pièce » la lit.
 2. **Variables de mover** (§ 5) : modèle, compilation, simulateur, validation, tiroir du mover.
 3. **Sorties des fonctions personnalisées**, puis des sous-process et opérations.
 4. **Objets à sorties variables** (type Keyence XG, table de sorties, simulation) : plus tard.
@@ -99,20 +99,25 @@ Chaque étape : tests de compilation (allocation, portée), tests de validation,
 
 ## 5. Variables de mover (demande du 2026-10-17)
 
-**Besoin** : un mover doit pouvoir porter des informations propres, lisibles et modifiables par les stations, pour déplacer des informations d'une station à l'autre (un réglage choisi en amont, un décalage propre à ce mover, un compteur de passages, un drapeau « à repasser »…).
+**Besoin** : un mover doit pouvoir porter des informations propres, lisibles et modifiables par les stations, pour déplacer des informations d'une station à l'autre (un réglage choisi en amont, un offset propre à ce mover, un compteur de passages, un drapeau « à repasser »…).
 
 **Ce qui existe** : les **données de pièce** (32 au plus, définies dans la configuration machine) sont attachées à la pièce d'un emplacement du mover, avec le Verdict et l'Identifiant. Elles suivent la pièce, disparaissent avec elle, et il y en a un jeu par emplacement (4 emplacements au plus). Elles ne couvrent donc pas une information qui appartient au **mover** lui-même et qui reste quand le mover est vide ou change de pièce.
 
-**Proposition** : des **variables de mover**, construites comme les données de pièce.
-- **Déclaration** : dans la configuration machine, une liste nommée (nom, type nombre ou booléen, unité, valeur initiale), commune à tous les movers ; chaque mover a **son propre jeu de valeurs**. Limite proposée : 16 variables.
+**Décidé le 2026-10-17** : des **variables de mover**, construites comme les données de pièce, avec des positions.
+- **Déclaration** : dans la configuration machine, une liste nommée (nom, type **nombre, booléen ou position**, unité, valeur initiale, règle de remise à zéro), commune à tous les movers ; chaque mover a **son propre jeu de valeurs**. Limite proposée : 16 variables.
+- **Remise à zéro, au choix pour chaque variable** : **jamais** (la valeur survit au Stop, au Reset, à un nouveau déploiement et à un redémarrage du PLC, par exemple un offset propre au mover) ; **au déploiement** ; **quand le mover est vidé** (commande « Vider le mover »). Une étape « Réinitialiser les variables du mover » existe aussi. Aucune variable n'est remise à zéro par un simple Reset de la machine.
 - **Accès** : une opération de station lit et écrit les variables du mover **présent à son poste** ; le process général peut les écrire aussi (étape « Définir variable de mover »). Le cycle de fond n'a pas de mover : leur usage y est refusé par la validation. Elles sont utilisables comme valeurs, dans les conditions, comme cibles de liaison d'un résultat et dans « Définir variable », exactement comme les variables de station et les données de pièce.
-- **Compilation et PLC** : nouvelle source de valeur et nouvelle cible de liaison `MoverData` (à côté de `PartData`) ; un tableau de valeurs dans la structure du mover (`ST_Mover`). Changement de `docs/05` (structures, `SetVar`), de `docs/06` (`E_ValueSource`, `E_BindTarget`) et du simulateur.
+- **Compilation et PLC** : nouvelle source de valeur et nouvelle cible de liaison `MoverData` (à côté de `PartData`) ; un tableau de valeurs et un tableau de positions dans la structure du mover (`ST_Mover`) ; variables à règle « jamais » en mémoire rémanente sur le PLC réel. Changement de `docs/05` (structures, `SetVar`), de `docs/06` (`E_ValueSource`, `E_BindTarget`) et du simulateur.
 - **Durée de vie** : les valeurs persistent d'un Stop à un Start, comme les movers eux-mêmes.
+- **Déploiement d'un projet dont la liste de variables a changé** : une variable est reconnue par son identifiant stable (pas par son rang ni son nom). Une variable conservée garde sa valeur si son type n'a pas changé (même pour la règle « au déploiement », qui s'applique alors) ; une variable ajoutée prend sa valeur initiale ; une variable supprimée disparaît. Le déploiement affiche ce qui sera perdu.
 - **HMI** : le tiroir d'un mover (page Machine, page Pièces) affiche ses variables ; leur modification à la main se fait en Maintenance, avec le niveau d'utilisateur requis.
-- **Validation** (à ajouter) : variable de mover utilisée par le cycle de fond ; type incompatible ; valeur lue sur un chemin où elle n'a pas été écrite (même avertissement que pour les variables nommées).
+- **Validation** (à ajouter) : variable de mover utilisée par le cycle de fond ; type incompatible ; valeur lue sur un chemin où elle n'a pas été écrite (même avertissement que pour les variables nommées, sauf pour une variable à règle « jamais » qui garde par construction une valeur utile).
 
-## 6. À préciser avant de coder
+## 6. À préciser plus tard
 
-1. **Variables de mover** : la forme ci-dessus convient-elle (une liste commune, 16 au plus, nombre ou booléen) ? Faut-il aussi des positions (quatre valeurs) ?
-2. **Remise à zéro** : quand une variable de mover revient-elle à sa valeur initiale ? Propositions : au déploiement ; à la commande « Vider le mover » ; par une étape « Réinitialiser les variables du mover ». Pas à chaque Reset de la machine.
-3. **Un exemple concret** de ce que vous voulez y faire passer, pour vérifier qu'une donnée de pièce ne suffit pas.
+1. **Remise à zéro « jamais » et changement de type** : si le type d'une variable « jamais » change au déploiement, la valeur est perdue (avec confirmation). À valider quand on l'implémente.
+2. **Étape « Réinitialiser » et « Vider le mover »** : à quel niveau d'utilisateur ? Même droit que les actions manuelles, sauf avis contraire.
+
+## 7. Correction du 2026-10-17
+
+Les fonctions du catalogue n'ont presque aucun résultat (une seule en a). Les liaisons sur `FunctionStep` n'apportent donc rien pour l'instant : elles sont reportées avec les sorties des fonctions personnalisées. Par ailleurs l'éditeur n'a aujourd'hui **aucune interface** pour les liaisons de résultats des actions, et son onglet « Données » est un texte figé : l'étape 1 inclut leur création.
