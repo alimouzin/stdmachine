@@ -33,6 +33,8 @@ Les points 1 et 3 s'obtiennent sans couloirs (pastille d'objet sur la carte, pal
 
 ## 2. Sorties des étapes
 
+> **Sorties des blocs composés : spécifiées de façon ferme le 2026-10-17 (D81)**, voir `docs/02` § 5.5. Le texte ci-dessous est conservé comme historique.
+
 ### Ce qui existe
 
 - Une action du catalogue a des **résultats fixes** `r1..r8` (`docs/03`), liés à une variable de station, une donnée de pièce, l'identifiant, le verdict ou « pièce retirée » (`ActionStep.Bindings`, `BindTarget`).

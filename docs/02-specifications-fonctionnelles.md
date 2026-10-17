@@ -188,6 +188,19 @@ La préparation n'est pas un type de process : c'est le début d'une opération,
 | Aller à l'étape | Saut vers une étape nommée du même process | — |
 | Ignorer | Continue (avertissement enregistré) | — |
 
+### 5.5 Sorties des blocs composés
+
+Un **bloc composé** (fonction personnalisée, sous-process, opération) peut rendre des valeurs à celui qui l'appelle. Les blocs de structure (Si / Sinon, En parallèle, Répéter) n'ont pas de sortie propre ; les fonctions de module du catalogue n'en ont pas non plus dans cette version.
+
+- **Déclaration** : jusqu'à 8 sorties par bloc : nom (facultatif : sans nom, la sortie s'appelle « Sortie 1 », « Sortie 2 »…, selon son rang), type (nombre, entier, booléen, jugement, position), unité. Pour une fonction personnalisée et un sous-process : dans le bloc lui-même. Pour une opération : dans la signature de l'opération, avec ses paramètres (Studio machine › Fonctions), donc commune à toutes les stations qui l'implémentent ; une opération rend au plus une sortie de type position, et aucune sortie texte.
+- **Définition de la valeur** : par l'étape **Définir la sortie** (sortie, valeur au sélecteur habituel : constante, variable, donnée de pièce, variable de mover, paramètre), ou en liant le résultat d'une action à la sortie (la cible « Sortie » apparaît dans le choix des liaisons, à côté des variables). Une sortie est définie quand l'exécution passe par l'une de ces étapes ; une sortie qui n'est pas définie sur tous les chemins avertit (V121) et garde alors la valeur du passage précédent.
+- **Utilisation à l'appel** : la carte de l'appel (fonction personnalisée, Appeler sous-process, opération du process général) a une section **Sorties** : une ligne par sortie, avec la variable qui la reçoit, choisie comme pour les sorties d'une action (« Ne pas ranger », variables compatibles, « Nouvelle variable… »). Une sortie non rangée est ignorée. Cibles possibles : variable de process ou de station (variable de mover, donnée de pièce ou verdict, selon le niveau) ; au niveau machine : variable de mover, donnée de pièce, verdict. Un type incompatible est refusé (V014).
+- **Fonction personnalisée** : dépliée à la compilation ; la sortie est remplacée par la variable choisie à l'appel, sans coût d'exécution et sans limite d'appels.
+- **Sous-process** : la valeur passe par un emplacement interne de la station (réservé par le compilateur, que l'ingénieur ne manipule pas), copié vers la variable choisie juste après le retour. Comme cet emplacement est partagé, **un sous-process à sorties ne peut pas être appelé depuis deux contextes qui peuvent tourner en même temps** : deux branches d'un même bloc En parallèle, ou l'opération et le cycle de fond d'une même station (V120). Les emplacements comptent dans la limite de 64 variables.
+- **Opération** : les sorties sont rendues par la station au séquenceur général quand l'opération se termine bien (`Done`) ; elles sont copiées dans les cibles choisies par l'étape d'opération du process général. Si l'opération échoue ou est avortée, rien n'est copié.
+- **Exemple** : le bloc « Rechercher pièce Asyril » (fonction personnalisée de la station Pressage 01) cherche la pièce (Refaire 3 fois, avec vibration de l'alimenteur) puis l'obtient. Il déclare deux sorties, « Position pièce » (position) et « Nombre » (entier), définies par les liaisons des résultats de « Obtenir pièce » et « Chercher pièce ». L'appel les range dans les variables de process `PosPignon` et `NbPièces`.
+- Limites : le PLC garde 8 résultats par action, avec une seule position et un seul texte (`04`) ; l'objet à sorties variables (Keyence XG) reste à étudier plus tard.
+
 ## 6. Process général
 
 ### 6.1 Étapes disponibles (palette niveau machine)

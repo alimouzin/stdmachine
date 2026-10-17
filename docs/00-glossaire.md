@@ -58,7 +58,8 @@ Ce glossaire fixe le sens des mots utilisés dans tous les documents, dans le co
 | Pastille d'objet | `ObjectChip` | Icône et nom de l'objet de premier niveau, portés par chaque carte en mode Flux. |
 | Variable de station | `StationVar` | Mémoire d'une station partagée par tous ses process (par exemple la position trouvée par la vision, utilisée ensuite par la prise). |
 | Variable de process | `ProcessVar` | Mémoire nommée propre à un process, invisible des autres. Créée à la demande depuis la sortie d'une étape ; peut être rendue partagée (elle devient alors une variable de station). |
-| Sortie | `Output` | Résultat d'une étape rangé dans une variable nommée. Une sortie sans nom se désigne par son rang. |
+| Sortie | `Output` | Valeur rendue par une étape : résultat d'une action rangé dans une variable nommée, ou sortie déclarée d'un bloc composé (fonction personnalisée, sous-process, opération). Une sortie sans nom se désigne par son rang (« Sortie 2 »). |
+| Bloc composé | `CompositeBlock` | Étape qui en contient d'autres : fonction personnalisée, appel de sous-process, opération. À ne pas confondre avec les blocs de structure (Si / Sinon, En parallèle, Répéter). |
 | Variable de mover | `MoverVar` | Information propre à un mover (nombre, booléen ou position), déclarée dans la configuration machine (16 au plus) ; chaque mover a son jeu de valeurs. Elle suit le mover, pas la pièce. Règle de remise à zéro : jamais, au déploiement, ou quand le mover est vide. |
 | Donnée de pièce | `PartData` | Mémoire attachée à une pièce, qui la suit de station en station (résultats, verdict, compteurs de retouche). |
 | Verdict | `Verdict` | Donnée de pièce réservée : non défini, bon, mauvais. Elle décide de la sortie de la pièce. |

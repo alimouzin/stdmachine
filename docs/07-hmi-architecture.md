@@ -59,7 +59,7 @@ MachineProject
 ├─ Machine : MachineConfig
 │  ├─ Planar : tuiles (colonnes, lignes, taille), nombre de movers, emplacements par mover, vitesse par défaut
 │  ├─ PlanarPositions : PlanarPosition[] (Id, Kind Work|Queue|Buffer|Park, Position, StationId?)
-│  ├─ Groups : GroupConfig[] (Id, Name, Role, Priority, StationIds, Operations : OperationSignature[])
+│  ├─ Groups : GroupConfig[] (Id, Name, Role, Priority, StationIds, Operations : OperationSignature[] (Name, Parameters, Outputs : OutputDef[≤8]))
 │  │            — « fonctions » dans l'interface ; une station peut figurer dans plusieurs fonctions
 │  ├─ RejectGroupId?, NoStationDelayMs
 │  ├─ MachineObjects : ObjectNode[] (planaire, movers, balise, sécurités)
@@ -79,7 +79,7 @@ MachineProject
 │  │   (ProcessDefinition.Variables : ProcessVariable[] (Id, Name, Type, Initial), visibles dans ce seul process)
 │  ├─ Interlocks : Interlock[] (Id, ObjectId, Actions | AllMotion, Condition, Generated)
 │  ├─ PressRecipes : PressRecipe[]
-│  ├─ CustomFunctions : FunctionDefinition[] (copie d'une fonction de module, modifiée)
+│  ├─ CustomFunctions : FunctionDefinition[] (copie d'une fonction de module, modifiée ; Outputs : OutputDef[≤8])
 │  └─ Processes : ProcessDefinition[] (Kind, Name, Implements : OperationRef[] (GroupId, OperationNo), Parameters, Body)
 ├─ GeneralProcess : ProcessDefinition (+ sous-process généraux)
 └─ Deployed : DeployedSnapshot? (empreinte, date, auteur, copie du projet compilé)
@@ -91,14 +91,15 @@ MachineProject
 ### 3.2 Process
 
 ```
-ProcessDefinition : Kind (Operation|Background|Init|Stop|Clear|Calibration|Sub|General|GeneralSub|MachineCalibration), ValidityDays? (calibrations), Name, Implements (Operation : opérations de fonctions implémentées), Parameters, Variables : ProcessVariable[], Body : Sequence
+ProcessDefinition : Kind (Operation|Background|Init|Stop|Clear|Calibration|Sub|General|GeneralSub|MachineCalibration), ValidityDays? (calibrations), Name, Implements (Operation : opérations de fonctions implémentées), Parameters, Outputs : OutputDef[≤8] (sous-process), Variables : ProcessVariable[], Body : Sequence
 Sequence : Step[]
 Step (abstrait) : Id (Guid), StepId (uint), Label?, Comment?
 ├─ ActionStep : ObjectId, ActionNo, Args : ValueRef[], Bindings : Binding[] (sorties : cible Var = variable de station ou de process, PartData, MoverVar, PartId, Verdict, PartRemoved), TimeoutMs?, FailPolicy
-├─ FunctionStep : ModuleObjectId, FunctionRef (module | personnalisée), Args, FailPolicy
+├─ FunctionStep : ModuleObjectId, FunctionRef (module | personnalisée), Args, OutputBindings : Binding[] (personnalisée), FailPolicy
 ├─ WaitConditionStep : Condition, TimeoutMs?
 ├─ WaitTimeStep : DurationMs (ValueRef)
-├─ CallStep : ProcessId
+├─ CallStep : ProcessId, OutputBindings : Binding[]
+├─ SetOutputStep : OutputId, Value : ValueRef                 (bloc composé ayant des sorties)
 ├─ SetStep : Target (Var | PartData | MoverVar | Verdict | PartRemoved), Operation (= | += | −=), Value
 ├─ PromptStep : Text, Mode (Confirm|Input), Target?     (calibration)
 ├─ SavePositionStep : ObjectId, PositionId               (calibration)
@@ -107,11 +108,13 @@ Step (abstrait) : Id (Guid), StepId (uint), Label?, Comment?
 ├─ WaitMoverStep                                              (séparateur préparation / avec mover)
 ├─ AlarmStep : Message, Severity, AlarmNo
 ├─ EndStep
-├─ RouteStep : GroupId, OperationNo, Slot, Args               (niveau machine)
+├─ RouteStep : GroupId, OperationNo, Slot, Args, OutputBindings : Binding[]   (niveau machine)
 └─ Block (abstrait)
    ├─ ParallelBlock : Branches : Sequence[2..4]
    ├─ IfBlock : Condition, Then : Sequence, Else : Sequence, ElseLabel?
    └─ RepeatBlock : Mode (Count|While), Count | Condition + Max, Body : Sequence
+OutputDef : Id, Name? (sans nom : « Sortie <rang> »), Type (Number|Integer|Bool|Verdict|Position), Unit
+Binding : cible Var | PartData | MoverVar | PartId | Verdict | PartRemoved | Output (sortie du bloc en cours)
 Condition : Combine (All|Any), Terms : CondTerm[1..4] (Left : ValueRef, Cmp, Right : ValueRef)
 FailPolicy : Kind (StopStation|Retry|PartBad|Goto|Ignore), Retries, GotoStepId
 ```
@@ -225,6 +228,8 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V025 | Erreur | Calibrer la station vise une station ou une calibration introuvable, ou une calibration qui s'appelle elle-même |
 | V026 | Erreur | Variable de mover (ou étape Réinitialiser) utilisée dans le cycle de fond, l'initialisation, l'arrêt ou le vidage, ou dans un sous-process appelé par eux |
 | V027 | Erreur | Déclaration des variables de mover invalide : nom en double ou vide, valeur initiale hors type, plus de 16 variables |
+| V120 | Erreur | Sous-process à sorties appelé depuis deux contextes qui peuvent tourner en même temps (deux branches d'un même En parallèle, ou l'opération et le cycle de fond d'une station) |
+| V122 | Erreur | Étape Définir la sortie ou liaison vers une sortie hors d'un bloc qui en déclare, sortie inexistante, ou déclaration invalide (plus de 8 sorties, nom en double, deux sorties de type position ou une sortie texte pour une opération) |
 | V101 | Avertissement | Objet en simulation |
 | V102 | Avertissement | Recette de presse non vérifiée sur la presse |
 | V103 | Avertissement | Aucun chemin ne traite le verdict mauvais et aucune fonction de rebut n'existe |
@@ -244,6 +249,7 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V117 | Avertissement | Une variable de mover est écrite dans deux branches d'un même bloc En parallèle (la dernière écriture gagne) |
 | V118 | Avertissement | Variable de mover lue mais écrite par aucun process ni calibration (elle garde toujours sa valeur initiale), sauf règle « Jamais » |
 | V119 | Avertissement | Variable de mover déclarée mais jamais utilisée |
+| V121 | Avertissement | Sortie d'un bloc composé non définie sur tous les chemins (elle garde la valeur du passage précédent) |
 | V201 | Information | Le PLC n'a pas le projet courant (déploiement nécessaire) |
 
 ## 5. Persistance (StdMachine.Persistence)
@@ -398,6 +404,8 @@ StdMachine.Hmi.exe --screenshot-all <dossier> [--scenario <nom>]
 | --- | --- |
 | Core.Tests | Catalogue cohérent ; compilation de chaque carte et de chaque bloc (listing attendu) ; dépliage des fonctions du robot ; allocation des variables cachées, conditions, textes ; chaque règle de validation (un cas qui la déclenche, un cas qui ne la déclenche pas) ; droits (niveaux, refus, Abort toujours permis) ; override effectif et timeout effectif (exemples de `02-specifications-fonctionnelles.md` § 13) ; carte de compilation (instruction ↔ carte) |
 | Simulation.Tests | Toutes les transitions PackML (et les refus) ; chaque instruction de l'interpréteur ; Fork/Join à 2, 3, 4 branches ; Hold et Stop qui laissent finir l'opération ; Abort pendant une opération ; politiques d'échec ; pas à pas aux trois granularités, y compris en parallèle ; canal manuel (états refusés, verrouillage, garde du jog) ; routage (choix de station, file, tampon, rebut, mover à vider) ; station Aborted dans une fonction de deux stations ; fin d'OF ; persistance des movers après Stop/Start ; machine d'exemple : 100 pièces en simulation accélérée, toutes sorties ou rebutées |
+| Core.Tests (sorties de blocs) | Fonction personnalisée à deux sorties dépliée deux fois avec des cibles différentes (aucune instruction en plus) ; sous-process à sorties : emplacement alloué, copie après `Call`, comptage dans les 64 ; V120 (deux branches, opération et fond), V121 (chemin sans définition), V122 ; V014 sur type incompatible ; signature d'opération avec sorties et V017 |
+| Simulation.Tests (sorties de blocs) | « Rechercher pièce Asyril » rend position et nombre, rangés dans deux variables de process puis lus par « Prendre pièce » ; sous-process appelé deux fois de suite avec des cibles différentes ; opération `Done` copie ses sorties vers une donnée de pièce et une variable de mover ; opération `Failed` ou avortée ne copie rien ; sortie non rangée ignorée ; position copiée avec son décalage |
 | Simulation.Tests (variables de mover) | Écriture et lecture par une opération puis par le process général (nombre, booléen, position avec décalage) ; deux movers gardent chacun leur valeur ; lecture dans la préparation avant l'arrivée ; remise à zéro `OnEmpty` à la sortie, au rebut, au retrait confirmé et à la pièce « retirée » (pas tant qu'une autre pièce du mover reste) ; `OnDeploy` ; `Never` survit au Stop, au Reset, à l'Abort et à un redéploiement qui ajoute, retire ou réordonne des variables (identifiant) ; type changé = valeur initiale ; étape Réinitialiser (une variable, toutes) ; commande de la HMI (acceptée en Maintenance Stopped, refusée en Execute) ; refus V026 dans le cycle de fond |
 | Simulation.Tests (qualité) | Tous les tests de `10-surveillance-des-rebuts.md` § 12 |
 | Plant.Tests | Tests de première version de `11-interface-usine.md` § 8 (canal Journal de messages, schémas, `seq`, réglages) |

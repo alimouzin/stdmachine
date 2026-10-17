@@ -162,6 +162,7 @@ END_FOR
 | `LoopNext` | `Var[I.aArg[1]] -= 1` ; si > 0 → `nPC := I.aArg[2]`, sinon avancer. |
 | `Call` | Empiler (`nTable`, `nPC + 1`) ; profondeur > 4 → échec 904. `nTable := I.aArg[1]`, `nPC := début de la table`. |
 | `Return` | Dépiler et reprendre ; pile vide → traiter comme `End`. |
+| `SetOut` | Écrire la sortie n° `I.aArg[1]` de l'opération (table d'opération : `aOut` / `stOutPos` de la réponse, bit dans `nOutMask`) ; dans un sous-process : l'emplacement interne de la sortie. Une valeur de type position copie `stPos` (le décalage est ajouté à la composante utilisée). Avancer. |
 | `SetVar` | Cible `aBind[1]` (variable de station, ou de process qui est allouée comme une variable de station, donnée de pièce, ou variable de mover) := / += / −= valeur de `aParam[1]` selon `I.aArg[1]` (0, 1, 2). Avancer. |
 | `Alarm` | Lever l'alarme de process (code `900 + I.aArg[3]`, texte n° `I.aArg[1]`, gravité `I.aArg[2]`). Avertissement → avancer. Défaut de station → la station passe Aborted. Défaut machine → la machine passe Aborted. |
 | `End` | `I.aArg[1] = 1` (cycle de fond) → `nPC := début de la table`. Sinon → `Done`. |
@@ -230,6 +231,9 @@ TYPE ST_OpResponse : STRUCT
     nReqId     : UDINT;           // recopie de la demande traitée
     eStatus    : (Idle, Running, Done, Failed, Aborted, Preparing) USINT;   // Preparing : avant WaitMover
     nErrorCode : UINT;
+    nOutMask   : UINT;                // bit k-1 = sortie k définie (opération terminée par Done)
+    aOut       : ARRAY[1..8] OF LREAL;   // sorties de l'opération (booléen : 0 ou 1)
+    stOutPos   : ST_Position;     // l'unique sortie de type position
 END_STRUCT END_TYPE
 ```
 
@@ -355,6 +359,7 @@ Paramètres de l'instruction : fonction `aArg[1]`, opération `aArg[2]`, emplace
 
 ### 5.5 Fin d'une opération
 
+0. Si la réponse est `Done` et que l'instruction `Route` a des liaisons de sorties (`aBind[k]`, `k` = rang de la sortie), copier chaque sortie définie (`nOutMask`) vers sa cible : donnée de pièce de l'emplacement visé, variable de mover du mover, ou verdict. Rien n'est copié pour `Failed` et `Aborted`.
 1. Libérer la position de travail de la station ; promouvoir le premier mover de sa file.
 2. Si la fonction de l'opération est de rôle Entrée et l'opération est `Done` : pour chaque emplacement visé par l'instruction `Route` (`aArg[3]`, 0 = tous), créer la pièce : identifiant lié par l'opération (cible `PartId`) ou, s'il est vide, généré (`<machine>-<AAAAMMJJ>-<compteur sur 6 chiffres>`), état « en cours », OF en cours, horodatage. Les liaisons faites pendant l'opération écrivent dans l'enregistrement de l'emplacement, qui devient présent à ce moment.
 3. Si la fonction de l'opération est de rôle Sortie ou Rebut : clôturer les pièces déchargées (état « sortie » ou « rebutée »), mettre à jour les compteurs de l'OF.

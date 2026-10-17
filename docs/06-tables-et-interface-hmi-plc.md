@@ -37,7 +37,7 @@ TYPE ST_Bind : STRUCT eTarget : E_BindTarget; nIndex : INT; END_STRUCT END_TYPE
 TYPE E_Op : (Nop := 0, Action := 1, WaitCond := 2, WaitTime := 3, Jump := 4, JumpIfFalse := 5,
              Fork := 6, Join := 7, LoopInit := 8, LoopNext := 9, Call := 10, Return := 11,
              SetVar := 12, Alarm := 13, End := 14, StepBegin := 15, StepEnd := 16,
-             WaitMover := 17, ResetMoverVars := 22, Prompt := 18, SavePos := 19, CalibStation := 21, Route := 20) UINT; END_TYPE
+             WaitMover := 17, SetOut := 23, ResetMoverVars := 22, Prompt := 18, SavePos := 19, CalibStation := 21, Route := 20) UINT; END_TYPE
 
 TYPE E_FailPolicy : (StopStation := 0, Retry := 1, PartBad := 2, Goto := 3, Ignore := 4) USINT; END_TYPE
 
@@ -100,13 +100,14 @@ END_STRUCT END_TYPE
 | `SetVar` | — | [1] valeur | [1] cible | [1] 0 affecter, 1 ajouter, 2 soustraire |
 | `Alarm` | — | — | — | [1] n° de texte, [2] gravité (1 avertissement, 2 défaut station, 3 défaut machine), [3] n° d'alarme de process (0..99, code 900 + n) |
 | `End` | — | — | — | [1] 0 fin, 1 reprendre au début |
+| `SetOut` | — | [1] valeur | — | [1] rang de la sortie (opération : sortie de la réponse ; sous-process : emplacement interne). Valeur de type position : copie de la position |
 | `ResetMoverVars` | — | — | — | [1] rang de la variable de mover, 0 = toutes celles dont la règle n'est pas `Never` (refusée dans le cycle de fond, l'initialisation, l'arrêt et le vidage) |
 | `Prompt` | — | — | [1] cible de la valeur saisie (mode saisie) | [1] n° de texte, [2] 0 confirmation, 1 saisie |
 | `SavePos` | objet (position actuelle) | — | — | [1] n° de position nommée (calibration seulement) |
 | `CalibStation` | — | — | — | [1] n° de station, [2] n° de calibration (calibration machine seulement) |
 | `WaitMover` | — | — | — | — (une seule par table d'opération, au premier niveau ; avant elle, aucune source ni cible `PartData`, `PartId`, `Verdict`, `PartRemoved`) |
 | `StepBegin`, `StepEnd` | — | — | — | [1] niveau (1 carte, 2 étape interne d'une fonction de module) |
-| `Route` | — | paramètres d'opération 1..8 | données de pièce : liaisons des sorties d'opération (réservé, non utilisé en v1) | [1] fonction, [2] n° d'opération, [3] emplacement (0 = tous) |
+| `Route` | — | paramètres d'opération 1..8 | liaisons des sorties de l'opération, rang `k` = sortie `k` (cibles : donnée de pièce, variable de mover, verdict) | [1] fonction, [2] n° d'opération, [3] emplacement (0 = tous) |
 
 Les index d'instruction (`cible`, `début`, `Fork`, `Join`) sont **absolus** dans le tableau `aInstr` de la station (ou du process général).
 
@@ -220,7 +221,9 @@ Le compilateur (HMI, `StdMachine.Core`) transforme l'arbre d'un process en instr
 | Calibrer la station | `StepBegin(1)`, `CalibStation`, `StepEnd(1)` |
 | Attendre condition | `StepBegin(1)`, `WaitCond(c)`, `StepEnd(1)` |
 | Attendre durée | `StepBegin(1)`, `WaitTime(d)`, `StepEnd(1)` |
-| Appeler sous-process | `StepBegin(1)`, `Call(t)`, `StepEnd(1)` |
+| Appeler sous-process | `StepBegin(1)`, `Call(t)`, `StepEnd(1)` ; pour chaque sortie rangée : `SetVar` de la variable cible depuis l'emplacement interne, avant `StepEnd(1)` |
+| Définir la sortie | `StepBegin(1)`, `SetOut`, `StepEnd(1)` |
+| Fonction personnalisée avec sorties | comme une fonction de module : corps déplié, la sortie `k` est remplacée par la variable choisie à l'appel (aucune instruction supplémentaire) |
 | Réinitialiser les variables du mover | `StepBegin(1)`, `ResetMoverVars`, `StepEnd(1)` |
 | Définir variable / donnée de pièce / variable de mover | `StepBegin(1)`, `SetVar`, `StepEnd(1)` |
 | Signaler défaut | `StepBegin(1)`, `Alarm`, `StepEnd(1)` |
@@ -273,6 +276,7 @@ Le compilateur termine chaque table : opération, initialisation, arrêt, vidage
 ### 5.4 Allocation
 
 - **Variables de process** : placées juste après les variables de station, une place chacune (deux process d'une station peuvent s'exécuter en même temps, donc pas de partage de place). Pour le PLC, ce sont des variables de station ordinaires : le jeu d'instructions ne change pas.
+- **Emplacements de sorties de sous-process** : un par sortie de chaque sous-process à sorties appelé par la station, pris juste avant les compteurs de boucle (en descendant depuis 64) ; le validateur compte tout dans les 64.
 - **Variables cachées** (compteurs de boucle) : prises en partant de la variable 64 vers le bas ; le validateur vérifie que variables de station + de process + cachées ≤ 64.
 - **Conditions** : dédoublonnées par contenu, numérotées dans l'ordre de première apparition.
 - **Textes** : messages d'alarme de process et constantes texte, dédoublonnés.

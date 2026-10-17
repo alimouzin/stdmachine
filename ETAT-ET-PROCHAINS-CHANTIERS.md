@@ -22,7 +22,7 @@ Des informations propres au mover, lisibles et modifiables par les stations (off
 - À faire : modèle, compilation (source et cible `MoverData`), simulateur, validation, tiroir du mover dans la HMI, déploiement qui conserve les valeurs par identifiant, et mise à jour de `docs/05` et `docs/06` (structure du mover, `SetVar`, sources et cibles).
 - Taille : un chantier de plusieurs jours, comparable à l'étape 1 des variables nommées, avec en plus un changement du contrat PLC.
 
-### 2. Sorties des blocs composés
+### 2. Sorties des blocs composés (spécifiées de façon ferme, D81 ; pas encore codées)
 Étendre le mécanisme de l'étape 1 aux fonctions personnalisées (dépliées à la compilation, sans coût d'exécution), puis aux sous-process et aux opérations (valeur passée par un emplacement interne, copiée vers la variable nommée choisie à l'appel). Plusieurs sorties par bloc, nommées ou non (une sortie sans nom se désigne par son rang). Exemple visé : un bloc « Rechercher pièce Asyril » (chercher avec reprises, puis obtenir) qui rend une position et un nombre.
 - À faire : modèle des sorties de bloc, choix de la variable à l'appel dans l'éditeur, compilation, règle « un bloc à sorties ne s'appelle pas depuis deux contextes à la fois », validation, tests, simulation de bout en bout.
 - Ensuite, **objets à sorties variables** (Keyence XG) : table de sorties déclarée sur l'objet, indicateur `variableOutputs` dans le catalogue, simulation à partir d'une plage. Remis à plus tard : il faut d'abord connaître le nombre, les types et le mode de transmission des valeurs.
