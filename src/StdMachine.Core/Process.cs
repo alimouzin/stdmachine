@@ -394,12 +394,19 @@ public sealed class ProcessDefinition
     public string Name { get; set; } = string.Empty;
     /// <summary>Opérations de fonctions implémentées par ce process (niveau station).</summary>
     public List<OperationRef> Implements { get; } = new List<OperationRef>();
+
+    /// <summary>
+    /// Variables propres à ce process (portée « process ») : nommées, visibles seulement ici (V020). Le compilateur les place après les variables de
+    /// station, dans la même plage de 64 (docs/13). Les variables partagées entre process restent dans <see cref="StationConfig.Variables"/>.
+    /// </summary>
+    public List<StationVariable> Variables { get; } = new List<StationVariable>();
     public Sequence Body { get; set; } = new Sequence();
 
     public ProcessDefinition Clone()
     {
         var c = new ProcessDefinition { Id = Id, Kind = Kind, Name = Name, Body = Body.Clone() };
         c.Implements.AddRange(Implements);
+        c.Variables.AddRange(Variables.Select(v => new StationVariable { Id = v.Id, Name = v.Name, Type = v.Type, Initial = v.Initial }));
         return c;
     }
 

@@ -36,6 +36,36 @@ public class CompilerTests
     }
 
     [Fact]
+    public void Process_variables_follow_the_station_variables_and_each_has_its_own_slot()
+    {
+        var p = SampleProject.Build(Cat);
+        var station = p.Station(DemoProject.Pressage01)!;
+        int stationVars = station.Variables.Count;
+        var a = new StationVariable { Name = "PosPignon", Type = "Position", Initial = "0" };
+        var b = new StationVariable { Name = "Essais", Type = "Number", Initial = "5" };
+        station.Processes.First(x => x.Name == "Presser pignon").Variables.Add(a);
+        station.Processes.First(x => x.Name == "Sertir").Variables.Add(b);
+        station.Processes.First(x => x.Name == "Sertir").Body.Steps.Add(new SetStep { Target = SetTarget.Var, TargetRef = b.Id, Value = ValueRef.Const(7) });
+
+        var data = Compile(p).Station(DemoProject.Pressage01)!;
+
+        Assert.Equal(stationVars + 2, data.Variables.Count);
+        Assert.Equal("Position", data.Variables[stationVars].Type);
+        Assert.Equal(new CVarInit("Number", 5), data.Variables[stationVars + 1]);
+        // « Définir variable » vise l'emplacement de la variable de process (numérotation à partir de 1).
+        Assert.Contains(data.Instructions, i => i.Op == Op.SetVar && i.Binds[0].Target == BindKind.Var && i.Binds[0].Index == stationVars + 2);
+    }
+
+    [Fact]
+    public void Process_variables_count_in_the_64_variable_limit()
+    {
+        var p = SampleProject.Build(Cat);
+        var proc = p.Station(DemoProject.Pressage01)!.Processes.First(x => x.Name == "Presser pignon");
+        for (int i = 0; i < 70; i++) proc.Variables.Add(new StationVariable { Name = "v" + i });
+        Assert.Contains("V007", ProjectCompiler.Compile(p, Cat).Issues.Select(i => i.Code));
+    }
+
+    [Fact]
     public void Compilation_is_deterministic_and_the_hash_follows_the_content()
     {
         var a = Compile();

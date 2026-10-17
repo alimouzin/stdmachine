@@ -45,6 +45,29 @@ public class ProjectSerializerTests
     }
 
     [Fact]
+    public void Process_variables_and_result_bindings_survive_a_round_trip()
+    {
+        var project = SampleProject.Build(Samples.Catalog());
+        var proc = project.Stations.SelectMany(s => s.Processes).First(p => p.Name == "Presser pignon");
+        var pos = new StationVariable { Name = "PosPignon", Type = "Position", Initial = "0" };
+        var count = new StationVariable { Name = "Essais", Type = "Number", Initial = "5" };
+        proc.Variables.Add(pos);
+        proc.Variables.Add(count);
+        var get = proc.AllSteps().OfType<ActionStep>().First();
+        get.Bindings.Add(new ResultBinding(1, BindTarget.Var, pos.Id));
+
+        var back = ProjectSerializer.Deserialize(ProjectSerializer.Serialize(project));
+
+        var backProc = back.Stations.SelectMany(s => s.Processes).First(p => p.Name == "Presser pignon");
+        Assert.Equal(new[] { "PosPignon", "Essais" }, backProc.Variables.Select(v => v.Name));
+        Assert.Equal(new[] { pos.Id, count.Id }, backProc.Variables.Select(v => v.Id));
+        Assert.Equal("Position", backProc.Variables[0].Type);
+        Assert.Equal("5", backProc.Variables[1].Initial);
+        var binding = Assert.Single(backProc.AllSteps().OfType<ActionStep>().First().Bindings);
+        Assert.Equal(new ResultBinding(1, BindTarget.Var, pos.Id), binding);
+    }
+
+    [Fact]
     public void Project_without_schema_version_is_migrated()
     {
         var json = ProjectSerializer.Serialize(DemoProject.Build()).Replace("\"schemaVersion\": 1,", "");

@@ -67,7 +67,7 @@ public sealed class ProjectValidator
         {
             Check(s.AllObjects().Count(), PlcLimits.ObjectsPerStation, "objets de " + s.Name, Studio(s));
             Check(s.Positions.Count, PlcLimits.NamedPositions, "positions nommées de " + s.Name, Studio(s));
-            Check(s.Variables.Count, PlcLimits.Variables, "variables de " + s.Name, Studio(s));
+            Check(s.Variables.Count + s.Processes.Sum(p => p.Variables.Count), PlcLimits.Variables, "variables de " + s.Name + " (station et process)", Studio(s));
             Check(s.Interlocks.Count, PlcLimits.Interlocks, "verrouillages de " + s.Name, Studio(s));
             foreach (var press in s.PressRecipes.GroupBy(r => r.ObjectId))
                 Check(press.Count(), PlcLimits.PressRecipes, "recettes de presse de " + s.Name, Studio(s, press.Key));
@@ -275,6 +275,11 @@ public sealed class ProjectValidator
     private void ProcessRules(StationConfig s, ProcessDefinition proc, Dictionary<Guid, ObjectNode> objects, List<ProcessDefinition> all)
     {
         CheckSteps(s, proc, proc.Body, objects, all);
+        foreach (var finding in VariableUsage.Analyze(s, proc))
+        {
+            var link = Studio(s, proc: proc.Id, step: finding.StepId);
+            if (finding.IsError) Error(finding.Code, finding.Message, link); else Warn(finding.Code, finding.Message, link);
+        }
         // Récursion de sous-process
         if (Reaches(proc, proc.Id, all, new HashSet<Guid>()))
             Error("V009", "Le process " + proc.Name + " (" + s.Name + ") s'appelle lui-même, directement ou non.", Studio(s, proc: proc.Id));

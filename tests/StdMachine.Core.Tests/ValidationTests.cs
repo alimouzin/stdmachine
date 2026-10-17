@@ -64,6 +64,12 @@ public class ValidationTests
         d["V017"] = p => { var sert = Press1(p).Processes.First(x => x.Name == "Sertir"); Press1(p).Processes.First(x => x.Name == "Presser pignon").Implements.AddRange(sert.Implements); };
         d["V018"] = p => { for (int i = 0; i < 9; i++) { var g = new GroupConfig { Name = "g" + i }; g.StationIds.Add(Press1(p).Id); g.Operations.Add(new OperationSignature { Name = "o" }); p.Machine.Groups.Add(g); } };
         d["V019"] = p => p.Machine.Quality.Mover.RateWarnPercent = 50;
+        d["V020"] = p =>
+        {
+            var v = new StationVariable { Name = "PosPrivee", Type = "Position" };
+            Press1(p).Processes.First(x => x.Name == "Sertir").Variables.Add(v);
+            Press1(p).Processes.First(x => x.Name == "Presser pignon").Body.Steps.Add(new SetStep { Target = SetTarget.Var, TargetRef = v.Id, Value = ValueRef.Const(1) });
+        };
         d["V101"] = p => Press1(p).AllObjects().First(o => o.TypeCode == "Press").Simulated = true;
         d["V102"] = p => Press1(p).PressRecipes[0].Verified = false;
         d["V103"] = p => { p.Machine.RejectGroupId = null; p.Machine.Groups.RemoveAll(g => g.Role == GroupRole.Reject); };
@@ -76,6 +82,15 @@ public class ValidationTests
         d["V111"] = p => p.Machine.Groups.First(g => g.Name == "Contrôle").StationIds.Clear();
         d["V112"] = p => p.Machine.PlanarPositions.RemoveAll(pp => pp.Kind == PlanarPositionKind.Buffer || (pp.StationId == DemoProject.StationId(DemoProject.Pressage01) && pp.Kind == PlanarPositionKind.Queue));
         d["V113"] = p => p.Machine.Groups.RemoveAll(g => g.Role == GroupRole.Work && g.Name != "Contrôle"); 
+        d["V115"] = p =>
+        {
+            var proc = Press1(p).Processes.First(x => x.Name == "Presser pignon");
+            var v = new StationVariable { Name = "PosPignon", Type = "Position" };
+            proc.Variables.Add(v);
+            var wait = new WaitConditionStep();
+            wait.Condition.Terms.Add(new CondTerm { Left = ValueRef.Var(v.Id), Op = CompareOp.Equal, Right = ValueRef.Const(1) });
+            proc.Body.Steps.Insert(0, wait);
+        };
         return d;
     }
 

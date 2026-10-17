@@ -188,8 +188,17 @@ public static class ProjectCompiler
             if (data.Objects.Count > PlcLimits.ObjectsPerStation) throw new CompileException("Station " + s.Name + " : " + data.Objects.Count + " objets pour une limite de " + PlcLimits.ObjectsPerStation + ".");
             foreach (var pos in s.Positions) data.Positions.Add(new CNamedPos(pos.X, pos.Y, pos.Z, pos.C, pos.Frame, pos.Approach ?? 0, pos.Taught, pos.Id));
             foreach (var v in s.Variables) data.Variables.Add(new CVarInit(v.Type, double.TryParse(v.Initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var d) ? d : 0));
+            // Variables de process : après celles de la station, chacune a son propre emplacement (deux process de la station peuvent tourner en même temps).
+            var processVars = new Dictionary<Guid, int>();
+            foreach (var proc in s.Processes)
+                foreach (var v in proc.Variables)
+                {
+                    data.Variables.Add(new CVarInit(v.Type, double.TryParse(v.Initial, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var pd) ? pd : 0));
+                    processVars[v.Id] = data.Variables.Count;
+                }
 
             var ctx = new Ctx(_p, _c, s, data, local, _out, s.Number);
+            ctx.ProcessVars = processVars;
             var procs = s.Processes.Where(p => p.Kind != ProcessKind.General && p.Kind != ProcessKind.GeneralSub).ToList();
             if (procs.Count > 16) throw new CompileException("Station " + s.Name + " : " + procs.Count + " tables pour une limite de 16.");
             for (int i = 0; i < procs.Count; i++) ctx.TableNo[procs[i].Id] = i + 1;
@@ -288,6 +297,9 @@ public static class ProjectCompiler
         private readonly List<string> _path = new List<string>();
 
         public readonly Dictionary<Guid, int> TableNo = new Dictionary<Guid, int>();
+
+        /// <summary>Variables de process de la station : identifiant → numéro de variable (docs/13).</summary>
+        public Dictionary<Guid, int> ProcessVars { get; set; } = new Dictionary<Guid, int>();
 
         public Ctx(MachineProject p, CatalogDocument c, StationConfig? s, StationData d, Dictionary<Guid, int> local, CompiledTables output, int stationNo)
         {
@@ -420,8 +432,9 @@ public static class ProjectCompiler
         private int VarIndex(Guid? id)
         {
             int i = _s == null ? -1 : _s.Variables.FindIndex(x => x.Id == id);
-            if (i < 0) throw new CompileException(Where + " : variable introuvable.");
-            return i + 1;
+            if (i >= 0) return i + 1;
+            if (id.HasValue && ProcessVars.TryGetValue(id.Value, out var pv)) return pv;
+            throw new CompileException(Where + " : variable introuvable.");
         }
 
         private int TextIndex(string text)
@@ -459,7 +472,7 @@ public static class ProjectCompiler
         {
             _hiddenVars++;
             int v = 64 - _hiddenVars + 1;
-            if (_s != null && _s.Variables.Count + _hiddenVars > 64) throw new CompileException(Where + " : variables visibles et cachées au-delà de 64.");
+            if (_s != null && _d.Variables.Count + _hiddenVars > 64) throw new CompileException(Where + " : variables visibles et cachées au-delà de 64.");
             return v;
         }
 

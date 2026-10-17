@@ -1980,6 +1980,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -2119,6 +2120,7 @@
           "kind": "init",
           "name": "Initialisation",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -2152,6 +2154,7 @@
           "kind": "clear",
           "name": "Vidage",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -3144,6 +3147,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -3717,6 +3721,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -3887,6 +3892,7 @@
           "kind": "background",
           "name": "Cycle de fond",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -3922,6 +3928,7 @@
           "kind": "init",
           "name": "Initialisation",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -3955,6 +3962,7 @@
           "kind": "clear",
           "name": "Vidage",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -5231,6 +5239,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -5792,6 +5801,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -5962,6 +5972,7 @@
           "kind": "background",
           "name": "Cycle de fond",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -5997,6 +6008,7 @@
           "kind": "init",
           "name": "Initialisation",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -6030,6 +6042,7 @@
           "kind": "clear",
           "name": "Vidage",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -6615,6 +6628,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -6683,6 +6697,7 @@
           "kind": "init",
           "name": "Initialisation",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": []
           }
@@ -6692,6 +6707,7 @@
           "kind": "clear",
           "name": "Vidage",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": []
           }
@@ -7294,6 +7310,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -7396,6 +7413,7 @@
           "kind": "init",
           "name": "Initialisation",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -7417,6 +7435,7 @@
           "kind": "clear",
           "name": "Vidage",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -7611,6 +7630,7 @@
               "operationNo": 1
             }
           ],
+          "variables": [],
           "body": {
             "steps": [
               {
@@ -7657,6 +7677,7 @@
           "kind": "init",
           "name": "Initialisation",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": []
           }
@@ -7666,6 +7687,7 @@
           "kind": "clear",
           "name": "Vidage",
           "implements": [],
+          "variables": [],
           "body": {
             "steps": []
           }
@@ -7681,6 +7703,7 @@
     "kind": "general",
     "name": "Process g\u00E9n\u00E9ral",
     "implements": [],
+    "variables": [],
     "body": {
       "steps": [
         {
