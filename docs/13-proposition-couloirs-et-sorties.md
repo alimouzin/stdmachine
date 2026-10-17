@@ -82,7 +82,7 @@ Chaque étape : tests de compilation (allocation, portée), tests de validation,
 1. **« Bloc »** = une carte d'étape (action, fonction, sous-process, opération). Les blocs de structure (Si / Sinon, En parallèle, Répéter) n'ont pas de sortie propre. **Décidé.**
 2. **Valeurs d'étape : les deux.** Une sortie est utilisable directement par les étapes suivantes (variable cachée allouée par le compilateur) **et** peut être liée explicitement à une variable de station ou à une donnée de pièce, pour la garder d'un process à l'autre. **Décidé.**
 3. **Plusieurs sorties par bloc, nommées ou non.** Une sortie sans nom se désigne par son rang (« Sortie 1 », « Sortie 2 »…) ; une sortie nommée garde son nom partout (cartes, sélecteurs, liaisons). Le Keyence XG est remis à plus tard : l'étape 3 de l'ordre de réalisation attend. **Décidé.**
-4. **Couloirs : prototype du mode « Flux ».** Fait, voir ci-dessous. Le choix définitif reste à faire.
+4. **Couloirs : prototype du mode « Flux ».** Fait ; le Flux est le mode par défaut (D72) et les couloirs restent **en option**. La suppression éventuelle des couloirs est à décider plus tard (note dans `REPRISE-PHASES-2-A-5.md`).
 
 ## 4. Prototype « Flux » (réalisé le 2026-10-17)
 
