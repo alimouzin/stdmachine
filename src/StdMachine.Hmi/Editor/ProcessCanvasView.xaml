@@ -16,8 +16,8 @@
         <!-- Ligne de paramètre : nom à gauche, valeur à droite -->
         <DataTemplate DataType="{x:Type ed:ParamLine}">
             <Grid Margin="0,0,0,2">
-                <TextBlock Text="{Binding Key}" FontSize="12" Foreground="{StaticResource Text.Secondary}" HorizontalAlignment="Left"/>
-                <TextBlock x:Name="V" Text="{Binding Value}" FontSize="12" FontWeight="Medium" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="150" Margin="60,0,0,0"/>
+                <TextBlock Text="{Binding Key}" FontSize="12" Foreground="{StaticResource Text.Secondary}" HorizontalAlignment="Left" TextTrimming="CharacterEllipsis" MaxWidth="96"/>
+                <TextBlock x:Name="V" Text="{Binding Value}" FontSize="12" FontWeight="Medium" HorizontalAlignment="Right" TextTrimming="CharacterEllipsis" MaxWidth="112" Margin="60,0,0,0"/>
             </Grid>
             <DataTemplate.Triggers>
                 <DataTrigger Binding="{Binding IsError}" Value="True">

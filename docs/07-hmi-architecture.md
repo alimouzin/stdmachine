@@ -210,6 +210,7 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V017 | Erreur | Une opération d'une fonction est implémentée par deux process de la même station, ou un process implémente des opérations dont les paramètres diffèrent |
 | V018 | Erreur | Une station appartient à plus de 8 fonctions, ou a plus de 32 couples (fonction, opération) |
 | V019 | Erreur | Règle qualité incohérente (avertissement ≥ action, échantillon minimal > fenêtre, fenêtre hors 1..255) |
+| V020 | Erreur | Une variable de process est utilisée dans un autre process que le sien |
 | V101 | Avertissement | Objet en simulation |
 | V102 | Avertissement | Recette de presse non vérifiée sur la presse |
 | V103 | Avertissement | Aucun chemin ne traite le verdict mauvais et aucune fonction de rebut n'existe |
@@ -223,6 +224,7 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V111 | Avertissement | Station membre d'aucune fonction (elle ne sera jamais utilisée en production) |
 | V112 | Avertissement | Station partagée par plusieurs fonctions sans position de file, et moins de 2 positions tampon : blocage possible |
 | V113 | Avertissement | Fonction qui impute ses rebuts sans fonction amont de rôle Travail |
+| V115 | Avertissement | Variable de process lue sur un chemin où elle n'est pas écrite avant (elle garde la valeur du passage précédent) |
 | V114 | Avertissement | Arrêt qualité réglé sur une station seule dans une de ses fonctions (sa pause bloque la fonction) |
 | V201 | Information | Le PLC n'a pas le projet courant (déploiement nécessaire) |
 

@@ -1,4 +1,5 @@
 using StdMachine.Core;
+using StdMachine.Hmi.Services;
 using StdMachine.Simulation.Demo;
 
 namespace StdMachine.Hmi.Editor;
@@ -78,6 +79,13 @@ public sealed class StepPresenter
         if (def == null) return new CardText("Action inconnue", "help", new[] { new ParamLine("Objet", node?.Name ?? "supprimé", true) }, 0.5, node?.Name);
         var lines = ParamLines(def.Params, a.Args);
         if (a.Fail.Kind == FailKind.Retry && lines.Count < 3) lines.Add(new ParamLine("En cas d'échec", "refaire " + a.Fail.Retries + " fois"));
+        // Résultats rangés : une ligne « Nom du résultat → variable » par liaison, pour voir d'où vient une valeur sans ouvrir l'étape.
+        if (a.Bindings.Count > 0)
+        {
+            var results = AppServices.Compilation.Catalog?.Type(node?.TypeCode ?? string.Empty)?.Action(a.ActionNo)?.Results;
+            foreach (var b in a.Bindings.OrderBy(x => x.ResultNo))
+                lines.Add(new ParamLine(results != null && b.ResultNo - 1 < results.Count ? results[b.ResultNo - 1].Name : "Résultat " + b.ResultNo, "→ " + BindingTargetText(b)));
+        }
         return new CardText(def.Name, def.Icon, lines, def.DurationSeconds, node?.Name);
     }
 
@@ -177,9 +185,25 @@ public sealed class StepPresenter
     private string Name(Guid? id)
     {
         if (id == null) return "?";
-        var v = _station?.Variables.FirstOrDefault(x => x.Id == id);
+        // Variable du process affiché d'abord, puis celles des autres process (le nom reste lisible même si V020 le signale), puis la station.
+        var v = _process?.Variables.FirstOrDefault(x => x.Id == id)
+            ?? _station?.Processes.SelectMany(p => p.Variables).FirstOrDefault(x => x.Id == id)
+            ?? _station?.Variables.FirstOrDefault(x => x.Id == id);
         if (v != null) return v.Name;
         return _project.Machine.PartData.FirstOrDefault(x => x.Id == id)?.Name ?? "?";
+    }
+
+    /// <summary>Où un résultat d'action est rangé : « PosPignon », « donnée « Force finale » », « Verdict »…</summary>
+    public string BindingTargetText(ResultBinding b)
+    {
+        switch (b.Target)
+        {
+            case BindTarget.Var: return Name(b.Ref);
+            case BindTarget.PartData: return "donnée « " + Name(b.Ref) + " »";
+            case BindTarget.PartId: return "Identifiant de la pièce";
+            case BindTarget.Verdict: return "Verdict";
+            default: return "Pièce retirée";
+        }
     }
 
     public string ConditionText(Condition c)

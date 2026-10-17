@@ -53,6 +53,25 @@ public sealed partial class ParamRowViewModel : ObservableObject
     [RelayCommand] private Task Edit(FrameworkElement anchor) => _edit(anchor);
 }
 
+/// <summary>Une variable de process dans l'onglet Données : renommer, rendre partagée (variable de station) ou supprimer.</summary>
+public sealed class VariableRowViewModel
+{
+    public VariableRowViewModel(StationVariable variable, Func<FrameworkElement, Task> rename, Func<FrameworkElement, Task> share, Func<FrameworkElement, Task> delete)
+    {
+        Name = variable.Name;
+        TypeText = ProcessEditorViewModel.TypeText(variable.Type);
+        RenameCommand = new AsyncRelayCommand<FrameworkElement>(a => rename(a!));
+        ShareCommand = new AsyncRelayCommand<FrameworkElement>(a => share(a!));
+        DeleteCommand = new AsyncRelayCommand<FrameworkElement>(a => delete(a!));
+    }
+
+    public string Name { get; }
+    public string TypeText { get; }
+    public IAsyncRelayCommand<FrameworkElement> RenameCommand { get; }
+    public IAsyncRelayCommand<FrameworkElement> ShareCommand { get; }
+    public IAsyncRelayCommand<FrameworkElement> DeleteCommand { get; }
+}
+
 public sealed record ProcessTabModel(string Name, string Key, bool IsSelected);
 
 public sealed record IssueRow(string Code, string Message, ValidationSeverity Severity, Guid? StepId);
@@ -92,6 +111,10 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
     public ObservableCollection<ProcessTabModel> Tabs { get; } = new ObservableCollection<ProcessTabModel>();
     public ObservableCollection<PaletteGroupViewModel> Groups { get; } = new ObservableCollection<PaletteGroupViewModel>();
     public ObservableCollection<ParamRowViewModel> Params { get; } = new ObservableCollection<ParamRowViewModel>();
+    /// <summary>Résultats de l'étape sélectionnée et variable qui les reçoit (docs/13).</summary>
+    public ObservableCollection<ParamRowViewModel> Outputs { get; } = new ObservableCollection<ParamRowViewModel>();
+    /// <summary>Variables propres au process affiché (onglet Données).</summary>
+    public ObservableCollection<VariableRowViewModel> ProcessVars { get; } = new ObservableCollection<VariableRowViewModel>();
     public ObservableCollection<IssueRow> Issues { get; } = new ObservableCollection<IssueRow>();
 
     public bool IsStationLevel => Level == ProcessLevel.Station;
@@ -251,16 +274,32 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
 
     // ---------------------------------------------------------------- modifications annulables
 
-    /// <summary>Applique une modification de l'arbre et l'enregistre comme commande annulable (instantanés avant / après).</summary>
+    /// <summary>Applique une modification de l'arbre et des variables et l'enregistre comme commande annulable (instantanés avant / après).</summary>
     private void Apply(string description, Action mutate, Guid? select = null)
     {
         var before = Process.Body.Clone();
+        var varsBefore = SnapshotVariables();
         mutate();
         var after = Process.Body.Clone();
+        var varsAfter = SnapshotVariables();
         _undo.Push(new DelegateEdit(description,
-            () => { Process.Body = before.Clone(); AfterEdit(null); },
-            () => { Process.Body = after.Clone(); AfterEdit(null); }));
+            () => { Process.Body = before.Clone(); RestoreVariables(varsBefore); AfterEdit(null); },
+            () => { Process.Body = after.Clone(); RestoreVariables(varsAfter); AfterEdit(null); }));
         AfterEdit(select);
+    }
+
+    private static StationVariable CloneVariable(StationVariable v) => new StationVariable { Id = v.Id, Name = v.Name, Type = v.Type, Initial = v.Initial };
+
+    private (List<StationVariable> Process, List<StationVariable> Station) SnapshotVariables()
+        => (Process.Variables.Select(CloneVariable).ToList(), Station?.Variables.Select(CloneVariable).ToList() ?? new List<StationVariable>());
+
+    private void RestoreVariables((List<StationVariable> Process, List<StationVariable> Station) snapshot)
+    {
+        Process.Variables.Clear();
+        Process.Variables.AddRange(snapshot.Process.Select(CloneVariable));
+        if (Station == null) return;
+        Station.Variables.Clear();
+        Station.Variables.AddRange(snapshot.Station.Select(CloneVariable));
     }
 
     private void AfterEdit(Guid? select)
@@ -346,6 +385,8 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
     {
         _syncingPanel = true;
         Params.Clear();
+        Outputs.Clear();
+        RefreshVariableRows();
         var id = Canvas.SelectedStepId;
         var loc = id.HasValue ? ProcessTree.Find(Process.Body, id.Value) : null;
         HasSelection = loc.HasValue;
@@ -368,6 +409,7 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
             {
                 var def = DemoCatalog.Get(Station!.FindObject(a.ObjectId)?.TypeCode ?? "")?.Action(a.ActionNo);
                 if (def != null) BuildParamRows(def.Params, a.Args, step);
+                BuildOutputRows(a);
                 ShowFail = true; FailIndex = ToIndex(a.Fail.Kind); ShowRetries = a.Fail.Kind == FailKind.Retry; Retries = a.Fail.Retries == 0 ? 3 : a.Fail.Retries;
                 ShowTimeout = true; Timeout = a.TimeoutSeconds ?? (def?.DurationSeconds > 0 ? Math.Round(def.DurationSeconds * 4, 1) : 5);
                 break;
@@ -452,6 +494,165 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
         }
     }
 
+    // ---------------------------------------------------------------- variables et sorties (docs/13)
+
+    public static string TypeText(string type) => type == "Position" ? "Position" : type == "Bool" ? "Booléen" : "Nombre";
+
+    private static string ResultTypeText(string type) => type switch
+    {
+        "Position" => "position",
+        "Int" => "entier",
+        "Bool" => "booléen",
+        "Text" => "texte",
+        "Enum" => "jugement",
+        _ => "nombre",
+    };
+
+    private bool NameTaken(string name, StationVariable? except = null)
+        => Process.Variables.Concat(Station?.Variables ?? new List<StationVariable>())
+            .Any(v => !ReferenceEquals(v, except) && string.Equals(v.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    private string UniqueName(string wanted)
+    {
+        string name = wanted.Trim();
+        if (!NameTaken(name)) return name;
+        for (int i = 2; ; i++)
+            if (!NameTaken(name + " " + i)) return name + " " + i;
+    }
+
+    private void RefreshVariableRows()
+    {
+        ProcessVars.Clear();
+        foreach (var v in Process.Variables)
+        {
+            var variable = v;
+            ProcessVars.Add(new VariableRowViewModel(variable, a => RenameVariableAsync(a, variable), a => ShareVariableAsync(variable), a => DeleteVariableAsync(variable)));
+        }
+    }
+
+    private async Task RenameVariableAsync(FrameworkElement anchor, StationVariable v)
+    {
+        var name = await AppServices.Keypad.EditTextAsync(anchor, new TextEditRequest("Nom de la variable", v.Name, "Nom visible dans les cartes et les sélecteurs"));
+        if (name == null) return;
+        name = name.Trim();
+        if (name.Length == 0 || name == v.Name) return;
+        if (NameTaken(name, v)) { AppServices.Toast.Show("Une variable porte déjà ce nom.", ToastKind.Warning); return; }
+        Apply("Renommer la variable « " + v.Name + " »", () => v.Name = name);
+    }
+
+    private Task ShareVariableAsync(StationVariable v)
+    {
+        if (Station == null) return Task.CompletedTask;
+        // Même identifiant : toutes les références restent valables, la variable devient visible dans tous les process de la station.
+        Apply("Rendre la variable « " + v.Name + " » partagée", () => { Process.Variables.RemoveAll(x => x.Id == v.Id); Station.Variables.Add(CloneVariable(v)); });
+        AppServices.Toast.Show("« " + v.Name + " » est maintenant une variable de station.", ToastKind.Info);
+        return Task.CompletedTask;
+    }
+
+    private Task DeleteVariableAsync(StationVariable v)
+    {
+        int uses = Process.AllSteps().Count(s => StdMachine.Core.Validation.VariableUsage.ReadsOf(s).Concat(StdMachine.Core.Validation.VariableUsage.WritesOf(s)).Contains(v.Id));
+        if (uses > 0)
+        {
+            AppServices.Toast.Show("« " + v.Name + " » est utilisée par " + UiText.Plural(uses, "étape", "étapes") + " : retirez d'abord ces usages.", ToastKind.Warning);
+            return Task.CompletedTask;
+        }
+        Apply("Supprimer la variable « " + v.Name + " »", () => Process.Variables.RemoveAll(x => x.Id == v.Id));
+        return Task.CompletedTask;
+    }
+
+    [RelayCommand]
+    private async Task NewVariable(FrameworkElement anchor)
+    {
+        var types = new List<PickItem>
+        {
+            new PickItem("Nombre", "valeur numérique", "Number", true, "pin"),
+            new PickItem("Booléen", "vrai ou faux", "Bool", true, "toggle_on"),
+            new PickItem("Position", "X, Y, Z, C", "Position", true, "place"),
+        };
+        if (await Pickers.PickAsync(anchor, "Type de la variable", types) is not string type) return;
+        var name = await AppServices.Keypad.EditTextAsync(anchor, new TextEditRequest("Nom de la variable", UniqueName("Variable"), "Nom visible dans les cartes et les sélecteurs"));
+        if (string.IsNullOrWhiteSpace(name)) return;
+        name = name.Trim();
+        if (NameTaken(name)) { AppServices.Toast.Show("Une variable porte déjà ce nom.", ToastKind.Warning); return; }
+        Apply("Créer la variable « " + name + " »", () => Process.Variables.Add(new StationVariable { Name = name, Type = type }));
+    }
+
+    /// <summary>Une ligne par résultat de l'action sélectionnée : toucher pour choisir la variable (ou la donnée) qui le reçoit.</summary>
+    private void BuildOutputRows(ActionStep a)
+    {
+        var results = ResultsOf(a);
+        var presenter = new StepPresenter(_project, Station, Process);
+        for (int i = 0; i < results.Count; i++)
+        {
+            int no = i + 1;
+            var result = results[i];
+            var binding = a.Bindings.FirstOrDefault(b => b.ResultNo == no);
+            string value = binding == null ? "Non rangé" : presenter.BindingTargetText(binding);
+            Outputs.Add(new ParamRowViewModel(result.Name + " · " + ResultTypeText(result.Type), value, false, anchor => EditOutputAsync(anchor, a, no, result)));
+        }
+    }
+
+    private IReadOnlyList<StdMachine.Core.Catalog.CatalogResult> ResultsOf(ActionStep a)
+    {
+        var node = Station?.FindObject(a.ObjectId);
+        var action = AppServices.Compilation.Catalog?.Type(node?.TypeCode ?? string.Empty)?.Action(a.ActionNo);
+        return action?.Results ?? new List<StdMachine.Core.Catalog.CatalogResult>();
+    }
+
+    private static bool Compatible(string resultType, string variableType)
+        => resultType == "Position" ? variableType == "Position" : resultType != "Text" && variableType != "Position";
+
+    private async Task EditOutputAsync(FrameworkElement anchor, ActionStep a, int no, StdMachine.Core.Catalog.CatalogResult result)
+    {
+        const string None = "none", NewProcess = "new:process", NewStation = "new:station";
+        var items = new List<PickItem> { new PickItem("Ne pas ranger", null, None, true, "block") };
+        foreach (var v in Process.Variables.Where(v => Compatible(result.Type, v.Type)))
+            items.Add(new PickItem(v.Name, "variable de process", new ResultBinding(no, BindTarget.Var, v.Id), true, "tune"));
+        foreach (var v in (Station?.Variables ?? new List<StationVariable>()).Where(v => Compatible(result.Type, v.Type)))
+            items.Add(new PickItem(v.Name, "variable de station", new ResultBinding(no, BindTarget.Var, v.Id), true, "tune"));
+        if (result.Type != "Position" && result.Type != "Text")
+            foreach (var d in _project.Machine.PartData.Where(d => !d.Reserved))
+                items.Add(new PickItem("Donnée « " + d.Name + " »", "donnée de pièce", new ResultBinding(no, BindTarget.PartData, d.Id), true, "category"));
+        if (result.Type == "Enum") items.Add(new PickItem("Verdict de la pièce", "bon ou mauvais selon le jugement", new ResultBinding(no, BindTarget.Verdict), true, "gavel"));
+        if (result.Type == "Text") items.Add(new PickItem("Identifiant de la pièce", null, new ResultBinding(no, BindTarget.PartId), true, "qr_code"));
+        if (result.Type != "Text")
+        {
+            items.Add(new PickItem("Nouvelle variable de process…", "visible seulement ici", NewProcess, true, "add"));
+            items.Add(new PickItem("Nouvelle variable de station…", "partagée entre les process", NewStation, true, "add"));
+        }
+
+        object current = (object?)a.Bindings.FirstOrDefault(b => b.ResultNo == no) ?? None;
+        var pick = await Pickers.PickAsync(anchor, result.Name, items, current);
+        if (pick == null) return;
+
+        if (pick is string s && s == None)
+        {
+            Apply("Ne plus ranger « " + result.Name + " »", () => a.Bindings.RemoveAll(b => b.ResultNo == no), a.Id);
+            return;
+        }
+        if (pick is ResultBinding chosen)
+        {
+            Apply("Ranger « " + result.Name + " »", () => { a.Bindings.RemoveAll(b => b.ResultNo == no); a.Bindings.Add(chosen); }, a.Id);
+            return;
+        }
+
+        // Nouvelle variable : le nom est proposé d'après le résultat et se modifie tout de suite.
+        string type = result.Type == "Position" ? "Position" : result.Type == "Bool" ? "Bool" : "Number";
+        var name = await AppServices.Keypad.EditTextAsync(anchor, new TextEditRequest("Nom de la variable", UniqueName(result.Name), "Nom visible dans les cartes et les sélecteurs"));
+        if (string.IsNullOrWhiteSpace(name)) return;
+        name = name.Trim();
+        if (NameTaken(name)) { AppServices.Toast.Show("Une variable porte déjà ce nom.", ToastKind.Warning); return; }
+        var variable = new StationVariable { Name = name, Type = type };
+        bool shared = (string)pick == NewStation && Station != null;
+        Apply("Ranger « " + result.Name + " » dans « " + name + " »", () =>
+        {
+            if (shared) Station!.Variables.Add(variable); else Process.Variables.Add(variable);
+            a.Bindings.RemoveAll(b => b.ResultNo == no);
+            a.Bindings.Add(new ResultBinding(no, BindTarget.Var, variable.Id));
+        }, a.Id);
+    }
+
     private async Task EditParamAsync(FrameworkElement anchor, ParamDef d, int idx, List<ValueRef> args, Step step)
     {
         while (args.Count <= idx) args.Add(ValueRef.Const(d.Default));
@@ -463,6 +664,8 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
                 var items = new List<PickItem>();
                 foreach (var p in Station!.Positions)
                     items.Add(new PickItem(p.Name, p.Taught ? "apprise" : "non apprise", ValueRef.NamedPos(p.Id, p.Approach ?? 0), p.Taught));
+                foreach (var v in Process.Variables.Where(v => v.Type == "Position"))
+                    items.Add(new PickItem(v.Name, "variable de process", ValueRef.Var(v.Id), true, "tune"));
                 foreach (var v in Station.Variables.Where(v => v.Type == "Position"))
                     items.Add(new PickItem(v.Name, "variable de station", ValueRef.Var(v.Id), true, "tune"));
                 var pick = await Pickers.PickAsync(anchor, d.Name, items, args[idx]);

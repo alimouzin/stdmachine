@@ -202,6 +202,30 @@
                                             </ItemsControl.ItemTemplate>
                                         </ItemsControl>
                                     </StackPanel>
+                                    <StackPanel Margin="18,14,18,14" Visibility="{Binding Outputs.Count, Converter={x:Static infra:Conv.PositiveToVis}}">
+                                        <TextBlock Text="Sorties (résultats rangés dans des variables)" FontWeight="SemiBold" FontSize="13" Margin="0,0,0,8"/>
+                                        <ItemsControl ItemsSource="{Binding Outputs}" Focusable="False">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Margin="0,0,0,10">
+                                                        <TextBlock Text="{Binding Label}" FontSize="12.5" Foreground="{StaticResource Neutral.Text}" Margin="0,0,0,4"/>
+                                                        <Button x:Name="Btn" Command="{Binding EditCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" HorizontalContentAlignment="Stretch" Height="48" Padding="12,0">
+                                                            <DockPanel>
+                                                                <c:Icon DockPanel.Dock="Right" Glyph="chevron_right" FontSize="20" Foreground="{StaticResource Text.Tertiary}"/>
+                                                                <TextBlock x:Name="Val" Text="{Binding Value}" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                                            </DockPanel>
+                                                        </Button>
+                                                    </StackPanel>
+                                                    <DataTemplate.Triggers>
+                                                        <DataTrigger Binding="{Binding IsError}" Value="True">
+                                                            <Setter TargetName="Btn" Property="BorderBrush" Value="{StaticResource Err.Dot}"/>
+                                                            <Setter TargetName="Val" Property="Foreground" Value="{StaticResource Err.Text}"/>
+                                                        </DataTrigger>
+                                                    </DataTemplate.Triggers>
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
 
                                     <StackPanel Margin="18,0,18,14" Visibility="{Binding IsBlock, Converter={x:Static infra:Conv.BoolToVis}}">
                                         <TextBlock Text="{Binding BlockInfo}" FontSize="12.5" Foreground="{StaticResource Neutral.Text}" TextWrapping="Wrap" Margin="0,0,0,10"/>
@@ -250,7 +274,27 @@
                                 </Style>
                             </ScrollViewer.Style>
                             <StackPanel Margin="18,16">
-                                <TextBlock Text="Variables de station" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <TextBlock Text="Variables du process" FontWeight="SemiBold" Margin="0,0,0,2"/>
+                                <TextBlock Text="Nommées, visibles seulement dans ce process." Style="{StaticResource Type.Caption}" Margin="0,0,0,8"/>
+                                <TextBlock Text="Aucune variable. Rangez le résultat d'une étape dans une variable, ou créez-en une ici." Style="{StaticResource Type.Caption}" TextWrapping="Wrap" Margin="0,0,0,8"
+                                           Visibility="{Binding ProcessVars.Count, Converter={x:Static infra:Conv.ZeroToVis}}"/>
+                                <ItemsControl ItemsSource="{Binding ProcessVars}" Focusable="False">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <DockPanel Height="52">
+                                                <Button DockPanel.Dock="Right" c:Ui.Icon="delete" c:Ui.Variant="Ghost" Command="{Binding DeleteCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Width="48" Padding="0" ToolTip="Supprimer"/>
+                                                <Button DockPanel.Dock="Right" c:Ui.Icon="share" c:Ui.Variant="Ghost" Command="{Binding ShareCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Width="48" Padding="0" ToolTip="Rendre partagée (variable de station)"/>
+                                                <Button DockPanel.Dock="Right" c:Ui.Icon="edit" c:Ui.Variant="Ghost" Command="{Binding RenameCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" Width="48" Padding="0" ToolTip="Renommer"/>
+                                                <TextBlock DockPanel.Dock="Right" Text="{Binding TypeText}" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                                <TextBlock Text="{Binding Name}" FontWeight="Medium" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                                            </DockPanel>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Button Content="Nouvelle variable" c:Ui.Icon="add" Command="{Binding NewVariableCommand}" CommandParameter="{Binding RelativeSource={RelativeSource Self}}" HorizontalAlignment="Left" Margin="0,6,0,0"/>
+
+                                <TextBlock Text="Variables de station" FontWeight="SemiBold" Margin="0,22,0,2"/>
+                                <TextBlock Text="Partagées entre tous les process de la station." Style="{StaticResource Type.Caption}" Margin="0,0,0,8"/>
                                 <ItemsControl ItemsSource="{Binding Station.Variables}" Focusable="False">
                                     <ItemsControl.ItemTemplate>
                                         <DataTemplate>

@@ -121,3 +121,9 @@ Chaque étape : tests de compilation (allocation, portée), tests de validation,
 ## 7. Correction du 2026-10-17
 
 Les fonctions du catalogue n'ont presque aucun résultat (une seule en a). Les liaisons sur `FunctionStep` n'apportent donc rien pour l'instant : elles sont reportées avec les sorties des fonctions personnalisées. Par ailleurs l'éditeur n'a aujourd'hui **aucune interface** pour les liaisons de résultats des actions, et son onglet « Données » est un texte figé : l'étape 1 inclut leur création.
+
+## 8. État d'avancement (2026-10-17)
+
+- **Étape 1 réalisée** : variables de process et variables de station nommées, création à la demande depuis les sorties d'une étape, onglet Données, cartes qui affichent « Résultat → variable », validation V020 et V115, annuler / refaire. Décisions D73 à D75. Tests : compilation, validation (analyse d'affectation), persistance, et un test de simulation qui montre qu'une variable de process donne la même production, pièce pour pièce, qu'une variable de station.
+- **À faire ensuite** : variables de mover (§ 5), sorties des fonctions personnalisées, sous-process et opérations, objets à sorties variables (Keyence XG).
+- **Défauts de clic corrigés au passage** (D71) : les commutateurs `Segmented` et les onglets `Tabs` ne répondaient pas à la souris.

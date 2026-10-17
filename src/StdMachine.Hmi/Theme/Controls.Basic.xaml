@@ -336,7 +336,9 @@
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ListBoxItem">
-                    <Setter Property="Focusable" Value="False"/>
+                    <!-- Focalisable : sans cela WPF ne sélectionne rien au clic (voir le style Segmented). -->
+                    <Setter Property="Focusable" Value="True"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                     <Setter Property="Foreground" Value="{StaticResource Text.Secondary}"/>
                     <Setter Property="FontSize" Value="{StaticResource FontSize.Body}"/>
                     <Setter Property="FontWeight" Value="Medium"/>
