@@ -389,7 +389,9 @@
         <Setter Property="ItemContainerStyle">
             <Setter.Value>
                 <Style TargetType="ListBoxItem">
-                    <Setter Property="Focusable" Value="False"/>
+                    <!-- Focalisable : WPF ne sélectionne un élément de liste au clic que s'il peut prendre le focus (sans cela, la souris ne sélectionne rien). Pas de rectangle de focus. -->
+                    <Setter Property="Focusable" Value="True"/>
+                    <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
                     <Setter Property="Foreground" Value="{StaticResource Text.Secondary}"/>
                     <Setter Property="FontSize" Value="{StaticResource FontSize.Body}"/>
                     <Setter Property="FontWeight" Value="Medium"/>
