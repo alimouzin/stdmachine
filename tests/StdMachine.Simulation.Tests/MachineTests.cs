@@ -52,6 +52,59 @@ public class MachineTests
         Assert.True(m.PartsExited + m.PartsRejected >= 3, "au moins quelques pièces terminées en 2 minutes");
     }
 
+    /// <summary>Remplace, dans un process, toutes les références à une variable de station par une variable de process (même type, même rôle).</summary>
+    private static void MoveToProcessVariable(StationConfig station, ProcessDefinition proc, StationVariable shared)
+    {
+        var local = new StationVariable { Name = shared.Name, Type = shared.Type, Initial = shared.Initial };
+        proc.Variables.Add(local);
+        void Fix(List<ValueRef> args)
+        {
+            for (int i = 0; i < args.Count; i++)
+                if (args[i].Kind == ValueKind.Var && args[i].Ref == shared.Id) args[i] = args[i] with { Ref = local.Id };
+        }
+        foreach (var step in proc.AllSteps())
+        {
+            if (step is ActionStep a)
+            {
+                Fix(a.Args);
+                for (int i = 0; i < a.Bindings.Count; i++)
+                    if (a.Bindings[i].Target == BindTarget.Var && a.Bindings[i].Ref == shared.Id) a.Bindings[i] = a.Bindings[i] with { Ref = local.Id };
+            }
+            else if (step is FunctionStep f) Fix(f.Args);
+        }
+    }
+
+    [Fact]
+    public void A_process_variable_carries_the_vision_position_to_the_pick_exactly_like_a_station_variable()
+    {
+        // Même production, au pièce près, que l'exemple qui range la position de la vision dans une variable de station.
+        var baseline = NewMachine(5);
+        ToExecute(baseline);
+        baseline.Run(120_000);
+
+        var project = Sample();
+        int moved = 0;
+        foreach (var station in project.Stations)
+            foreach (var shared in station.Variables.Where(v => v.Name == "PosPignon").ToList())
+                foreach (var proc in station.Processes.Where(p => p.AllSteps().Any(s => StdMachine.Core.Validation.VariableUsage.ReadsOf(s).Concat(StdMachine.Core.Validation.VariableUsage.WritesOf(s)).Contains(shared.Id))))
+                {
+                    MoveToProcessVariable(station, proc, shared);
+                    moved++;
+                }
+        Assert.True(moved >= 2, "au moins les deux presses utilisent la position de la vision");
+
+        var compiled = Compile(project);
+        Assert.Contains(compiled.Stations, st => st.Variables.Count > project.Station(st.Number)!.Variables.Count);
+        var m = new MachineSim(compiled, Catalog(), 5);
+        ToExecute(m);
+        m.Run(120_000);
+
+        Assert.True(m.PartsExited + m.PartsRejected >= 3);
+        Assert.Equal(baseline.PartsCreated, m.PartsCreated);
+        Assert.Equal(baseline.PartsExited, m.PartsExited);
+        Assert.Equal(baseline.PartsRejected, m.PartsRejected);
+    }
+
     [Fact]
     public void An_order_of_100_parts_is_produced_then_the_machine_stops_by_itself()
     {
