@@ -96,7 +96,7 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
 
     public bool IsStationLevel => Level == ProcessLevel.Station;
 
-    /// <summary>Mise en page du canevas : 0 = couloirs, 1 = flux vertical sans couloirs (prototype, docs/13).</summary>
+    /// <summary>Mise en page du canevas : 0 = couloirs, 1 = flux vertical sans couloirs (mode par défaut, docs/13).</summary>
     public int LayoutIndex
     {
         get => EditorSettings.FlowLayout ? 1 : 0;

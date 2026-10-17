@@ -35,8 +35,8 @@ public partial class App : Application
             return;
         }
         AnimationPolicy.Capture = options.IsScreenshot;
-        // Les captures sont reproductibles : couloirs par défaut, sans tenir compte du choix enregistré.
-        if (options.Layout != null || options.IsScreenshot) Editor.EditorSettings.Override(string.Equals(options.Layout, "flow", StringComparison.OrdinalIgnoreCase));
+        // Les captures sont reproductibles : mode par défaut (Flux), sans tenir compte du choix enregistré ; « --layout lanes » pour les couloirs.
+        if (options.Layout != null || options.IsScreenshot) Editor.EditorSettings.Override(!string.Equals(options.Layout, "lanes", StringComparison.OrdinalIgnoreCase));
 
         FreezeResources();
         TouchSettings.RegisterGlobalHandlers();
@@ -169,7 +169,7 @@ public sealed class CommandLine
     public bool PlantLog { get; private set; }
     public bool Topmost { get; private set; }
     public string? StartPage { get; private set; }
-    /// <summary>« flow » : éditeur de process en flux vertical sans couloirs (prototype) ; sinon couloirs.</summary>
+    /// <summary>« lanes » : éditeur de process en couloirs ; « flow » (défaut) : flux vertical sans couloirs.</summary>
     public string? Layout { get; private set; }
 
     public bool IsScreenshot => ScreenshotAllDir != null || ScreenshotPage != null;

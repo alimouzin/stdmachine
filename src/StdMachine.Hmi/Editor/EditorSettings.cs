@@ -26,9 +26,9 @@ public static class EditorSettings
 
     private static bool Load()
     {
-        try { return File.Exists(FilePath) && File.ReadAllText(FilePath).Trim() == "flow"; }
-        catch (IOException) { return false; }
-        catch (UnauthorizedAccessException) { return false; }
+        try { return !File.Exists(FilePath) || File.ReadAllText(FilePath).Trim() != "lanes"; }
+        catch (IOException) { return true; }
+        catch (UnauthorizedAccessException) { return true; }
     }
 
     private static void Save()

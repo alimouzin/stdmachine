@@ -86,7 +86,7 @@ Chaque étape : tests de compilation (allocation, portée), tests de validation,
 
 ## 4. Prototype « Flux » (réalisé le 2026-10-17)
 
-- **Utilisation** : bascule « Vue : Couloirs | Flux » dans la barre de l'éditeur de process, ou option `--layout flow` (captures, page Station comprise). Le réglage est global à l'application (`Editor/EditorSettings.cs`) et n'est pas enregistré. Le modèle de process, le compilateur et le simulateur ne changent pas.
+- **Utilisation** : bascule « Vue : Couloirs | Flux » dans la barre de l'éditeur de process, ou option `--layout lanes` ou `--layout flow` (captures, page Station comprise ; le Flux est le défaut depuis D72). Le réglage est global à l'application (`Editor/EditorSettings.cs`) et n'est pas enregistré. Le modèle de process, le compilateur et le simulateur ne changent pas.
 - **Ce qui change** (`Editor/ProcessLayout.cs`, `CardModels.cs`, `ProcessCanvasView.xaml`) : en mode Flux, pas d'en-têtes de couloirs ; les cartes sont empilées dans une seule colonne centrée ; chaque carte d'un objet porte une pastille (icône et nom de l'objet de premier niveau) ; un bloc En parallèle ou Si / Sinon épouse ses branches au lieu de prendre toute la largeur. Au niveau machine, il n'y a pas de pastille (la carte écrit déjà « Fonction : … »).
 - **Captures de comparaison** (`artifacts/layout/`, non versionnées) : `presser-lanes.png` et `presser-flow.png`, `general-lanes.png` et `general-flow.png`, `station-flow.png` (suivi d'exécution).
 - **Constats** :
