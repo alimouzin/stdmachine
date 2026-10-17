@@ -41,20 +41,20 @@ Les points 1 et 3 s'obtiennent sans couloirs (pastille d'objet sur la carte, pal
 - **Fonction personnalisée, sous-process, opération** : des paramètres d'entrée (opération : 8 au plus), **aucune sortie**.
 - **Keyence XG** : absent du catalogue (il y a IV et GT2, aux résultats fixes). Ses sorties sont à définir par l'ingénieur process : le catalogue ne sait pas les décrire.
 
-### Proposition : un seul mécanisme, la signature de sorties
+### Proposition : des sorties nommées, rangées dans des variables nommées
 
-Une **sortie** est un nom, un type (nombre, entier, booléen, position, jugement, texte) et une unité. Elle est déclarée là où elle a un sens, puis **utilisable par les étapes suivantes sans déclarer de variable**.
+Une **sortie** est un nom, un type (nombre, entier, booléen, position, jugement, texte) et une unité. Elle est déclarée là où elle a un sens (action ou fonction du catalogue, bloc composé, objet), puis **rangée dans une variable nommée**. Rien n'est implicite : la valeur a un nom et se voit dans l'éditeur.
 
-**a) Valeur d'étape (le cœur).** Chaque sortie d'une étape devient automatiquement une source dans les sélecteurs de valeur des étapes qui suivent (« Position de la pièce · étape 3 »). Le compilateur lui attribue une variable cachée (il en alloue déjà pour les compteurs de boucle). Pour garder une valeur d'un process à l'autre ou la mémoriser, on la lie, comme aujourd'hui, à une variable de station ou à une donnée de pièce.
+**a) Variables nommées créées à la demande (le cœur).** En ajoutant une étape qui a des sorties, l'éditeur crée la variable et la nomme d'après la sortie (« Position de la pièce »), avec un nom modifiable d'un geste. Elle apparaît tout de suite dans l'onglet Données du process et dans les sélecteurs de valeur de toutes les étapes qui peuvent la lire.
 
-- Portée : les étapes qui suivent dans le même process, y compris dans les blocs imbriqués ; pas dans une autre branche parallèle (avant la jointure) ; pas vers l'autre branche d'un Si / Sinon.
-- Validation (nouvelle règle, dans l'esprit de V014) : usage d'une sortie qui n'est pas garantie d'avoir été produite (étape dans une branche Si non prise, ou après une politique d'échec « Ignorer »), type incompatible.
-- Pas de changement du jeu d'instructions du PLC (`docs/06`) : la valeur d'étape se compile en variable ordinaire.
+- **Deux portées** : **variable de process** (visible seulement dans ce process ; par défaut) et **variable de station** (partagée entre les process de la station, comme aujourd'hui). Une variable de process est allouée par le compilateur dans la même plage de 64 variables que les variables de station.
+- **Validation (nouvelle règle, dans l'esprit de V014)** : une variable nommée garde sa dernière valeur ; un avertissement signale sa lecture sur un chemin où elle n'est pas écrite avant (étape dans une branche Si non prise, ou après une politique d'échec « Ignorer »), ainsi qu'un type incompatible.
+- Pas de changement du jeu d'instructions du PLC (`docs/06`) : tout se compile en variables et en `SetVar` ordinaires.
 
 **b) Blocs composés avec sorties.**
 
-- **Fonction personnalisée** (dépliée à la compilation) : une sortie est un résultat d'une de ses actions internes, relié à une « sortie de la fonction ». Au point d'appel, le compilateur remplace par la cible de l'appelant : aucun coût d'exécution.
-- **Sous-process et opération** (appelés, pas dépliés) : la sortie est écrite dans une variable cachée du bloc, copiée vers la cible de l'appelant juste après le retour (une instruction de copie). Nouvelle règle : un bloc à sorties ne peut pas être appelé en même temps depuis deux contextes (deux branches parallèles, ou opération et cycle de fond).
+- **Fonction personnalisée** (dépliée à la compilation) : une sortie est un résultat d'une de ses actions internes, relié à une « sortie de la fonction ». Au point d'appel, le compilateur remplace par la variable nommée choisie par l'appelant : aucun coût d'exécution.
+- **Sous-process et opération** (appelés, pas dépliés) : la sortie est écrite dans un emplacement interne du bloc (simple passage de valeur, que l'ingénieur ne manipule pas), copié vers la **variable nommée choisie à l'appel** juste après le retour (une instruction de copie). Nouvelle règle : un bloc à sorties ne peut pas être appelé en même temps depuis deux contextes (deux branches parallèles, ou opération et cycle de fond).
 - **Fonctions de module du catalogue** : ajouter les liaisons de résultats à `FunctionStep` (même mécanisme).
 - Exemple visé : un bloc « Rechercher pièce Asyril » = chercher (refaire 3 fois avec vibration), puis obtenir ; sortie « Position pièce » (Position) et « Nombre » (Entier).
 
@@ -63,24 +63,25 @@ Une **sortie** est un nom, un type (nombre, entier, booléen, position, jugement
 ### Limites connues
 
 - Le PLC garde **8 résultats** par action (`ST_ActResults` : `aReal[8]`, un seul `stPos`, un seul `sText`). Une caméra à plus de 8 valeurs, ou à deux positions, demande d'élargir cette structure (changement de `docs/04` et `docs/06`).
-- Variables : visibles + cachées ≤ 64 par station. Des valeurs d'étape nombreuses l'épuiseraient. Première version : allocation simple et règle de validation claire. Évolution : réutiliser une variable cachée après sa dernière lecture.
+- Variables : visibles + cachées ≤ 64 par station. Les variables de process y comptent (allouées par le compilateur dans la même plage que les variables cachées actuelles). Première version : allocation simple et règle de validation claire. Évolution : partager la place entre variables de process dont les durées de vie ne se recoupent pas.
 
 ### Ordre de réalisation proposé
 
-1. **Valeurs d'étape sur les résultats existants** (Asyril position, Keyence IV jugement et valeur) + liaisons sur `FunctionStep` + sélecteurs de l'éditeur + règles de validation. Démontrable de bout en bout avec le simulateur : « Obtenir pièce » → « Prendre pièce » sans variable déclarée.
-2. **Sorties des fonctions personnalisées**, puis des sous-process et opérations.
-3. **Objets à sorties variables** (type Keyence XG, table de sorties, simulation).
+1. **Variables nommées sur les résultats existants** : liaisons de résultats sur `FunctionStep` ; création à la demande d'une variable nommée à partir d'une sortie (Asyril position, Keyence IV jugement et valeur) ; variables de process (modèle, compilation, onglet Données, sélecteurs) ; règle de validation de la valeur périmée. Démontrable de bout en bout avec le simulateur : « Obtenir pièce » écrit `PosPignon`, « Prendre pièce » la lit.
+2. **Variables de mover** (§ 5) : modèle, compilation, simulateur, validation, tiroir du mover.
+3. **Sorties des fonctions personnalisées**, puis des sous-process et opérations.
+4. **Objets à sorties variables** (type Keyence XG, table de sorties, simulation) : plus tard.
 
 Chaque étape : tests de compilation (allocation, portée), tests de validation, test de simulation, captures regardées, journal de décisions.
 
 ### Documents touchés (après accord)
 
-`docs/00` (mots « Sortie », « Valeur d'étape »), `docs/02` § 5.2 et 5.3, `docs/03` (indicateur `variableOutputs`, type XG), `docs/04` (seulement si on dépasse 8 résultats), `docs/06` § 5 (compilation), `docs/07` § 3.2 (modèle) et § 4.2 (règles), `docs/08` § 6.9 (panneau Étape, sélecteurs), `docs/09` (décisions).
+`docs/00` (mots « Sortie », « Variable de process », « Variable de mover »), `docs/02` § 5.2 et 5.3, `docs/03` (indicateur `variableOutputs`, type XG), `docs/04` (seulement si on dépasse 8 résultats), `docs/05` (structure du mover, `SetVar`) et `docs/06` § 1, § 2 et § 5 (sources et cibles `MoverData`, compilation), `docs/07` § 3.1, § 3.2 et § 4.2 (modèle, règles), `docs/08` § 6.9 (panneau Étape, sélecteurs, onglet Données) et tiroir du mover, `docs/09` (décisions).
 
 ## 3. Décisions du 2026-10-17
 
 1. **« Bloc »** = une carte d'étape (action, fonction, sous-process, opération). Les blocs de structure (Si / Sinon, En parallèle, Répéter) n'ont pas de sortie propre. **Décidé.**
-2. **Valeurs d'étape : les deux.** Une sortie est utilisable directement par les étapes suivantes (variable cachée allouée par le compilateur) **et** peut être liée explicitement à une variable de station ou à une donnée de pièce, pour la garder d'un process à l'autre. **Décidé.**
+2. **Variables nommées, pas de valeurs implicites.** Une sortie d'étape est rangée dans une **variable nommée**, créée à la demande par l'éditeur (nom proposé d'après la sortie, modifiable d'un geste) et visible tout de suite. Deux portées : **variable de process** (visible seulement dans ce process, listée dans ses données, par défaut) et **variable de station** (partagée entre les process). **Décidé le 2026-10-17** (remplace les « valeurs d'étape » automatiques proposées d'abord).
 3. **Plusieurs sorties par bloc, nommées ou non.** Une sortie sans nom se désigne par son rang (« Sortie 1 », « Sortie 2 »…) ; une sortie nommée garde son nom partout (cartes, sélecteurs, liaisons). Le Keyence XG est remis à plus tard : l'étape 3 de l'ordre de réalisation attend. **Décidé.**
 4. **Couloirs : prototype du mode « Flux ».** Fait ; le Flux est le mode par défaut (D72) et les couloirs restent **en option**. La suppression éventuelle des couloirs est à décider plus tard (note dans `REPRISE-PHASES-2-A-5.md`).
 
@@ -95,3 +96,23 @@ Chaque étape : tests de compilation (allocation, portée), tests de validation,
   - En suivi d'exécution, les 3 branches parallèles (Presse, Vision Asyril, Robot XYZC) sont côte à côte dans la vue, alors qu'en couloirs elles sont dans trois colonnes qui demandent du défilement.
   - Perdu : la lecture « une colonne par objet ». La pastille et le chronogramme par objet la remplacent.
 - **Limites du prototype** : pastilles sans couleur propre à l'objet (les jetons de `Theme/Tokens.xaml` n'en définissent pas) ; glisser-déposer au doigt non essayé en mode Flux (la géométrie des zones de dépôt est celle des couloirs non alignés, déjà utilisée dans les blocs) ; défauts d'affichage déjà présents en couloirs et inchangés (texte de la carte « Exécuter recette » qui se chevauche, étiquette « Si … » qui chevauche un connecteur) ; pas de test automatique de la mise en page (le projet de tests ne référence pas la HMI).
+
+## 5. Variables de mover (demande du 2026-10-17)
+
+**Besoin** : un mover doit pouvoir porter des informations propres, lisibles et modifiables par les stations, pour déplacer des informations d'une station à l'autre (un réglage choisi en amont, un décalage propre à ce mover, un compteur de passages, un drapeau « à repasser »…).
+
+**Ce qui existe** : les **données de pièce** (32 au plus, définies dans la configuration machine) sont attachées à la pièce d'un emplacement du mover, avec le Verdict et l'Identifiant. Elles suivent la pièce, disparaissent avec elle, et il y en a un jeu par emplacement (4 emplacements au plus). Elles ne couvrent donc pas une information qui appartient au **mover** lui-même et qui reste quand le mover est vide ou change de pièce.
+
+**Proposition** : des **variables de mover**, construites comme les données de pièce.
+- **Déclaration** : dans la configuration machine, une liste nommée (nom, type nombre ou booléen, unité, valeur initiale), commune à tous les movers ; chaque mover a **son propre jeu de valeurs**. Limite proposée : 16 variables.
+- **Accès** : une opération de station lit et écrit les variables du mover **présent à son poste** ; le process général peut les écrire aussi (étape « Définir variable de mover »). Le cycle de fond n'a pas de mover : leur usage y est refusé par la validation. Elles sont utilisables comme valeurs, dans les conditions, comme cibles de liaison d'un résultat et dans « Définir variable », exactement comme les variables de station et les données de pièce.
+- **Compilation et PLC** : nouvelle source de valeur et nouvelle cible de liaison `MoverData` (à côté de `PartData`) ; un tableau de valeurs dans la structure du mover (`ST_Mover`). Changement de `docs/05` (structures, `SetVar`), de `docs/06` (`E_ValueSource`, `E_BindTarget`) et du simulateur.
+- **Durée de vie** : les valeurs persistent d'un Stop à un Start, comme les movers eux-mêmes.
+- **HMI** : le tiroir d'un mover (page Machine, page Pièces) affiche ses variables ; leur modification à la main se fait en Maintenance, avec le niveau d'utilisateur requis.
+- **Validation** (à ajouter) : variable de mover utilisée par le cycle de fond ; type incompatible ; valeur lue sur un chemin où elle n'a pas été écrite (même avertissement que pour les variables nommées).
+
+## 6. À préciser avant de coder
+
+1. **Variables de mover** : la forme ci-dessus convient-elle (une liste commune, 16 au plus, nombre ou booléen) ? Faut-il aussi des positions (quatre valeurs) ?
+2. **Remise à zéro** : quand une variable de mover revient-elle à sa valeur initiale ? Propositions : au déploiement ; à la commande « Vider le mover » ; par une étape « Réinitialiser les variables du mover ». Pas à chaque Reset de la machine.
+3. **Un exemple concret** de ce que vous voulez y faire passer, pour vérifier qu'une donnée de pièce ne suffit pas.
