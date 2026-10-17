@@ -13,7 +13,7 @@
 
 1. **Variables de mover** *(fait le 2026-10-17, D80 : B peut les coder, `docs/05` § 5.8)* : compléter `docs/05` (structure `ST_MoverCtx`, `SetVar`, remise à zéro, persistance), `docs/06` (`E_ValueSource.MoverData`, `E_BindTarget.MoverData`, tableaux dans la structure du mover), `docs/03` si le catalogue est touché, `docs/07` (modèle et règles de validation), `docs/08` (tiroir du mover, déclaration dans le Studio machine). Aujourd'hui seulement marquées « prévu » dans les documents.
 2. **Sorties des blocs composés** *(fait le 2026-10-17, D81 : `docs/02` § 5.5)* (fonctions personnalisées, sous-process, opérations) : passer la proposition de `docs/13` §2 en spécification ferme dans `docs/02`, `06`, `07`, `08`, avec les règles de validation et les cas limites.
-3. **Relecture de cohérence** des ajouts du 2026-10-17 (Fin des pièces, Préparation, Calibrations, Flux) : numéros d'instructions et de règles, tableaux de limites (`docs/05` §11), états de balise, droits (`docs/02` §17), exemples des scénarios (`docs/05` §12), `docs/13` marqué « réalisé » ou archivé.
+3. **Relecture de cohérence** *(faite le 2026-10-17 : règles de validation renumérotées — erreurs V0xx jusqu'à V029, avertissements V1xx jusqu'à V121 —, droits `calibration.run` et `mover.var.edit` ajoutés, balise « machine vidée »)* des ajouts du 2026-10-17 (Fin des pièces, Préparation, Calibrations, Flux) : numéros d'instructions et de règles, tableaux de limites (`docs/05` §11), états de balise, droits (`docs/02` §17), exemples des scénarios (`docs/05` §12), `docs/13` marqué « réalisé » ou archivé.
 
 Livrable A : documents à jour, décisions D80 et suivantes, et une liste de cas de test par chantier (dans `docs/07` §12) que B pourra coder.
 
@@ -28,6 +28,10 @@ Dans cet ordre, un commit par étape, `dotnet build` sans avertissement et `dotn
 5. **Variables de mover** et **sorties des blocs composés**, seulement quand A a livré leurs spécifications fermes (point 1 et 2 ci-dessus).
 
 Les étapes 1 à 4 ont leur spécification complète : B peut commencer tout de suite. Le catalogue `catalog/catalog.json` reste la seule source des numéros (aucun numéro en dur) ; les nouvelles instructions de `docs/06` (17 `WaitMover`, 18 `Prompt`, 19 `SavePos`, 21 `CalibStation`) sont des valeurs de `E_Op`, pas du catalogue.
+
+## État au 2026-10-17 (fin de la session de spécification)
+
+Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 `WaitMover`, 18 `Prompt`, 19 `SavePos`, 21 `CalibStation`, 22 `ResetMoverVars`, 23 `SetOut`. Règles ajoutées : V021 à V029, V116 à V119, V121. Décisions : D77 à D81. Tout le travail de code des documents ci-dessus (fin des pièces, préparation, calibrations, variables de mover, sorties de blocs, droits) reste pour l'agent B ; l'ordre conseillé : fin des pièces, préparation, variables de mover, sorties de blocs, calibrations, droits.
 
 ## Écarts constatés par le code
 
