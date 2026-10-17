@@ -107,6 +107,9 @@ public sealed partial class ShellViewModel : ViewModelBase
     [ObservableProperty] private bool _stateFlash;
     [ObservableProperty] private Tone _stateTone;
     [ObservableProperty] private bool _loadingLocked;
+    /// <summary>Puce de la barre du haut pendant « Finir les pièces » : « Fin des pièces · N restantes ».</summary>
+    [ObservableProperty] private bool _draining;
+    [ObservableProperty] private string _drainChip = string.Empty;
     public string ForceText => Res.Get("Shell.Forces") + " : " + ForceCount;
 
     // ---- bandeau d'alarme
@@ -171,6 +174,8 @@ public sealed partial class ShellViewModel : ViewModelBase
         ForceCount = s.Forces.Entries.Count;
         OnPropertyChanged(nameof(ForceText));
         LoadingLocked = m.LoadingLocked;
+        Draining = m.Draining;
+        DrainChip = Res.Get("Drain.Chip") + " · " + m.PartsInProcess;
 
         // Bandeau : le défaut le plus récent non acquitté
         var faults = s.Alarms.Where(a => a.Severity >= AlarmSeverity.StationFault && a.State == AlarmState.Active).OrderByDescending(a => a.Time).ToList();

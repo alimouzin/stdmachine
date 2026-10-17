@@ -231,6 +231,16 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
         lock (_gate) return Task.FromResult(Result(_sim.StationCommand(station, command)));
     }
 
+    public Task<CommandResult> StartDrainAsync(CancellationToken ct)
+    {
+        lock (_gate) return Task.FromResult(Result(_sim.StartDrain()));
+    }
+
+    public Task<CommandResult> CancelDrainAsync(CancellationToken ct)
+    {
+        lock (_gate) return Task.FromResult(Result(_sim.CancelDrain()));
+    }
+
     public Task<CommandResult> SetModeAsync(MachineMode mode, CancellationToken ct)
     {
         lock (_gate) return Task.FromResult(Result(_sim.SetMode(mode)));
@@ -705,12 +715,15 @@ public sealed class SimulatedPlcClient : IPlcClient, IPartEventSource, ISimulato
         bool maintenance = _sim.Mode == MachineMode.Maintenance || forces.StartBlocked;
         bool operatorWaited = quality.LoadingLocked || quality.Tracks.Any(t => t.Locked) || _sim.Movers.Any(m => m.State == MvState.Buffered && m.WaitReason != null && m.WaitReason.StartsWith("Aucune station", StringComparison.Ordinal))
                               || _sim.Stations.Any(s => s.OutOfProduction);
+        // Machine vidée d'elle-même (docs/02 § 8) : balise bleue clignotante jusqu'au Reset.
+        if ((_sim.Pack.State == PackMlState.Stopping || _sim.Pack.State == PackMlState.Stopped) && _sim.StopCause == Engine.MachineSim.DrainedStopCause) operatorWaited = true;
         var beacon = BeaconState.For(_sim.Pack.State, maintenance, operatorWaited);
         if (stations.Any(s => s.State == PackMlState.Aborted) && _sim.Pack.State == PackMlState.Execute)
             beacon = new BeaconState(beacon.Lights | BeaconLights.Red, beacon.Blinking | BeaconLights.Red);
         double eff = _sim.OverridePercent;
         var machine = new MachineStatus(_sim.Pack.State, _sim.Mode, At(_stateSinceMachine), _sim.OverridePercent, eff, beacon, _sim.Pack.State == PackMlState.Execute ? null : _sim.StopCause,
-            quality.LoadingLocked || _sim.LoadingLocked, faults, warnings, _compiled.Hash.Substring(0, 16).ToUpperInvariant());
+            quality.LoadingLocked || _sim.LoadingLocked, faults, warnings, _compiled.Hash.Substring(0, 16).ToUpperInvariant(),
+            _sim.Drain, _sim.PartsInProcess, _sim.DrainBlockingMover);
         return new PlcSnapshot(now, _sim.NowMs / 1000.0, PlcConnectionState.Simulation, machine, stations, movers, objects, alarms, quality, forces, orders);
     }
 

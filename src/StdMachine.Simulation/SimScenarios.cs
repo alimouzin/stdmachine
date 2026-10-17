@@ -11,7 +11,7 @@ namespace StdMachine.Simulation;
 /// </summary>
 public static class SimScenarios
 {
-    public static readonly string[] Names = { "idle", "running", "station-aborted", "step-mode", "manual", "validation-errors", "quality-hold", "forced" };
+    public static readonly string[] Names = { "idle", "running", "station-aborted", "step-mode", "manual", "validation-errors", "quality-hold", "forced", "draining" };
 
     /// <summary>Le projet que l'éditeur affiche pour ce scénario (celui qui a des erreurs pour <c>validation-errors</c>) ; le simulateur garde le projet valide déployé.</summary>
     public static MachineProject ProjectFor(string name, CatalogDocument catalog)
@@ -55,6 +55,12 @@ public static class SimScenarios
                 Produce(c, 60_000);
                 for (int i = 0; i < 5; i++) c.Sim.Quality.Record(QualityScope.StationImputed, c.Sim.StationIndex(DemoProject.Pressage02), true);
                 c.Advance(10_000);
+                break;
+            case "draining":
+                // « Finir les pièces » lancé en pleine production : le chargement est arrêté, les pièces engagées finissent (docs/02 § 8).
+                Produce(c, 60_000);
+                c.StartDrainAsync(default).Wait();
+                c.Advance(4_000);
                 break;
             case "forced":
                 Produce(c, 30_000);

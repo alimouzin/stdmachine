@@ -87,6 +87,12 @@ public interface IPlcClient
     Task<CommandResult> SendCommandAsync(StateCommand command, CancellationToken ct);
     Task<CommandResult> SendStationCommandAsync(int station, StateCommand command, CancellationToken ct);
     Task<CommandResult> SetModeAsync(MachineMode mode, CancellationToken ct);
+
+    /// <summary>« Finir les pièces » (docs/05 § 5.7) : plus de chargement, les pièces engagées finissent, puis Arrêter automatique. Acceptée en Execute et Held.</summary>
+    Task<CommandResult> StartDrainAsync(CancellationToken ct);
+
+    /// <summary>« Annuler la fin » : lève le mode tant que la machine n'est pas arrêtée ; le chargement reprend.</summary>
+    Task<CommandResult> CancelDrainAsync(CancellationToken ct);
     Task<CommandResult> SetOverrideAsync(OverrideTarget target, double percent, bool manual, CancellationToken ct);
 
     Task<ManualResult> ExecuteManualAsync(ManualActionRequest request, CancellationToken ct);

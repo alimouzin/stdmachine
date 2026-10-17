@@ -116,6 +116,7 @@
                         <TextBlock Text="{Binding ProjectName}" Style="{StaticResource Type.Caption}" MaxWidth="170" TextTrimming="CharacterEllipsis"/>
                     </StackPanel>
                     <c:StateBadge State="{Binding State}" Size="Medium" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <c:StatusPill Tone="Busy" IconName="hourglass_bottom" Text="{Binding DrainChip}" VerticalAlignment="Center" Margin="0,0,10,0" Visibility="{Binding Draining, Converter={x:Static infra:Conv.BoolToVis}}"/>
                     <c:StatusPill Text="{Binding ModeText}" Tone="{Binding ModeTone}" IconName="key" VerticalAlignment="Center" Margin="0,0,16,0"/>
                     <StackPanel VerticalAlignment="Center" Margin="0,0,14,0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,3">

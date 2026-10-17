@@ -184,6 +184,12 @@ public sealed class DemoPlcClient : IPlcClient, ISimulatorControl
         return CommandResult.Ok;
     }
 
+    public Task<CommandResult> StartDrainAsync(CancellationToken ct)
+        => Task.FromResult(CommandResult.Refused("Indisponible sur la maquette : lancez l'application avec --simulator."));
+
+    public Task<CommandResult> CancelDrainAsync(CancellationToken ct)
+        => Task.FromResult(CommandResult.Refused("Indisponible sur la maquette : lancez l'application avec --simulator."));
+
     public async Task<CommandResult> SetModeAsync(MachineMode mode, CancellationToken ct)
     {
         await Task.Delay(150, ct).ConfigureAwait(false);

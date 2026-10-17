@@ -36,6 +36,15 @@
   <data name="Cmd.Stop" xml:space="preserve"><value>Arrêter</value></data>
   <data name="Cmd.Clear" xml:space="preserve"><value>Acquitter</value></data>
   <data name="Cmd.Abort" xml:space="preserve"><value>Abort</value></data>
+  <data name="Cmd.Drain" xml:space="preserve"><value>Finir les pièces</value></data>
+  <data name="Cmd.DrainCancel" xml:space="preserve"><value>Annuler la fin</value></data>
+
+  <!-- Fin des pièces en cours (docs/02 § 8, docs/08 § 6.1) -->
+  <data name="Drain.Banner" xml:space="preserve"><value>Fin des pièces en cours</value></data>
+  <data name="Drain.Done" xml:space="preserve"><value>Machine vidée : plus aucune pièce en cours</value></data>
+  <data name="Drain.EntryStopped" xml:space="preserve"><value>Chargement arrêté</value></data>
+  <data name="Drain.Chip" xml:space="preserve"><value>Fin des pièces</value></data>
+  <data name="Drain.SeePart" xml:space="preserve"><value>Voir la pièce</value></data>
 
   <!-- États PackML : description française du badge L (docs/08 § 2.3) -->
   <data name="State.Stopped" xml:space="preserve"><value>Arrêtée</value></data>
