@@ -447,7 +447,7 @@ TYPE ST_StepControl : STRUCT
 END_STRUCT END_TYPE
 ```
 
-**Lancement** : en Maintenance, la HMI peut demander l'exécution d'une opération (ou de l'initialisation, du vidage) sur une station en Idle ou Execute, avec ou sans mover. Station en Idle : la demande la fait passer en Execute pour la durée de l'opération (le cycle de fond n'est pas lancé en pas à pas).
+**Lancement** : en Maintenance, la HMI peut demander l'exécution d'une opération (ou de l'initialisation, du vidage, d'une calibration) sur une station en Idle ou Execute, avec ou sans mover. Station en Idle : la demande la fait passer en Execute pour la durée de l'opération (le cycle de fond n'est pas lancé en pas à pas).
 
 **Points d'arrêt** selon la granularité :
 
@@ -504,6 +504,13 @@ END_STRUCT END_TYPE
 3. Le chargeur vérifie : sommes de contrôle ; types connus ; n° locaux uniques et parents valides (parents avant enfants) ; pools suffisants ; signaux et éléments matériels valides et sans double écriture ; tables : opérations connues, cibles de saut dans la table, n° d'objet et d'action valides pour le type, conditions, textes et positions référencés existants, Fork/Join appariés, profondeur d'appel ≤ 4.
 4. Tout est bon : copie atomique de la zone d'attente vers la zone active, appel de `FB_ObjectFactory`, réinitialisation des contextes, des variables de station (valeurs initiales) ; les movers et leurs pièces sont conservés si la structure du process général n'a pas changé de taille, sinon ils sont remis à l'étape 1 avec une alarme d'information.
 5. Réponse à la HMI : succès, ou refus avec la liste des erreurs (code, station, table, instruction) ; en cas de refus, la zone active n'a pas changé.
+
+### 10.1 Calibrations
+
+- Une calibration de station est une table de type `Calibration`, lancée comme une opération (contexte 1). Les valeurs qu'elle écrit (`SetVar` sur une variable persistante, `SavePos`) vont dans une copie de travail ; à `End(0)` réussi elles sont recopiées dans la mémoire rémanente et la position nommée est marquée apprise ; sur échec, Abort ou Stop, la copie est abandonnée.
+- Une **calibration machine** (table `MachineCalibration`) s'exécute sur un contexte unique du séquenceur général, seulement en Maintenance, machine en Idle. `CalibStation` lance la calibration de la station (comme un lancement HMI, la station passe Execute pour la durée) et attend `Done` ou `Failed` ; la politique d'échec de la carte s'applique. `Route` n'y vise que le mover choisi au lancement.
+- `Prompt` publie une demande (`GVL_Plant`/statut : texte, mode confirmation ou saisie) et attend la réponse de la HMI (`GVL_Hmi.stPrompt`) ; Abort ou perte de la HMI plus de 5 s l'annule (échec).
+- Chaque calibration publie `ST_CalibStatus` : état (Never, Valid, Expired, Failed, Running), date, utilisateur, durée de validité en jours. L'état Expired ou Never lève l'avertissement 912 une fois par Reset et par jour, sans effet sur les états.
 
 ## 11. Limites
 

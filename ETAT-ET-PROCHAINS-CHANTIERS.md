@@ -40,6 +40,9 @@ Mode d'arrêt « Finir les pièces » : plus de chargement, les pièces engagée
 ### 0 bis. Préparation d'une opération (spécifiée, D78, pas codée)
 Étape « Mover requis » : ce qui la précède tourne dès la réservation de la position de travail. Spécification : `docs/02` § 5.1–5.2, `docs/05` § 4.1–4.2 bis, `docs/06` (`WaitMover`, `bPrepare`). À faire : modèle (`WaitMoverStep`), compilation, validation V021 / V022 / V116, simulateur (demande à la réservation, statut `Preparing`, reprise après Pause, perte au Stop), éditeur (carte séparateur, zone teintée, sélecteurs sans données de pièce), chronogramme, scénario et tests (gain de cycle mesuré en simulation accélérée).
 
+### 0 ter. Calibrations (spécifiées, D79, pas codées)
+Process Calibration de station et machine, variables persistantes, onglet Calibrations de la page Manuel, avertissement 912. Spécification : `docs/02` § 11.1, `docs/05` § 10.1, `docs/06`. À faire : modèle (types de process, étapes, `Retained`, validité), compilation, validation V023 à V025, simulateur (copie de travail validée à la fin, `Prompt`, `CalibStation`, état et date), persistance de la mémoire rémanente, HMI (onglet, tiroir de demande, éditeur), tests.
+
 **Ensuite** (non planifié) : Studio complet branché sur le projet réel avec enregistrement automatique et chronogramme (phase 6) ; détail des différences au déploiement (aujourd'hui seulement l'empreinte) ; PLC réel et ADS (phase 9, sur demande explicite) ; interface usine MQTT (phase 10).
 
 ## Points ouverts et dettes connues

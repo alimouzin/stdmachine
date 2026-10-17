@@ -131,6 +131,7 @@ Si l'ingénieur process ne dessine pas de process d'initialisation, le compilate
 | Cycle de fond | En boucle tant que la station est en Execute | zéro ou un |
 | Initialisation | Pendant Resetting | un (dessiné ou généré) |
 | Arrêt | Pendant Stopping, après la fin de l'opération en cours | zéro ou un |
+| Calibration | Lancée à la main en Maintenance (§ 11.1) | zéro ou plusieurs |
 | Vidage | Pendant Clearing, pour remettre la station en état propre (dégager le robot, vider la pince) | zéro ou un |
 | Sous-process | Seulement par « Appeler sous-process » | zéro ou plusieurs |
 
@@ -323,6 +324,16 @@ Décision : Abort est accepté aussi depuis Stopped et Clearing (un arrêt d'urg
 - Les verrouillages restent actifs ; une action refusée affiche la condition qui bloque.
 - Apprendre une position se fait ici.
 - Chaque action manuelle est journalisée (utilisateur, objet, action, paramètres).
+
+### 11.1 Calibrations
+
+- **Programmation** : une calibration est un process de type Calibration, dessiné dans l'éditeur comme les autres. Une station en a zéro ou plusieurs (« Calibrer la vision Asyril », « Calibrer l'origine du robot ») ; elles comptent dans la limite de 16 process. Au niveau machine, une **calibration machine** enchaîne des calibrations de station et des demandes à l'opérateur (par exemple le robot et la caméra l'un après l'autre).
+- **Étapes propres** : « Demander à l'opérateur » (message avec confirmation, ou saisie d'une valeur rangée dans une variable), « Enregistrer la position » (écrit la position actuelle d'un objet dans une position nommée, comme l'apprentissage), « Enregistrer la valeur » (Définir variable sur une variable persistante) et, au niveau machine seulement, « Calibrer la station » (station et calibration, avec politique d'échec). Les étapes ordinaires restent permises (actions, conditions, boucles) ; une calibration machine peut aussi envoyer un mover choisi au lancement vers une station (étape Route).
+- **Variables persistantes** : une variable de station peut être déclarée persistante. Elle garde sa valeur d'un Stop à un Start, d'un redéploiement (reconnue par son identifiant) et d'une coupure. Seule une calibration peut l'écrire (règle V023) ; tous les process peuvent la lire.
+- **Résultats mis en attente** : les positions et variables persistantes écrites par une calibration ne sont validées qu'à sa fin réussie. Un échec ou un Abort les abandonne : les anciennes valeurs restent.
+- **Lancement** : en Maintenance seulement, comme le lancement d'une table (§ 11, `05` § 8) : la station (ou toutes celles de la calibration machine) en Idle, avec ou sans mover. Page Manuel, onglet « Calibrations » de la station et de la machine : liste, bouton Lancer, état (jamais faite, valide, périmée, en cours, échec), date, auteur. Droit `calibration.run` (niveau 1). Le suivi se fait carte par carte comme dans la page Station. L'opérateur répond aux demandes dans un tiroir de la page.
+- **Validité** : chaque calibration a une durée de validité facultative (en jours). Une calibration jamais faite ou périmée lève un **avertissement** (alarme 912 « Calibration à refaire : <nom> ») sans bloquer le démarrage. Décidé le 2026-10-17.
+- **Journal** : chaque exécution est journalisée (calibration, utilisateur, résultat, valeurs avant et après).
 
 ## 12. Mode pas à pas
 

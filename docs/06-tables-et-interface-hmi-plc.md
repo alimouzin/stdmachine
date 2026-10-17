@@ -37,7 +37,7 @@ TYPE ST_Bind : STRUCT eTarget : E_BindTarget; nIndex : INT; END_STRUCT END_TYPE
 TYPE E_Op : (Nop := 0, Action := 1, WaitCond := 2, WaitTime := 3, Jump := 4, JumpIfFalse := 5,
              Fork := 6, Join := 7, LoopInit := 8, LoopNext := 9, Call := 10, Return := 11,
              SetVar := 12, Alarm := 13, End := 14, StepBegin := 15, StepEnd := 16,
-             WaitMover := 17, Route := 20) UINT; END_TYPE
+             WaitMover := 17, Prompt := 18, SavePos := 19, CalibStation := 21, Route := 20) UINT; END_TYPE
 
 TYPE E_FailPolicy : (StopStation := 0, Retry := 1, PartBad := 2, Goto := 3, Ignore := 4) USINT; END_TYPE
 
@@ -56,8 +56,8 @@ STRUCT
     nFailTarget : INT;           // Goto : index d'instruction
 END_STRUCT END_TYPE
 
-TYPE E_TableKind : (Operation := 0, Background := 1, Init := 2, Stop := 3, Clear := 4, Sub := 5,
-                    General := 10, GeneralSub := 11) USINT; END_TYPE
+TYPE E_TableKind : (Operation := 0, Background := 1, Init := 2, Stop := 3, Clear := 4, Sub := 5, Calibration := 6,
+                    General := 10, GeneralSub := 11, MachineCalibration := 12) USINT; END_TYPE
 
 TYPE ST_TableDir :
 STRUCT
@@ -70,7 +70,9 @@ END_STRUCT END_TYPE
 
 TYPE ST_NamedPos : STRUCT stPos : ST_Position; fApproach : LREAL; bTaught : BOOL; END_STRUCT END_TYPE
 TYPE E_VarType : (Number := 0, Bool := 1, Position := 2) USINT; END_TYPE
-TYPE ST_VarInit : STRUCT eType : E_VarType; fValue : LREAL; stPos : ST_Position; END_STRUCT END_TYPE
+TYPE ST_VarInit : STRUCT eType : E_VarType; fValue : LREAL; stPos : ST_Position; bRetain : BOOL; END_STRUCT END_TYPE   // bRetain : persistante, conservée au redéploiement par identifiant
+TYPE E_CalibState : (Never := 0, Valid := 1, Expired := 2, Failed := 3, Running := 4) USINT; END_TYPE
+TYPE ST_CalibStatus : STRUCT eState : E_CalibState; tLast : LINT; sUser : STRING(24); nValidityDays : UINT; END_STRUCT END_TYPE   // 0 jour = n'expire jamais
 
 TYPE ST_Interlock :
 STRUCT
@@ -98,6 +100,9 @@ END_STRUCT END_TYPE
 | `SetVar` | — | [1] valeur | [1] cible | [1] 0 affecter, 1 ajouter, 2 soustraire |
 | `Alarm` | — | — | — | [1] n° de texte, [2] gravité (1 avertissement, 2 défaut station, 3 défaut machine), [3] n° d'alarme de process (0..99, code 900 + n) |
 | `End` | — | — | — | [1] 0 fin, 1 reprendre au début |
+| `Prompt` | — | — | [1] cible de la valeur saisie (mode saisie) | [1] n° de texte, [2] 0 confirmation, 1 saisie |
+| `SavePos` | objet (position actuelle) | — | — | [1] n° de position nommée (calibration seulement) |
+| `CalibStation` | — | — | — | [1] n° de station, [2] n° de calibration (calibration machine seulement) |
 | `WaitMover` | — | — | — | — (une seule par table d'opération, au premier niveau ; avant elle, aucune source ni cible `PartData`, `PartId`, `Verdict`, `PartRemoved`) |
 | `StepBegin`, `StepEnd` | — | — | — | [1] niveau (1 carte, 2 étape interne d'une fonction de module) |
 | `Route` | — | paramètres d'opération 1..8 | données de pièce : liaisons des sorties d'opération (réservé, non utilisé en v1) | [1] fonction, [2] n° d'opération, [3] emplacement (0 = tous) |
@@ -196,6 +201,8 @@ Le compilateur (HMI, `StdMachine.Core`) transforme l'arbre d'un process en instr
 | Action | `StepBegin(1)`, `Action`, `StepEnd(1)` |
 | Fonction de module | `StepBegin(1)`, puis le corps de la fonction déplié (ses étapes internes encadrées par `StepBegin(2)`/`StepEnd(2)`, ses blocs compilés selon le § 5.2, ses paramètres substitués), `StepEnd(1)` |
 | Mover requis | `WaitMover` (sans `StepBegin`/`StepEnd`) ; le compilateur met `bPrepare` de l'opération dans `aOpMap` |
+| Demander à l'opérateur, Enregistrer la position | `StepBegin(1)`, `Prompt` ou `SavePos`, `StepEnd(1)` |
+| Calibrer la station | `StepBegin(1)`, `CalibStation`, `StepEnd(1)` |
 | Attendre condition | `StepBegin(1)`, `WaitCond(c)`, `StepEnd(1)` |
 | Attendre durée | `StepBegin(1)`, `WaitTime(d)`, `StepEnd(1)` |
 | Appeler sous-process | `StepBegin(1)`, `Call(t)`, `StepEnd(1)` |
@@ -348,6 +355,7 @@ Toute commande HMI → PLC suit le même schéma :
 | `GVL_Hmi.aStep[1..16]` | `ST_StepControl` | Pas à pas par station |
 | `GVL_Hmi.stLaunch` | `ST_LaunchRequest` | Maintenance : lancer une table d'une station (station, table, mover ou 0, paramètres d'opération) |
 | `GVL_Hmi.stOrder` | `ST_OrderRequest` | OF : lancer (numéro interne, quantité, paramètres), suspendre, reprendre, annuler |
+| `GVL_Hmi.stPrompt` | `ST_PromptAnswer` | Réponse de l'opérateur à une demande de calibration : confirmer, annuler, valeur saisie |
 | `GVL_Hmi.stPartCmd` | `ST_PartRequest` | Confirmer le retrait des pièces d'un mover à vider |
 | `GVL_Hmi.stAlarmAck` | `ST_AlarmAckRequest` | Acquitter un avertissement (objet, code ; 0 = tous) |
 | `GVL_Hmi.stStaging` | `ST_Staging` | Zone d'attente du déploiement : `stMachine`, `aStation[1..16]`, `aPressRecipe[1..64]` |

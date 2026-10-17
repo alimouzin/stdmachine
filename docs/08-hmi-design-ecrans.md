@@ -311,6 +311,8 @@ Règles :
 
 ### 6.3 Mode manuel
 
+**Onglet Calibrations** (station, et machine sur le nœud machine) : une carte par calibration avec son état (pastille : jamais faite grise, valide verte, périmée orange, en cours bleue, échec rouge), la date et l'auteur de la dernière exécution, la validité restante, et le bouton « Lancer » (64 px, droit `calibration.run`). Une calibration en cours affiche son process carte par carte (rendu de la page Station) ; les demandes à l'opérateur ouvrent un tiroir (message, bouton Confirmer / Annuler, ou saisie au pavé numérique). Une calibration périmée ou jamais faite affiche aussi un point orange sur l'onglet et sur la puce de la station. Fin : toast avec le résumé des valeurs avant / après, ou message d'échec.
+
 ```
 ┌─ Puces stations ───────────────────────────────────────────────────────────────────────────────┐
 │ ⓘ Manuel disponible : mode Maintenance ✓  Station Stopped ✓  Droit Régleur ✓                    │
@@ -423,6 +425,7 @@ Référence : écran « Process » de la maquette, agrandi pour le toucher.
 └──────────────────┴───────────────────────────────────────────────────────────────────────┴────────────────────┘
 ```
 
+- **Calibrations** : les onglets de process regroupent les calibrations sous « Calibrations » (au niveau machine : « Calibrations machine »). La palette ajoute, dans le groupe Logique, « Demander à l'opérateur » et « Enregistrer la position », et « Calibrer la station » au niveau machine. L'onglet Données permet de déclarer une variable persistante (icône cadenas) et la durée de validité de la calibration.
 - **Mover requis** : étape de la palette (groupe Logique), carte en forme de trait horizontal fin (icône `person_pin_circle`, « Mover requis ») qui sépare le process en deux zones : au-dessus, un fond teinté « Préparation — avant l'arrivée du mover » ; au-dessous, le fond normal. Une seule peut être posée ; déposée ailleurs qu'au premier niveau, elle est refusée avec le message de V021. Dans les cartes de la préparation, les sélecteurs de valeur ne proposent pas les données de pièce (V022). En suivi d'exécution, la carte Mover requis s'allume en attente tant que le mover n'est pas arrivé. Le chronogramme estimé montre la préparation en parallèle du trajet du mover.
 - **Mode d'affichage** : bascule « Vue : Flux | Couloirs » dans la barre de l'éditeur (option `--layout flow|lanes`). **Flux** (défaut, D72) : une seule colonne de cartes, centrée, sans en-têtes de couloirs ; chaque carte d'un objet porte sa pastille d'objet ; les colonnes n'existent que dans un bloc En parallèle ou Si / Sinon, qui épouse ses branches. **Couloirs** (option) : décrit ci-dessous. Le modèle de process, le compilateur et le simulateur sont identiques dans les deux modes ; au niveau machine du Flux, pas de pastille (la carte écrit déjà « Fonction : … »).
 - **Niveaux** : sélecteur Machine | Station en haut à gauche, puis la station et le process. En mode Couloirs, au niveau machine, les couloirs sont les fonctions et la palette contient leurs opérations ; une carte d'opération a un bouton « Ouvrir l'opération » qui ouvre l'éditeur au niveau station (sur la première station de la fonction ; les puces de stations permettent de passer aux autres).

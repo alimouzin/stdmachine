@@ -74,7 +74,7 @@ MachineProject
 │  ├─ Objects : ObjectNode (arbre : Id, TypeId, Name, ChildRole?, Simulated, Disabled, Override,
 │  │            Params[], Signals[], Device, Speeds[], Timeouts[], Children[], Layout (vue de dessus))
 │  ├─ Positions : NamedPosition[] (Id, Name, X, Y, Z, C, Frame, Approach?, Taught, TaughtAt, TaughtBy)
-│  ├─ Variables : StationVariable[] (Id, Name, Type, Initial)   — partagées par tous les process
+│  ├─ Variables : StationVariable[] (Id, Name, Type, Initial, Retained)   — partagées par tous les process
 │  │   (ProcessDefinition.Variables : ProcessVariable[] (Id, Name, Type, Initial), visibles dans ce seul process)
 │  ├─ Interlocks : Interlock[] (Id, ObjectId, Actions | AllMotion, Condition, Generated)
 │  ├─ PressRecipes : PressRecipe[]
@@ -90,7 +90,7 @@ MachineProject
 ### 3.2 Process
 
 ```
-ProcessDefinition : Kind (Operation|Background|Init|Stop|Clear|Sub|General|GeneralSub), Name, Implements (Operation : opérations de fonctions implémentées), Parameters, Variables : ProcessVariable[], Body : Sequence
+ProcessDefinition : Kind (Operation|Background|Init|Stop|Clear|Calibration|Sub|General|GeneralSub|MachineCalibration), ValidityDays? (calibrations), Name, Implements (Operation : opérations de fonctions implémentées), Parameters, Variables : ProcessVariable[], Body : Sequence
 Sequence : Step[]
 Step (abstrait) : Id (Guid), StepId (uint), Label?, Comment?
 ├─ ActionStep : ObjectId, ActionNo, Args : ValueRef[], Bindings : Binding[] (sorties : cible Var = variable de station ou de process, PartData, PartId, Verdict, PartRemoved), TimeoutMs?, FailPolicy
@@ -99,6 +99,9 @@ Step (abstrait) : Id (Guid), StepId (uint), Label?, Comment?
 ├─ WaitTimeStep : DurationMs (ValueRef)
 ├─ CallStep : ProcessId
 ├─ SetStep : Target (Var | PartData | Verdict | PartRemoved), Operation (= | += | −=), Value
+├─ PromptStep : Text, Mode (Confirm|Input), Target?     (calibration)
+├─ SavePositionStep : ObjectId, PositionId               (calibration)
+├─ CalibrateStationStep : StationId, CalibrationId, FailPolicy   (calibration machine)
 ├─ WaitMoverStep                                              (séparateur préparation / avec mover)
 ├─ AlarmStep : Message, Severity, AlarmNo
 ├─ EndStep
@@ -215,6 +218,9 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V020 | Erreur | Une variable de process est utilisée dans un autre process que le sien |
 | V021 | Erreur | Étape Mover requis dans un bloc, un sous-process, un process qui n'est pas une opération, ou en plusieurs exemplaires |
 | V022 | Erreur | Une étape avant Mover requis lit ou écrit une donnée de pièce, le verdict, l'identifiant ou l'emplacement |
+| V023 | Erreur | Une variable persistante est écrite ailleurs que dans une calibration |
+| V024 | Erreur | Étape Demander à l'opérateur, Enregistrer la position ou Calibrer la station dans un process qui n'est pas une calibration (ou Calibrer la station hors d'une calibration machine) |
+| V025 | Erreur | Calibrer la station vise une station ou une calibration introuvable, ou une calibration qui s'appelle elle-même |
 | V101 | Avertissement | Objet en simulation |
 | V102 | Avertissement | Recette de presse non vérifiée sur la presse |
 | V103 | Avertissement | Aucun chemin ne traite le verdict mauvais et aucune fonction de rebut n'existe |
