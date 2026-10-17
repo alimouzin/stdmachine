@@ -162,7 +162,7 @@ END_FOR
 | `LoopNext` | `Var[I.aArg[1]] -= 1` ; si > 0 → `nPC := I.aArg[2]`, sinon avancer. |
 | `Call` | Empiler (`nTable`, `nPC + 1`) ; profondeur > 4 → échec 904. `nTable := I.aArg[1]`, `nPC := début de la table`. |
 | `Return` | Dépiler et reprendre ; pile vide → traiter comme `End`. |
-| `SetVar` | Cible `aBind[1]` (variable ou donnée de pièce) := / += / −= valeur de `aParam[1]` selon `I.aArg[1]` (0, 1, 2). Avancer. |
+| `SetVar` | Cible `aBind[1]` (variable de station, ou de process qui est allouée comme une variable de station, ou donnée de pièce ; *prévu* : variable de mover) := / += / −= valeur de `aParam[1]` selon `I.aArg[1]` (0, 1, 2). Avancer. |
 | `Alarm` | Lever l'alarme de process (code `900 + I.aArg[3]`, texte n° `I.aArg[1]`, gravité `I.aArg[2]`). Avertissement → avancer. Défaut de station → la station passe Aborted. Défaut machine → la machine passe Aborted. |
 | `End` | `I.aArg[1] = 1` (cycle de fond) → `nPC := début de la table`. Sinon → `Done`. |
 
@@ -175,6 +175,7 @@ Pour chaque paramètre `k` de l'instruction, selon `aParam[k].eSource` :
 | `Const` | `fValue` |
 | `Var` | variable de station n° `nIndex` (nombre ; ou position → `stPos`, `aKind[k] := Position`, `aReal[k] := fValue` comme décalage) |
 | `PartData` | donnée n° `nIndex` de la pièce de l'emplacement courant |
+| `MoverData` | *(prévu)* variable n° `nIndex` du mover présent à la station (même traitement que `Var` pour les positions) |
 | `OpParam` | paramètre n° `nIndex` de l'opération en cours (donné par le process général) |
 | `NamedPos` | position nommée n° `nIndex` de la station → `stPos`, `aKind[k] := Position`, `aReal[k] := fValue` (décalage ajouté à la composante utilisée) |
 | `Speed` | `aKind[k] := SpeedIndex`, `aReal[k] := nIndex` (n° de vitesse, résolu par l'objet) ; `nIndex = 0` → `SpeedPercent` avec `fValue` |

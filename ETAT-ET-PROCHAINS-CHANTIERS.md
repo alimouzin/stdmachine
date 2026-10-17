@@ -37,7 +37,7 @@ La HMI affiche encore des utilisateurs de démonstration (tout PIN à 4 chiffres
 **Ensuite** (non planifié) : Studio complet branché sur le projet réel avec enregistrement automatique et chronogramme (phase 6) ; détail des différences au déploiement (aujourd'hui seulement l'empreinte) ; PLC réel et ADS (phase 9, sur demande explicite) ; interface usine MQTT (phase 10).
 
 ## Points ouverts et dettes connues
-- **Documents de référence non mis à jour** : `docs/00` (mots « Couloir », « Variable de process », « Variable de mover »), `docs/02` § 5.3, `docs/06`, `docs/07` § 3.1 et 3.2 (modèle), `docs/08` § 6.9 (mode Flux, panneau Sorties). Seuls le journal et le tableau des règles de `docs/07` (V020, V115) ont été complétés.
+- **Documents de référence** : mis à jour le 2026-10-17 (D76) pour le mode Flux, les variables de process et les sorties. Les variables de mover y sont marquées « prévu ». Reste : `docs/05` (structure `ST_Mover` et `SetVar` détaillés) et `docs/03` quand ce chantier sera codé. Mise à jour faite sans compilateur, relire.
 - **Couloirs** : à garder ou à supprimer, décision remise à plus tard (note dans `REPRISE-PHASES-2-A-5.md`).
 - **Qualité** : une station verrouillée par imputation n'affiche pas son verrou sur sa ligne.
 - **Pages encore en données de démonstration** : Utilisateurs, Communications, Système, historique de la page Station.

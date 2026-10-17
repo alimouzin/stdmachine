@@ -143,15 +143,18 @@ Si l'ingénieur process ne dessine pas de process d'initialisation, le compilate
 | Un groupe par objet ou module de premier niveau | Ses actions de base, celles de ses enfants, et ses fonctions de module (et fonctions personnalisées) |
 | Logique | Attendre condition, Si / Sinon, Répéter N fois, En parallèle, Appeler sous-process, Définir variable, Signaler défaut, Fin |
 
-- Une étape a des paramètres (ceux de l'action), des liaisons de résultats (chaque résultat peut être rangé dans une variable de station ou une donnée de pièce), un timeout (défaut du catalogue) et une politique d'échec.
+- Une étape a des paramètres (ceux de l'action), des liaisons de résultats (chaque résultat, appelé sortie de l'étape, peut être rangé dans une variable de process, une variable de station, une donnée de pièce, le verdict ou l'identifiant ; l'éditeur crée la variable à la demande), un timeout (défaut du catalogue) et une politique d'échec.
 - En parallèle : 2 à 4 branches ; les branches s'attendent à la fin du bloc. Deux branches ne peuvent pas utiliser le même objet (erreur de validation). Blocs imbriqués autorisés jusqu'à 3 niveaux, dans la limite de 8 contextes d'exécution par station.
 - Si / Sinon : une condition, deux branches (Alors, Sinon) ; la branche Sinon peut être vide.
 - Répéter N fois : N de 1 à 1000, ou tant qu'une condition est vraie, avec un maximum.
 - Fin : termine le process. Pour une opération : fin de l'opération. Pour le cycle de fond : reprend au début.
 
-### 5.3 Variables de station, paramètres d'opération, données de pièce
+### 5.3 Variables de process et de station, paramètres d'opération, données de pièce
 
-- 64 variables de station : nom, type (nombre, booléen, position), valeur initiale. Elles sont partagées par tous les process de la station (c'est ainsi que le cycle de fond prépare une pièce pour l'opération).
+- Variables de station : nom, type (nombre, booléen, position), valeur initiale. Elles sont partagées par tous les process de la station (c'est ainsi que le cycle de fond prépare une pièce pour l'opération).
+- Variables de process : mêmes champs, mais visibles seulement dans leur process (portée par défaut d'une variable créée depuis une sortie d'étape). Le compilateur les place après les variables de station, une place chacune. Au total, variables de station, de process et cachées (compteurs de boucle) ne dépassent pas 64 par station. Rendre une variable de process « partagée » en fait une variable de station de même identifiant.
+- Une variable de process garde sa valeur d'un passage à l'autre ; la validation avertit (V115) quand elle est lue sur un chemin où elle n'est pas écrite avant, et refuse (V020) son usage dans un autre process.
+- *(Prévu, pas encore codé.)* Variables de mover : jusqu'à 16, déclarées dans la configuration machine (nom, type nombre, booléen ou position, unité, valeur initiale, remise à zéro : jamais, au déploiement ou quand le mover est vidé). Chaque mover a son jeu de valeurs, qui persiste d'un Stop à un Start. Une opération lit et écrit celles du mover présent à son poste ; le process général peut les écrire ; le cycle de fond ne peut pas les utiliser. Conception : `docs/13` § 5.
 - Une opération peut avoir jusqu'à 8 paramètres (nom, type, unité), donnés par l'étape du process général qui l'appelle (par exemple la recette de presse à utiliser).
 - Variables système en lecture : mover présent, emplacement courant, numéro d'OF, compteur de cycles, temps de la dernière opération.
 - Une opération lit et écrit les données de pièce de l'emplacement courant (Verdict, Identifiant, et les données définies dans la configuration machine). Elle peut marquer la pièce « retirée » (rebut interne à la station : la pièce quitte la machine à cette station).

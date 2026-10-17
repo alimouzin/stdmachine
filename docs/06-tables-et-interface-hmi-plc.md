@@ -30,6 +30,7 @@ STRUCT
                                  // à la composante utilisée par l'axe (hauteur d'approche)
 END_STRUCT END_TYPE
 
+// Prévu (variables de mover, docs/13 § 5) : source MoverData := 10 et cible MoverData := 6, indices dans le tableau de variables de ST_MoverCtx.
 TYPE E_BindTarget : (None := 0, Var := 1, PartData := 2, PartId := 3, Verdict := 4, PartRemoved := 5) USINT; END_TYPE
 TYPE ST_Bind : STRUCT eTarget : E_BindTarget; nIndex : INT; END_STRUCT END_TYPE
 
@@ -245,7 +246,8 @@ Le compilateur termine chaque table : opération, initialisation, arrêt, vidage
 
 ### 5.4 Allocation
 
-- **Variables cachées** (compteurs de boucle) : prises en partant de la variable 64 vers le bas ; le validateur vérifie que variables visibles + cachées ≤ 64.
+- **Variables de process** : placées juste après les variables de station, une place chacune (deux process d'une station peuvent s'exécuter en même temps, donc pas de partage de place). Pour le PLC, ce sont des variables de station ordinaires : le jeu d'instructions ne change pas.
+- **Variables cachées** (compteurs de boucle) : prises en partant de la variable 64 vers le bas ; le validateur vérifie que variables de station + de process + cachées ≤ 64.
 - **Conditions** : dédoublonnées par contenu, numérotées dans l'ordre de première apparition.
 - **Textes** : messages d'alarme de process et constantes texte, dédoublonnés.
 - **Objets** : n° local = rang dans le parcours en largeur de l'arborescence de la station (parents avant enfants), stable tant que l'arborescence ne change pas.

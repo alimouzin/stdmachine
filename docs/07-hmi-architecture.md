@@ -74,7 +74,8 @@ MachineProject
 │  ├─ Objects : ObjectNode (arbre : Id, TypeId, Name, ChildRole?, Simulated, Disabled, Override,
 │  │            Params[], Signals[], Device, Speeds[], Timeouts[], Children[], Layout (vue de dessus))
 │  ├─ Positions : NamedPosition[] (Id, Name, X, Y, Z, C, Frame, Approach?, Taught, TaughtAt, TaughtBy)
-│  ├─ Variables : StationVariable[] (Id, Name, Type, Initial)
+│  ├─ Variables : StationVariable[] (Id, Name, Type, Initial)   — partagées par tous les process
+│  │   (ProcessDefinition.Variables : ProcessVariable[] (Id, Name, Type, Initial), visibles dans ce seul process)
 │  ├─ Interlocks : Interlock[] (Id, ObjectId, Actions | AllMotion, Condition, Generated)
 │  ├─ PressRecipes : PressRecipe[]
 │  ├─ CustomFunctions : FunctionDefinition[] (copie d'une fonction de module, modifiée)
@@ -89,10 +90,10 @@ MachineProject
 ### 3.2 Process
 
 ```
-ProcessDefinition : Kind (Operation|Background|Init|Stop|Clear|Sub|General|GeneralSub), Name, Implements (Operation : opérations de fonctions implémentées), Parameters, Body : Sequence
+ProcessDefinition : Kind (Operation|Background|Init|Stop|Clear|Sub|General|GeneralSub), Name, Implements (Operation : opérations de fonctions implémentées), Parameters, Variables : ProcessVariable[], Body : Sequence
 Sequence : Step[]
 Step (abstrait) : Id (Guid), StepId (uint), Label?, Comment?
-├─ ActionStep : ObjectId, ActionNo, Args : ValueRef[], Bindings : Binding[], TimeoutMs?, FailPolicy
+├─ ActionStep : ObjectId, ActionNo, Args : ValueRef[], Bindings : Binding[] (sorties : cible Var = variable de station ou de process, PartData, PartId, Verdict, PartRemoved), TimeoutMs?, FailPolicy
 ├─ FunctionStep : ModuleObjectId, FunctionRef (module | personnalisée), Args, FailPolicy
 ├─ WaitConditionStep : Condition, TimeoutMs?
 ├─ WaitTimeStep : DurationMs (ValueRef)

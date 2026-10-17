@@ -48,8 +48,13 @@ Ce glossaire fixe le sens des mots utilisés dans tous les documents, dans le co
 | Étape | `Step` | Une carte de l'éditeur : une action, une fonction de module, une opération (niveau machine) ou une instruction de logique. |
 | Bloc | `Block` | Structure de logique qui contient des branches d'étapes : En parallèle, Si / Sinon, Répéter. |
 | Branche | `Branch` | Suite d'étapes à l'intérieur d'un bloc. |
-| Couloir | `Lane` | Colonne de l'éditeur. Niveau station : un couloir par objet de premier niveau (module ou objet seul) plus un couloir Logique. Niveau machine : un couloir par fonction. |
-| Variable de station | `StationVar` | Mémoire d'une station utilisée par ses process (par exemple la position trouvée par la vision, utilisée ensuite par la prise). |
+| Couloir | `Lane` | Colonne de l'éditeur en mode d'affichage « Couloirs » (option). Niveau station : un couloir par objet de premier niveau (module ou objet seul) plus un couloir Logique. Niveau machine : un couloir par fonction. Le mode par défaut est le **Flux** : une seule colonne, sans couloirs ; les colonnes n'existent que dans les blocs En parallèle et Si / Sinon. Le couloir est une mise en page, pas une notion du modèle. |
+| Flux | `Flow` | Mode d'affichage par défaut de l'éditeur de process : cartes empilées dans une colonne, une pastille sur chaque carte rappelle l'objet concerné. |
+| Pastille d'objet | `ObjectChip` | Icône et nom de l'objet de premier niveau, portés par chaque carte en mode Flux. |
+| Variable de station | `StationVar` | Mémoire d'une station partagée par tous ses process (par exemple la position trouvée par la vision, utilisée ensuite par la prise). |
+| Variable de process | `ProcessVar` | Mémoire nommée propre à un process, invisible des autres. Créée à la demande depuis la sortie d'une étape ; peut être rendue partagée (elle devient alors une variable de station). |
+| Sortie | `Output` | Résultat d'une étape rangé dans une variable nommée. Une sortie sans nom se désigne par son rang. |
+| Variable de mover | `MoverVar` | *(prévue, pas encore codée)* Information propre à un mover (nombre, booléen ou position), déclarée dans la configuration machine, un jeu de valeurs par mover ; elle suit le mover, pas la pièce. |
 | Donnée de pièce | `PartData` | Mémoire attachée à une pièce, qui la suit de station en station (résultats, verdict, compteurs de retouche). |
 | Verdict | `Verdict` | Donnée de pièce réservée : non défini, bon, mauvais. Elle décide de la sortie de la pièce. |
 | Condition | `Condition` | Jusqu'à 4 comparaisons combinées par « toutes vraies » ou « au moins une vraie ». Utilisée par Si / Sinon, Attendre condition et les verrouillages. |
