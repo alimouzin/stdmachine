@@ -62,6 +62,7 @@ public sealed partial class ProcessCanvasViewModel : ObservableObject
             Station = Station,
             Project = Project,
             ViewportWidth = _viewportWidth,
+            Flow = EditorSettings.FlowLayout,
             EndText = Process.Kind == ProcessKind.General ? "Fin · retour à l'étape 1" : Process.Kind == ProcessKind.Background ? "Retour au début du cycle" : "Fin d'opération",
             Validation = StepValidation,
         };

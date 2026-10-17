@@ -33,6 +33,11 @@ public sealed partial class StepCardModel : ObservableObject
     public bool IsLogic { get; set; }
     public int LaneIndex { get; set; }
 
+    /// <summary>Mode Flux : pastille de l'objet qui porte l'étape (remplace le couloir).</summary>
+    public string ObjectName { get; set; } = string.Empty;
+    public string ObjectIcon { get; set; } = "folder";
+    public bool HasObject { get; set; }
+
     [ObservableProperty] private bool _isSelected;
     [ObservableProperty] private bool _isHighlighted;
 

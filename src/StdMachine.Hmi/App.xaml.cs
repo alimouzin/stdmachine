@@ -35,6 +35,7 @@ public partial class App : Application
             return;
         }
         AnimationPolicy.Capture = options.IsScreenshot;
+        Editor.EditorSettings.FlowLayout = string.Equals(options.Layout, "flow", StringComparison.OrdinalIgnoreCase);
 
         FreezeResources();
         TouchSettings.RegisterGlobalHandlers();
@@ -167,6 +168,8 @@ public sealed class CommandLine
     public bool PlantLog { get; private set; }
     public bool Topmost { get; private set; }
     public string? StartPage { get; private set; }
+    /// <summary>« flow » : éditeur de process en flux vertical sans couloirs (prototype) ; sinon couloirs.</summary>
+    public string? Layout { get; private set; }
 
     public bool IsScreenshot => ScreenshotAllDir != null || ScreenshotPage != null;
 
@@ -208,6 +211,9 @@ public sealed class CommandLine
                     break;
                 case "--plant-log":
                     o.PlantLog = true;
+                    break;
+                case "--layout":
+                    o.Layout = args[++i];
                     break;
                 case "--page":
                     o.StartPage = args[++i];

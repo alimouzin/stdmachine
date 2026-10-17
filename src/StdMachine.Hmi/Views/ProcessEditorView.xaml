@@ -34,6 +34,11 @@
                             <Button.Style><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Style.Triggers><DataTrigger Binding="{Binding IsStationLevel}" Value="True"><Setter Property="c:Ui.Variant" Value="Primary"/></DataTrigger></Style.Triggers></Style></Button.Style>
                         </Button>
                     </StackPanel>
+                    <TextBlock Text="Vue" Style="{StaticResource Type.Caption}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <ListBox Style="{StaticResource Segmented}" SelectedIndex="{Binding LayoutIndex, Mode=TwoWay}" Margin="0,0,16,0" VerticalAlignment="Center">
+                        <ListBoxItem Content="Couloirs"/>
+                        <ListBoxItem Content="Flux"/>
+                    </ListBox>
                     <TextBlock Text="{Binding Title}" Style="{StaticResource Type.Title}" VerticalAlignment="Center"/>
                 </StackPanel>
             </DockPanel>

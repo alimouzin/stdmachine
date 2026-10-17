@@ -95,6 +95,19 @@ public sealed partial class ProcessEditorViewModel : ViewModelBase
     public ObservableCollection<IssueRow> Issues { get; } = new ObservableCollection<IssueRow>();
 
     public bool IsStationLevel => Level == ProcessLevel.Station;
+
+    /// <summary>Mise en page du canevas : 0 = couloirs, 1 = flux vertical sans couloirs (prototype, docs/13).</summary>
+    public int LayoutIndex
+    {
+        get => EditorSettings.FlowLayout ? 1 : 0;
+        set
+        {
+            if ((value == 1) == EditorSettings.FlowLayout) return;
+            EditorSettings.FlowLayout = value == 1;
+            OnPropertyChanged();
+            Canvas.Rebuild();
+        }
+    }
     public bool CanUndo => _undo.CanUndo;
     public bool CanRedo => _undo.CanRedo;
     public string Title => Level == ProcessLevel.Machine ? "Process général" : Station!.Name + " · " + Process.Name;

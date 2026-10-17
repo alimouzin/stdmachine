@@ -37,6 +37,8 @@ public sealed class ProcessLayoutOptions
     public double ViewportWidth { get; set; } = 1100;
     public Func<Guid, (string? Error, string? Warning)> Validation { get; set; } = _ => (null, null);
     public string EndText { get; set; } = "Fin d'opération";
+    /// <summary>Mode « Flux » : une seule colonne, sans couloirs (prototype).</summary>
+    public bool Flow { get; set; }
 }
 
 /// <summary>
@@ -78,7 +80,8 @@ public sealed class ProcessLayoutEngine
         _number = 0;
         _laneIndex.Clear();
         _topObject.Clear();
-        BuildLanes(process);
+        BuildTopObjects();
+        if (!_o.Flow) BuildLanes(process);
 
         // Largeur : chaque couloir au moins LaneMinWidth, réparti sur la largeur disponible
         int n = Math.Max(1, _l.Lanes.Count);
@@ -87,14 +90,14 @@ public sealed class ProcessLayoutEngine
         for (int i = 0; i < _l.Lanes.Count; i++) lanes.Add(_l.Lanes[i] with { X = i * laneW, Width = laneW });
         _l.Lanes.Clear();
         _l.Lanes.AddRange(lanes);
-        _l.Width = n * laneW;
+        _l.Width = _o.Flow ? Math.Max(options.ViewportWidth, CardWidth + 80) : n * laneW;
 
         Exit? prev = null;
-        double y = 62;
+        double y = _o.Flow ? 20 : 62;
         var steps = process.Body;
         var trailingEnd = steps.Steps.Count > 0 && steps.Steps[steps.Steps.Count - 1] is EndStep ? steps.Steps[steps.Steps.Count - 1] : null;
         _maxRight = 0;
-        double bottom = PlaceSequence(steps, 0, _l.Width, y, true, ref prev, trailingEnd, true);
+        double bottom = PlaceSequence(steps, 0, _l.Width, y, !_o.Flow, ref prev, trailingEnd, true);
         if (_maxRight > _l.Width) _l.Width = _maxRight;
         // Marqueur de fin
         double ey = bottom + 6;
@@ -109,6 +112,25 @@ public sealed class ProcessLayoutEngine
     }
 
     // ---------------------------------------------------------------- couloirs
+
+    /// <summary>Objet de premier niveau de chaque objet de la station (sert aux couloirs et à la pastille d'objet du mode Flux).</summary>
+    private void BuildTopObjects()
+    {
+        if (_o.Level == ProcessLevel.Station && _o.Station != null)
+            foreach (var root in _o.Station.Objects)
+                foreach (var o in root.SelfAndDescendants())
+                    _topObject[o.Id] = root.Id;
+    }
+
+    /// <summary>Pastille d'objet d'une carte en mode Flux : l'objet de premier niveau qui porte l'étape (niveau station seulement).</summary>
+    private (string? Name, string? Icon) ObjectOf(Step step)
+    {
+        if (_o.Level != ProcessLevel.Station) return (null, null);
+        Guid? obj = step is ActionStep a ? a.ObjectId : step is FunctionStep f ? f.ModuleObjectId : (Guid?)null;
+        if (obj.HasValue && _topObject.TryGetValue(obj.Value, out var root) && _o.Station?.FindObject(root) is { } node)
+            return (node.Name, StdMachine.Simulation.Demo.DemoCatalog.Get(node.TypeCode)?.Icon ?? "folder");
+        return (null, null);
+    }
 
     private void BuildLanes(ProcessDefinition process)
     {
@@ -266,6 +288,12 @@ public sealed class ProcessLayoutEngine
         {
             // Un bloc dont les branches se partagent un seul couloir déborde du couloir : chaque branche garde la largeur d'une carte.
             double need = branches.Count * (CardWidth + 20);
+            if (_o.Flow && fx1 - fx0 > need + 40)
+            {
+                // Mode Flux : le cadre épouse ses branches au lieu de prendre toute la largeur.
+                double mid0 = (fx0 + fx1) / 2;
+                fx0 = mid0 - need / 2; fx1 = mid0 + need / 2;
+            }
             if (fx1 - fx0 < need)
             {
                 double mid = (fx0 + fx1) / 2;
@@ -342,7 +370,14 @@ public sealed class ProcessLayoutEngine
             ErrorMessage = err, WarnMessage = warn,
             IsLogic = !(step is ActionStep || step is FunctionStep || step is RouteStep),
         };
-        card.Height = Math.Max(112, 92 + 20 * text.Params.Count) + (err != null || warn != null ? 44 : 0);
+        if (_o.Flow)
+        {
+            var (objName, objIcon) = ObjectOf(step);
+            card.ObjectName = objName ?? string.Empty;
+            card.ObjectIcon = objIcon ?? "folder";
+            card.HasObject = objName != null;
+        }
+        card.Height = Math.Max(112, 92 + 20 * text.Params.Count) + (err != null || warn != null ? 44 : 0) + (card.HasObject ? 28 : 0);
         return card;
     }
 
