@@ -19,7 +19,7 @@ Toutes en `{attribute 'pack_mode' := '1'}`. Côté C# : `[StructLayout(LayoutKin
 
 ```iecst
 TYPE E_ValueSource : (None := 0, Const := 1, Var := 2, PartData := 3, OpParam := 4, NamedPos := 5,
-                      Speed := 6, Text := 7, ObjValue := 8, System := 9) USINT; END_TYPE
+                      Speed := 6, Text := 7, ObjValue := 8, System := 9, MoverData := 10) USINT; END_TYPE
 
 TYPE ST_Value :                  // 11 octets
 STRUCT
@@ -30,14 +30,14 @@ STRUCT
                                  // à la composante utilisée par l'axe (hauteur d'approche)
 END_STRUCT END_TYPE
 
-// Prévu (variables de mover, docs/13 § 5) : source MoverData := 10 et cible MoverData := 6, indices dans le tableau de variables de ST_MoverCtx.
-TYPE E_BindTarget : (None := 0, Var := 1, PartData := 2, PartId := 3, Verdict := 4, PartRemoved := 5) USINT; END_TYPE
+// MoverData : rang de la variable de mover (aMoverVar), valeur dans ST_MoverCtx.aVar / aVarPos (05 § 5.8).
+TYPE E_BindTarget : (None := 0, Var := 1, PartData := 2, PartId := 3, Verdict := 4, PartRemoved := 5, MoverData := 6) USINT; END_TYPE
 TYPE ST_Bind : STRUCT eTarget : E_BindTarget; nIndex : INT; END_STRUCT END_TYPE
 
 TYPE E_Op : (Nop := 0, Action := 1, WaitCond := 2, WaitTime := 3, Jump := 4, JumpIfFalse := 5,
              Fork := 6, Join := 7, LoopInit := 8, LoopNext := 9, Call := 10, Return := 11,
              SetVar := 12, Alarm := 13, End := 14, StepBegin := 15, StepEnd := 16,
-             WaitMover := 17, Prompt := 18, SavePos := 19, CalibStation := 21, Route := 20) UINT; END_TYPE
+             WaitMover := 17, ResetMoverVars := 22, Prompt := 18, SavePos := 19, CalibStation := 21, Route := 20) UINT; END_TYPE
 
 TYPE E_FailPolicy : (StopStation := 0, Retry := 1, PartBad := 2, Goto := 3, Ignore := 4) USINT; END_TYPE
 
@@ -100,6 +100,7 @@ END_STRUCT END_TYPE
 | `SetVar` | — | [1] valeur | [1] cible | [1] 0 affecter, 1 ajouter, 2 soustraire |
 | `Alarm` | — | — | — | [1] n° de texte, [2] gravité (1 avertissement, 2 défaut station, 3 défaut machine), [3] n° d'alarme de process (0..99, code 900 + n) |
 | `End` | — | — | — | [1] 0 fin, 1 reprendre au début |
+| `ResetMoverVars` | — | — | — | [1] rang de la variable de mover, 0 = toutes celles dont la règle n'est pas `Never` (refusée dans le cycle de fond, l'initialisation, l'arrêt et le vidage) |
 | `Prompt` | — | — | [1] cible de la valeur saisie (mode saisie) | [1] n° de texte, [2] 0 confirmation, 1 saisie |
 | `SavePos` | objet (position actuelle) | — | — | [1] n° de position nommée (calibration seulement) |
 | `CalibStation` | — | — | — | [1] n° de station, [2] n° de calibration (calibration machine seulement) |
@@ -158,6 +159,18 @@ END_STRUCT END_TYPE
 
 TYPE ST_PlanarPos : STRUCT stPos : ST_Position; eKind : (Work, Queue, Buffer, Park) USINT; nStation : USINT; END_STRUCT END_TYPE
 
+TYPE E_MoverVarReset : (Never := 0, OnDeploy := 1, OnEmpty := 2) USINT; END_TYPE
+TYPE ST_MoverVarDef :
+STRUCT
+    nId        : UDINT;           // identifiant stable (conservé au renommage et au déplacement)
+    sName      : STRING(24);
+    eType      : E_VarType;
+    sUnit      : STRING(8);
+    fInit      : LREAL;
+    stInitPos  : ST_Position;
+    eReset     : E_MoverVarReset;
+END_STRUCT END_TYPE
+
 TYPE ST_MachineData :
 STRUCT
     sMachineName : STRING(40);
@@ -170,6 +183,8 @@ STRUCT
     fOverride    : LREAL;
     nRejectGroup : USINT;         // 0 = aucune fonction de rebut
     nNoStationMs : UDINT;         // délai avant « mover à vider »
+    nMoverVar    : USINT;
+    aMoverVar    : ARRAY[1..16] OF ST_MoverVarDef;   // variables de mover (05 § 5.8)
     aGroup       : ARRAY[1..16] OF ST_GroupCfg;
     aStation     : ARRAY[1..16] OF ST_StationCfg;
     aPlanarPos   : ARRAY[1..128] OF ST_PlanarPos;
@@ -206,7 +221,8 @@ Le compilateur (HMI, `StdMachine.Core`) transforme l'arbre d'un process en instr
 | Attendre condition | `StepBegin(1)`, `WaitCond(c)`, `StepEnd(1)` |
 | Attendre durée | `StepBegin(1)`, `WaitTime(d)`, `StepEnd(1)` |
 | Appeler sous-process | `StepBegin(1)`, `Call(t)`, `StepEnd(1)` |
-| Définir variable / donnée de pièce | `StepBegin(1)`, `SetVar`, `StepEnd(1)` |
+| Réinitialiser les variables du mover | `StepBegin(1)`, `ResetMoverVars`, `StepEnd(1)` |
+| Définir variable / donnée de pièce / variable de mover | `StepBegin(1)`, `SetVar`, `StepEnd(1)` |
 | Signaler défaut | `StepBegin(1)`, `Alarm`, `StepEnd(1)` |
 | Fin | `End(0)` |
 | Opération (niveau machine) | `Route` (pas de marqueur : pas de pas à pas au niveau machine) |
@@ -355,6 +371,7 @@ Toute commande HMI → PLC suit le même schéma :
 | `GVL_Hmi.aStep[1..16]` | `ST_StepControl` | Pas à pas par station |
 | `GVL_Hmi.stLaunch` | `ST_LaunchRequest` | Maintenance : lancer une table d'une station (station, table, mover ou 0, paramètres d'opération) |
 | `GVL_Hmi.stOrder` | `ST_OrderRequest` | OF : lancer (numéro interne, quantité, paramètres), suspendre, reprendre, annuler |
+| `GVL_Hmi.stMoverVar` | `ST_MoverVarRequest` | Maintenance : écrire la valeur d'une variable d'un mover (mover, rang, valeur ou position) ou la remettre à sa valeur initiale ; utilisateur |
 | `GVL_Hmi.stPrompt` | `ST_PromptAnswer` | Réponse de l'opérateur à une demande de calibration : confirmer, annuler, valeur saisie |
 | `GVL_Hmi.stPartCmd` | `ST_PartRequest` | Confirmer le retrait des pièces d'un mover à vider |
 | `GVL_Hmi.stAlarmAck` | `ST_AlarmAckRequest` | Acquitter un avertissement (objet, code ; 0 = tous) |
@@ -371,7 +388,7 @@ Toute commande HMI → PLC suit le même schéma :
 | `GVL_Hmi.stMachineStatus` | état, mode, override effectif, balise, défauts, OF en cours et compteurs, horloge PLC, battement PLC, empreinte du projet actif | 10 Hz |
 | `GVL_Hmi.aStationStatus[1..16]` | état, mode, override effectif, balise, opération en cours, 8 contextes (statut, table, PC, carte, carte suivante, objet, action, essai, attente) | 10 Hz |
 | `GVL_Hmi.aObjStatus[0..16, 1..64]` | `ST_ObjStatus` | 10 Hz pour la station affichée, 1 Hz pour les autres |
-| `GVL_Hmi.aMoverStatus[1..32]` | état, X, Y, C, station, destination, table, PC, carte, emplacements (présence, identifiant, état, verdict) | 10 Hz |
+| `GVL_Hmi.aMoverStatus[1..32]` | état, X, Y, C, station, destination, table, PC, carte, emplacements (présence, identifiant, état, verdict), variables de mover (valeur ou position, avec leur identifiant) | 10 Hz |
 | `GVL_Hmi.stAlarms` | alarmes actives + tampon d'événements avec `nWriteSeq` | 4 Hz (lecture depuis le dernier `nSeq`) |
 | `GVL_Hmi.stTraces` | tampon de traces avec `nWriteSeq` | 2 Hz |
 | `GVL_Hmi.stForce` | forçages actifs (état déclaré, démarrage bloqué, stations hors production, movers hors service, motifs) | 2 Hz |

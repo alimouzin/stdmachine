@@ -11,7 +11,7 @@
 
 ## Ce que prend l'agent A (spécification, pas de code)
 
-1. **Variables de mover** : compléter `docs/05` (structure `ST_MoverCtx`, `SetVar`, remise à zéro, persistance), `docs/06` (`E_ValueSource.MoverData`, `E_BindTarget.MoverData`, tableaux dans la structure du mover), `docs/03` si le catalogue est touché, `docs/07` (modèle et règles de validation), `docs/08` (tiroir du mover, déclaration dans le Studio machine). Aujourd'hui seulement marquées « prévu » dans les documents.
+1. **Variables de mover** *(fait le 2026-10-17, D80 : B peut les coder, `docs/05` § 5.8)* : compléter `docs/05` (structure `ST_MoverCtx`, `SetVar`, remise à zéro, persistance), `docs/06` (`E_ValueSource.MoverData`, `E_BindTarget.MoverData`, tableaux dans la structure du mover), `docs/03` si le catalogue est touché, `docs/07` (modèle et règles de validation), `docs/08` (tiroir du mover, déclaration dans le Studio machine). Aujourd'hui seulement marquées « prévu » dans les documents.
 2. **Sorties des blocs composés** (fonctions personnalisées, sous-process, opérations) : passer la proposition de `docs/13` §2 en spécification ferme dans `docs/02`, `06`, `07`, `08`, avec les règles de validation et les cas limites.
 3. **Relecture de cohérence** des ajouts du 2026-10-17 (Fin des pièces, Préparation, Calibrations, Flux) : numéros d'instructions et de règles, tableaux de limites (`docs/05` §11), états de balise, droits (`docs/02` §17), exemples des scénarios (`docs/05` §12), `docs/13` marqué « réalisé » ou archivé.
 

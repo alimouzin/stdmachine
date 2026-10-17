@@ -14,7 +14,7 @@ Dernière mise à jour : 2026-10-17. Branche `feature/verification-simulateur` (
 
 ## Les 3 prochains gros chantiers
 
-### 1. Variables de mover (décidées, pas encore codées)
+### 1. Variables de mover (spécifiées de façon ferme le 2026-10-17, D80 ; pas encore codées)
 Des informations propres au mover, lisibles et modifiables par les stations (offset du mover, réglage choisi en amont, compteur, drapeau…). Conception dans `docs/13` § 5.
 - Liste déclarée dans la configuration machine : nom, type **nombre, booléen ou position**, unité, valeur initiale, 16 au plus ; chaque mover a son jeu de valeurs.
 - Remise à zéro **au choix par variable** : jamais (survit au Stop, au Reset, au redéploiement), au déploiement, ou quand le mover est vidé ; une étape « Réinitialiser » existe aussi.

@@ -162,7 +162,7 @@ END_FOR
 | `LoopNext` | `Var[I.aArg[1]] -= 1` ; si > 0 → `nPC := I.aArg[2]`, sinon avancer. |
 | `Call` | Empiler (`nTable`, `nPC + 1`) ; profondeur > 4 → échec 904. `nTable := I.aArg[1]`, `nPC := début de la table`. |
 | `Return` | Dépiler et reprendre ; pile vide → traiter comme `End`. |
-| `SetVar` | Cible `aBind[1]` (variable de station, ou de process qui est allouée comme une variable de station, ou donnée de pièce ; *prévu* : variable de mover) := / += / −= valeur de `aParam[1]` selon `I.aArg[1]` (0, 1, 2). Avancer. |
+| `SetVar` | Cible `aBind[1]` (variable de station, ou de process qui est allouée comme une variable de station, donnée de pièce, ou variable de mover) := / += / −= valeur de `aParam[1]` selon `I.aArg[1]` (0, 1, 2). Avancer. |
 | `Alarm` | Lever l'alarme de process (code `900 + I.aArg[3]`, texte n° `I.aArg[1]`, gravité `I.aArg[2]`). Avertissement → avancer. Défaut de station → la station passe Aborted. Défaut machine → la machine passe Aborted. |
 | `End` | `I.aArg[1] = 1` (cycle de fond) → `nPC := début de la table`. Sinon → `Done`. |
 
@@ -175,7 +175,7 @@ Pour chaque paramètre `k` de l'instruction, selon `aParam[k].eSource` :
 | `Const` | `fValue` |
 | `Var` | variable de station n° `nIndex` (nombre ; ou position → `stPos`, `aKind[k] := Position`, `aReal[k] := fValue` comme décalage) |
 | `PartData` | donnée n° `nIndex` de la pièce de l'emplacement courant |
-| `MoverData` | *(prévu)* variable n° `nIndex` du mover présent à la station (même traitement que `Var` pour les positions) |
+| `MoverData` | variable n° `nIndex` du mover attribué à l'opération (opération de station : `I.nMover` de la demande ; process général : le mover du fil). Même traitement que `Var` pour les positions (`stPos`, décalage). Refusée dans le cycle de fond, l'initialisation, l'arrêt et le vidage (le compilateur la refuse) |
 | `OpParam` | paramètre n° `nIndex` de l'opération en cours (donné par le process général) |
 | `NamedPos` | position nommée n° `nIndex` de la station → `stPos`, `aKind[k] := Position`, `aReal[k] := fValue` (décalage ajouté à la composante utilisée) |
 | `Speed` | `aKind[k] := SpeedIndex`, `aReal[k] := nIndex` (n° de vitesse, résolu par l'objet) ; `nIndex = 0` → `SpeedPercent` avec `fValue` |
@@ -235,7 +235,7 @@ END_STRUCT END_TYPE
 
 Le séquenceur général ne pose une demande que si la station est en Execute et sans opération en cours. Deux cas :
 - **Sans préparation** (le couple (fonction, opération) n'a pas d'instruction `WaitMover`, `bPrepare = FALSE` dans `aOpMap`) : la demande est posée quand le mover est en position de travail, comme décrit ci-dessus.
-- **Avec préparation** : la demande est posée dès que la position de travail est réservée au mover (§ 5.4, étape 4, et promotion depuis la file, § 5.5) avec `bMoverAtStation = FALSE`. La station répond `Preparing` et exécute les instructions jusqu'à `WaitMover`. Quand le mover est arrivé, le séquenceur général met `bMoverAtStation := TRUE` ; `WaitMover` laisse alors passer (attache le mover et l'emplacement, recopie `nSlot`) et la station répond `Running`. Avant `WaitMover`, aucune instruction ne peut lire ni écrire de donnée de pièce (le compilateur et la validation le garantissent). Si la préparation finit avant l'arrivée, le contexte attend sur `WaitMover` (`WaitCond`) ; si le mover arrive avant, il n'attend rien. La station répond `Running` au cycle suivant, puis `Done` ou `Failed` (opération terminée par un échec traité, la pièce est mauvaise) ou `Aborted` (la station est passée Aborted).
+- **Avec préparation** : la demande est posée dès que la position de travail est réservée au mover (§ 5.4, étape 4, et promotion depuis la file, § 5.5) avec `bMoverAtStation = FALSE`. La station répond `Preparing` et exécute les instructions jusqu'à `WaitMover`. Quand le mover est arrivé, le séquenceur général met `bMoverAtStation := TRUE` ; `WaitMover` laisse alors passer (attache l'emplacement, recopie `nSlot` ; le mover `nMover` est déjà attribué dès la réservation, donc ses variables sont utilisables avant) et la station répond `Running`. Avant `WaitMover`, aucune instruction ne peut lire ni écrire de donnée de pièce (le compilateur et la validation le garantissent). Si la préparation finit avant l'arrivée, le contexte attend sur `WaitMover` (`WaitCond`) ; si le mover arrive avant, il n'attend rien. La station répond `Running` au cycle suivant, puis `Done` ou `Failed` (opération terminée par un échec traité, la pièce est mauvaise) ou `Aborted` (la station est passée Aborted).
 
 ### 4.2 Comportement par état
 
@@ -318,6 +318,9 @@ TYPE ST_MoverCtx : STRUCT
     nRouteRetry  : UDINT;               // nombre de cycles sans station disponible
     tWaitStart   : LINT;
     aSlot        : ARRAY[1..4] OF ST_Part;
+    aVar         : ARRAY[1..16] OF LREAL;        // variables de mover (booléen : 0 ou 1) ; § 5.8
+    aVarPos      : ARRAY[1..16] OF ST_Position;  // valeur des variables de type position
+    aVarId       : ARRAY[1..16] OF UDINT;        // identifiant stable de la variable à ce rang (remappage au déploiement)
 END_STRUCT END_TYPE
 ```
 
@@ -325,7 +328,7 @@ END_STRUCT END_TYPE
 
 | État du mover | Traitement |
 | --- | --- |
-| `Ready` | Exécuter les instructions instantanées (`Jump`, `JumpIfFalse`, `SetVar` sur données de pièce, `LoopInit`, `LoopNext`, `Call`, `Return`, `Alarm`) jusqu'à une instruction `Route`, `WaitCond` ou `End`. `Route` → routage (§ 5.4). `End` → le mover recommence à l'étape 1 (les pièces encore présentes lèvent l'avertissement 910 « Pièce présente en fin de process »). |
+| `Ready` | Exécuter les instructions instantanées (`Jump`, `JumpIfFalse`, `SetVar` sur données de pièce ou variables de mover, `ResetMoverVars`, `LoopInit`, `LoopNext`, `Call`, `Return`, `Alarm`) jusqu'à une instruction `Route`, `WaitCond` ou `End`. `Route` → routage (§ 5.4). `End` → le mover recommence à l'étape 1 (les pièces encore présentes lèvent l'avertissement 910 « Pièce présente en fin de process »). |
 | `Routing` | Attendre l'arrivée (fournie par le gestionnaire de movers). Si l'opération visée a une préparation et que la position de travail est réservée à ce mover : poser la demande dès la réservation (préparation, § 4.1).  Arrivé en file → `Queued` ; arrivé en position de travail → poser la demande d'opération → `AtStation` ; arrivé en tampon → `Buffered`. |
 | `Queued` | Quand la position de travail de la station se libère et que c'est son tour : déplacer vers la position de travail → `Routing`. Ordre de la file : priorité de la fonction visée par chaque mover (la plus haute d'abord), puis ordre d'arrivée. |
 | `Buffered` | Réessayer le routage à chaque cycle (§ 5.4). |
@@ -373,6 +376,26 @@ Pas un état PackML : un indicateur `bDrain` du séquenceur général, valable e
 - **Effet** : même verrou que la fin d'OF (§ 5.6) et que l'arrêt du chargement qualité : une instruction `Route` vers une fonction de rôle Entrée n'est pas lancée, le mover attend en tampon (`Buffered`, motif « fin des pièces »). Les opérations d'entrée déjà demandées vont à leur terme.
 - **Fin** : quand `bDrain` et qu'aucun mover ne porte de pièce et qu'aucune opération de fonction Entrée n'est en cours : commande Stop automatique de la machine, raison d'arrêt « machine vidée », balise bleu clignotant, événement « Machine vidée » pour la HMI. Un mover `ToEmpty` portant des pièces retient la fin tant que l'opérateur n'a pas confirmé leur retrait.
 - **Publication** : `bDrain` et `nPartsInProcess` (pièces portées par les movers) dans le statut de la machine, pour que la HMI affiche le compte à rebours.
+
+### 5.8 Variables de mover
+
+**Configuration** (dans `ST_MachineData`, `06` § 2) : `aMoverVar[1..16]` de `ST_MoverVarDef` (identifiant stable, nom, type, unité, valeur initiale, règle de remise à zéro `Never`, `OnDeploy`, `OnEmpty`). Le rang d'une variable est sa place dans cette liste ; le compilateur traduit l'identifiant en rang (`nIndex` des sources et cibles `MoverData`).
+
+**Accès** :
+- Lecture (`MoverData` en source de valeur ou dans une condition) : `aVar[nIndex]` du mover attribué ; une variable de type position donne `stPos` (= `aVarPos[nIndex]`) avec l'éventuel décalage de la valeur, comme une variable de station.
+- Écriture (`SetVar` ou liaison d'un résultat vers la cible `MoverData`) : instantanée, comme pour les données de pièce. Un type incompatible (position écrite dans un nombre…) est refusé à la compilation (V014).
+- Le séquenceur de station donne accès au mover `I.nMover` dès la demande, donc dès la préparation (§ 4.1) ; le séquenceur général au mover du fil qu'il exécute. Dans un contexte sans mover (cycle de fond, initialisation, arrêt, vidage), l'instruction n'existe pas : le compilateur la refuse.
+- Accès simultanés : deux branches parallèles d'une opération peuvent lire la même variable ; si deux écrivent, la dernière écriture gagne (la validation avertit, V117).
+
+**Remise à zéro** (valeur initiale de `aMoverVar`) :
+- `OnEmpty` : à chaque fois qu'un emplacement devient vide et que tous les emplacements du mover sont alors vides : clôture des pièces déchargées (§ 5.5, étape 3), confirmation de retrait d'un mover `ToEmpty` (§ 5.3), pièce marquée « retirée » par une opération (§ 5.5, étape 4 de l'ordre d'exécution).
+- `OnDeploy` : à l'activation d'un déploiement (`FB_Loader`, § 10).
+- Étape « Réinitialiser les variables du mover » : instruction `ResetMoverVars` (`aArg[1]` = rang de la variable, 0 = toutes celles dont la règle n'est pas `Never`). Une variable nommée explicitement est remise à zéro quelle que soit sa règle.
+- Jamais par Reset, Stop, Abort, Clear, coupure ou redémarrage : les movers sont en mémoire persistante.
+
+**Création et suppression de movers** : un mover ajouté au déploiement prend les valeurs initiales de toutes les variables.
+
+**Commande HMI** (`GVL_Hmi.stMoverVar`, `06` § 6.2) : en Maintenance, modifier la valeur d'une variable d'un mover, ou la remettre à sa valeur initiale. Acceptée si la machine est Stopped ou Idle ; refusée sinon (le mover est peut-être en cours de lecture).
 
 ## 6. Gestionnaire de movers — FB_MoverManager
 
@@ -495,14 +518,14 @@ END_STRUCT END_TYPE
 
 - `FB_TraceBuffer` : tampon circulaire de 256 traces. La HMI lit à partir du dernier `nSeq` reçu. Si le tampon déborde, la HMI le voit (trou dans les `nSeq`) et l'enregistre comme événement.
 - Courbes de presse : tampon de 8 courbes de 1 000 points (force, course), identifiées par `nCurveId`, lues par la HMI juste après la trace.
-- Persistance (`VAR_GLOBAL PERSISTENT`) : contextes des movers, pièces, compteurs (objets compteurs persistants, compteurs d'OF), positions nommées apprises, overrides. La configuration et les tables déployées sont aussi persistantes : après une coupure, le PLC redémarre Stopped avec le dernier déploiement.
+- Persistance (`VAR_GLOBAL PERSISTENT`) : contextes des movers (avec leurs variables de mover), pièces, compteurs (objets compteurs persistants, compteurs d'OF), positions nommées apprises, overrides. La configuration et les tables déployées sont aussi persistantes : après une coupure, le PLC redémarre Stopped avec le dernier déploiement.
 
 ## 10. Activation d'un déploiement — FB_Loader
 
 1. Refus si la machine n'est pas Stopped.
 2. La HMI écrit la configuration et les tables dans une **zone d'attente** (`GVL_Hmi.stStaging`), puis demande la vérification avec la somme de contrôle CRC-32 de chaque bloc.
 3. Le chargeur vérifie : sommes de contrôle ; types connus ; n° locaux uniques et parents valides (parents avant enfants) ; pools suffisants ; signaux et éléments matériels valides et sans double écriture ; tables : opérations connues, cibles de saut dans la table, n° d'objet et d'action valides pour le type, conditions, textes et positions référencés existants, Fork/Join appariés, profondeur d'appel ≤ 4.
-4. Tout est bon : copie atomique de la zone d'attente vers la zone active, appel de `FB_ObjectFactory`, réinitialisation des contextes, des variables de station (valeurs initiales) ; les movers et leurs pièces sont conservés si la structure du process général n'a pas changé de taille, sinon ils sont remis à l'étape 1 avec une alarme d'information.
+4. Tout est bon : copie atomique de la zone d'attente vers la zone active, appel de `FB_ObjectFactory`, réinitialisation des contextes, des variables de station (valeurs initiales) ; les movers et leurs pièces sont conservés si la structure du process général n'a pas changé de taille, sinon ils sont remis à l'étape 1 avec une alarme d'information. **Variables de mover** : pour chaque mover et chaque variable de la nouvelle liste, la valeur est reprise de l'ancienne variable de même identifiant (`aVarId`) et de même type, sauf si sa règle est `OnDeploy` (valeur initiale) ; une variable nouvelle ou dont le type a changé prend sa valeur initiale ; une variable supprimée disparaît.
 5. Réponse à la HMI : succès, ou refus avec la liste des erreurs (code, station, table, instruction) ; en cas de refus, la zone active n'a pas changé.
 
 ### 10.1 Calibrations
@@ -531,6 +554,7 @@ END_STRUCT END_TYPE
 | `MAX_PLANAR_POS` | 128 |
 | `MAX_VARS` | 64 par station |
 | `MAX_PART_DATA` | 32 |
+| `MAX_MOVER_VARS` | 16 par mover |
 | `MAX_INTERLOCKS` | 32 par station |
 | `MAX_CTX` | 8 par station |
 | `MAX_CALL_DEPTH` | 4 |

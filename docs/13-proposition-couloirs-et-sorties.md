@@ -99,6 +99,8 @@ Chaque étape : tests de compilation (allocation, portée), tests de validation,
 
 ## 5. Variables de mover (demande du 2026-10-17)
 
+> **Spécifié de façon ferme le 2026-10-17 (D80)** : la référence est `docs/05` § 5.8 et `docs/02` § 5.3. Le texte ci-dessous est conservé comme historique.
+
 **Besoin** : un mover doit pouvoir porter des informations propres, lisibles et modifiables par les stations, pour déplacer des informations d'une station à l'autre (un réglage choisi en amont, un offset propre à ce mover, un compteur de passages, un drapeau « à repasser »…).
 
 **Ce qui existe** : les **données de pièce** (32 au plus, définies dans la configuration machine) sont attachées à la pièce d'un emplacement du mover, avec le Verdict et l'Identifiant. Elles suivent la pièce, disparaissent avec elle, et il y en a un jeu par emplacement (4 emplacements au plus). Elles ne couvrent donc pas une information qui appartient au **mover** lui-même et qui reste quand le mover est vide ou change de pièce.

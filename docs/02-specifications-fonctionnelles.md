@@ -152,10 +152,10 @@ La préparation n'est pas un type de process : c'est le début d'une opération,
 | Groupe de palette | Étapes |
 | --- | --- |
 | Un groupe par objet ou module de premier niveau | Ses actions de base, celles de ses enfants, et ses fonctions de module (et fonctions personnalisées) |
-| Logique | Mover requis, Attendre condition, Si / Sinon, Répéter N fois, En parallèle, Appeler sous-process, Définir variable, Signaler défaut, Fin |
+| Logique | Mover requis, Réinitialiser les variables du mover, Attendre condition, Si / Sinon, Répéter N fois, En parallèle, Appeler sous-process, Définir variable, Signaler défaut, Fin |
 
 - Une étape a des paramètres (ceux de l'action), des liaisons de résultats (chaque résultat, appelé sortie de l'étape, peut être rangé dans une variable de process, une variable de station, une donnée de pièce, le verdict ou l'identifiant ; l'éditeur crée la variable à la demande), un timeout (défaut du catalogue) et une politique d'échec.
-- Mover requis : séparateur d'une opération. Les étapes qui le précèdent forment la préparation : elles ne peuvent lire ni écrire les données de la pièce (Verdict, Identifiant, « pièce retirée », données de pièce), ni désigner l'emplacement ; elles peuvent utiliser les variables, les positions, les paramètres d'opération et tous les objets de la station. Une seule étape Mover requis par opération, au premier niveau de la séquence (ni dans un bloc, ni dans un sous-process), et seulement dans une opération.
+- Mover requis : séparateur d'une opération. Les étapes qui le précèdent forment la préparation : elles ne peuvent lire ni écrire les données de la pièce (Verdict, Identifiant, « pièce retirée », données de pièce), ni désigner l'emplacement ; elles peuvent utiliser les variables, les variables du mover réservé, les positions, les paramètres d'opération et tous les objets de la station. Une seule étape Mover requis par opération, au premier niveau de la séquence (ni dans un bloc, ni dans un sous-process), et seulement dans une opération.
 - À l'arrêt (Stop), la préparation déjà faite est perdue : le process d'Arrêt doit remettre la station en état (par exemple reposer la pièce prise). En pause (Pause), la préparation va jusqu'à l'étape Mover requis et attend.
 - En parallèle : 2 à 4 branches ; les branches s'attendent à la fin du bloc. Deux branches ne peuvent pas utiliser le même objet (erreur de validation). Blocs imbriqués autorisés jusqu'à 3 niveaux, dans la limite de 8 contextes d'exécution par station.
 - Si / Sinon : une condition, deux branches (Alors, Sinon) ; la branche Sinon peut être vide.
@@ -167,7 +167,13 @@ La préparation n'est pas un type de process : c'est le début d'une opération,
 - Variables de station : nom, type (nombre, booléen, position), valeur initiale. Elles sont partagées par tous les process de la station (c'est ainsi que le cycle de fond prépare une pièce pour l'opération).
 - Variables de process : mêmes champs, mais visibles seulement dans leur process (portée par défaut d'une variable créée depuis une sortie d'étape). Le compilateur les place après les variables de station, une place chacune. Au total, variables de station, de process et cachées (compteurs de boucle) ne dépassent pas 64 par station. Rendre une variable de process « partagée » en fait une variable de station de même identifiant.
 - Une variable de process garde sa valeur d'un passage à l'autre ; la validation avertit (V115) quand elle est lue sur un chemin où elle n'est pas écrite avant, et refuse (V020) son usage dans un autre process.
-- *(Prévu, pas encore codé.)* Variables de mover : jusqu'à 16, déclarées dans la configuration machine (nom, type nombre, booléen ou position, unité, valeur initiale, remise à zéro : jamais, au déploiement ou quand le mover est vidé). Chaque mover a son jeu de valeurs, qui persiste d'un Stop à un Start. Une opération lit et écrit celles du mover présent à son poste ; le process général peut les écrire ; le cycle de fond ne peut pas les utiliser. Conception : `docs/13` § 5.
+- **Variables de mover** : jusqu'à 16, déclarées dans la configuration machine (Studio machine › Variables de mover) : nom, type (nombre, booléen, position), unité, valeur initiale, **règle de remise à zéro**. Chaque mover a son propre jeu de valeurs ; elles appartiennent au mover (pas à la pièce), restent quand il est vide et changent de pièce, et persistent d'un Stop à un Start et d'une coupure. Règles de remise à zéro, au choix pour chaque variable :
+  - **Jamais** : la valeur survit au Stop, au Reset, à un redéploiement (reconnue par l'identifiant de la variable) et à un redémarrage du PLC (exemple : décalage de calibration propre au mover).
+  - **Au déploiement** : remise à la valeur initiale à chaque activation d'un déploiement.
+  - **Quand le mover est vide** : remise à la valeur initiale dès que la dernière pièce du mover le quitte (sortie, rebut, retrait confirmé ou pièce marquée « retirée »).
+  - Un simple Reset ou Stop de la machine ne remet jamais une variable à zéro. L'étape « Réinitialiser les variables du mover » les remet à leur valeur initiale (une variable choisie, ou toutes celles dont la règle n'est pas « jamais »).
+  - **Accès** : une opération lit et écrit les variables du mover qui lui est attribué (dès la réservation de la position de travail, donc aussi dans la préparation) ; le process général lit et écrit celles du mover dont il exécute le fil ; une calibration lancée avec un mover y a accès. Le cycle de fond, l'initialisation, l'arrêt et le vidage n'ont pas de mover : leur usage y est refusé (V026). Elles s'emploient comme valeur, dans une condition, comme cible d'une sortie d'étape et dans « Définir variable », comme une variable de station.
+  - **Modification à la main** : en Maintenance, depuis le tiroir du mover, droit `mover.var.edit` (niveau Régleur). Journalisée.
 - Une opération peut avoir jusqu'à 8 paramètres (nom, type, unité), donnés par l'étape du process général qui l'appelle (par exemple la recette de presse à utiliser).
 - Variables système en lecture : mover présent, emplacement courant, numéro d'OF, compteur de cycles, temps de la dernière opération.
 - Une opération lit et écrit les données de pièce de l'emplacement courant (Verdict, Identifiant, et les données définies dans la configuration machine). Elle peut marquer la pièce « retirée » (rebut interne à la station : la pièce quitte la machine à cette station).
@@ -415,6 +421,7 @@ Décision : Abort est accepté aussi depuis Stopped et Clearing (un arrêt d'urg
 | Acquitter un avertissement | `alarm.ack` | 0 |
 | Mode manuel : actions | `manual.execute` | 1 |
 | Mode manuel : jog | `manual.jog` | 1 |
+| Modifier une variable de mover à la main | `mover.var.edit` | 1 |
 | Mode pas à pas | `step.use` | 1 |
 | Apprendre une position | `position.teach` | 1 |
 | Saisir une position à la main | `position.edit` | 2 |
