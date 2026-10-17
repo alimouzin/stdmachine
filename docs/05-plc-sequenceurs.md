@@ -359,6 +359,14 @@ Paramètres de l'instruction : fonction `aArg[1]`, opération `aArg[2]`, emplace
 - Quand bonnes + en cours ≥ quantité : une instruction `Route` vers une fonction de rôle Entrée n'est plus lancée ; le mover attend en tampon (`Buffered`, avec le motif « fin d'OF »).
 - Quand plus aucune pièce n'est en cours et que l'OF est complet : commande Stop automatique, balise bleu clignotant, événement « OF terminé » pour la HMI.
 
+### 5.7 Fin des pièces en cours (`Drain`)
+
+Pas un état PackML : un indicateur `bDrain` du séquenceur général, valable en Execute et Held.
+- **Pose** : la commande `DrainStart` (HMI) positionne `bDrain` si la machine est en Execute ou Held ; refusée sinon. `DrainCancel` le remet à FALSE. `bDrain` est aussi remis à FALSE à l'entrée de Stopping, Stopped et Aborted.
+- **Effet** : même verrou que la fin d'OF (§ 5.6) et que l'arrêt du chargement qualité : une instruction `Route` vers une fonction de rôle Entrée n'est pas lancée, le mover attend en tampon (`Buffered`, motif « fin des pièces »). Les opérations d'entrée déjà demandées vont à leur terme.
+- **Fin** : quand `bDrain` et qu'aucun mover ne porte de pièce et qu'aucune opération de fonction Entrée n'est en cours : commande Stop automatique de la machine, raison d'arrêt « machine vidée », balise bleu clignotant, événement « Machine vidée » pour la HMI. Un mover `ToEmpty` portant des pièces retient la fin tant que l'opérateur n'a pas confirmé leur retrait.
+- **Publication** : `bDrain` et `nPartsInProcess` (pièces portées par les movers) dans le statut de la machine, pour que la HMI affiche le compte à rebours.
+
 ## 6. Gestionnaire de movers — FB_MoverManager
 
 ### 6.1 Positions planaires

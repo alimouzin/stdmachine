@@ -338,7 +338,7 @@ Toute commande HMI → PLC suit le même schéma :
 | Symbole | Type | Rôle |
 | --- | --- | --- |
 | `GVL_Hmi.nHmiHeartbeat` | UDINT | Incrémenté toutes les 500 ms. Perte > 5 s : événement « HMI déconnectée » ; la production continue ; un jog en cours s'arrête |
-| `GVL_Hmi.stCmd` | `ST_CmdRequest` | Commande d'état : cible (machine ou station n), commande (Reset, Start, Stop, Hold, Abort, Clear), changement de mode, utilisateur |
+| `GVL_Hmi.stCmd` | `ST_CmdRequest` | Commande d'état : cible (machine ou station n), commande (Reset, Start, Stop, Hold, Abort, Clear, ainsi que `DrainStart` et `DrainCancel` pour la machine seulement, `05` § 5.7), changement de mode, utilisateur |
 | `GVL_Hmi.stOverride` | `ST_OverrideRequest` | Nœud (machine, station n, objet n de station m), valeur, override manuel ou non |
 | `GVL_Hmi.aManual[0..16]` | `ST_ManualRequest` | Canal manuel de la machine (0) et de chaque station |
 | `GVL_Hmi.nJogAlive` | UDINT | Garde du jog, incrémentée toutes les 100 ms bouton tenu |

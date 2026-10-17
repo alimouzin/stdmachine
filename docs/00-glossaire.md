@@ -49,6 +49,7 @@ Ce glossaire fixe le sens des mots utilisés dans tous les documents, dans le co
 | Bloc | `Block` | Structure de logique qui contient des branches d'étapes : En parallèle, Si / Sinon, Répéter. |
 | Branche | `Branch` | Suite d'étapes à l'intérieur d'un bloc. |
 | Couloir | `Lane` | Colonne de l'éditeur en mode d'affichage « Couloirs » (option). Niveau station : un couloir par objet de premier niveau (module ou objet seul) plus un couloir Logique. Niveau machine : un couloir par fonction. Le mode par défaut est le **Flux** : une seule colonne, sans couloirs ; les colonnes n'existent que dans les blocs En parallèle et Si / Sinon. Le couloir est une mise en page, pas une notion du modèle. |
+| Fin des pièces en cours | `Drain` | Mode d'arrêt de la machine : plus aucune pièce n'est chargée, les pièces déjà engagées terminent leur process, puis la machine s'arrête (Stop automatique). Bouton « Finir les pièces ». À ne pas confondre avec le process de **vidage** (état Clearing) ni avec un mover « à vider » : le mot « vider » n'est pas employé pour ce mode. |
 | Flux | `Flow` | Mode d'affichage par défaut de l'éditeur de process : cartes empilées dans une colonne, une pastille sur chaque carte rappelle l'objet concerné. |
 | Pastille d'objet | `ObjectChip` | Icône et nom de l'objet de premier niveau, portés par chaque carte en mode Flux. |
 | Variable de station | `StationVar` | Mémoire d'une station partagée par tous ses process (par exemple la position trouvée par la vision, utilisée ensuite par la prise). |
