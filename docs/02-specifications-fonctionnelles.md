@@ -291,13 +291,13 @@ Décision : Abort est accepté aussi depuis Stopped et Clearing (un arrêt d'urg
 
 **Modes** : Production et Maintenance, au niveau machine, changés seulement à l'état Stopped. Toutes les stations suivent le mode de la machine, sauf une station mise hors production pour une intervention, qui peut passer seule en Maintenance (`12-forcages-et-etats-declares.md` § 3).
 
-**Fin des pièces en cours** (`Drain`) : mode d'arrêt de la machine, à côté d'Arrêter et de Pause. Commande « Finir les pièces », acceptée en Execute et Held (droit `machine.run`).
+**Fin des pièces en cours** (`Drain`) : mode d'arrêt de la machine, à côté d'Arrêter et de Pause. Commande « Finir les pièces », acceptée en Execute, Held et **Idle** (droit `machine.run`). Depuis Idle, le mode est armé : le Démarrer suivant met la machine en Execute sans charger de nouvelle pièce, finit celles qui sont restées sur les movers, puis la machine s'arrête (cas d'une machine arrêtée avec des pièces en cours : Réarmer, Finir les pièces, Démarrer). Si aucune pièce n'est en cours, la machine s'arrête aussitôt après le Démarrer.
 - Plus aucune pièce n'est chargée : les opérations des fonctions de rôle Entrée ne sont plus lancées (comme à la fin d'un OF ou à l'« arrêt du chargement » qualité) ; une opération d'entrée déjà lancée se termine normalement, sa pièce est donc finie aussi.
 - Toutes les autres stations continuent de produire : chaque pièce engagée parcourt son process jusqu'à sa sortie (bonne) ou au rebut (mauvaise). Les movers vides attendent en tampon, motif « Fin des pièces ».
 - Quand plus aucune pièce n'est en cours, la machine exécute **Arrêter** automatiquement (cause « Machine vidée »), la balise passe en bleu clignotant et la HMI affiche « Machine vidée : plus aucune pièce en cours ». À l'arrêt, aucun mover ne porte de pièce.
 - « Annuler la fin » (même droit) lève le mode tant que la machine n'est pas arrêtée : le chargement reprend. Arrêter, Abort et un défaut machine lèvent aussi le mode (la machine n'est alors pas forcément vide).
 - Un mover « à vider » (pièces à retirer par l'opérateur) ou une fonction sans station disponible empêche la fin : la HMI affiche ce qui retient la machine.
-- L'OF n'est pas modifié : il reste En cours avec ses compteurs, et reprend au prochain Démarrer. Le mode est volontairement distinct de l'état Held (qui fige les pièces en cours de process) et de Stopping (qui laisse les pièces sur les movers).
+- L'OF n'est pas modifié (décidé) : il reste En cours avec ses compteurs, et reprend au prochain Démarrer. Le mode est volontairement distinct de l'état Held (qui fige les pièces en cours de process) et de Stopping (qui laisse les pièces sur les movers).
 
 **Commandes de station** : en Production, les commandes viennent de la machine, sauf pour la réintégration d'une station Aborted pendant que la machine produit (Acquitter, Réarmer, Démarrer cette station seule). En Maintenance, chaque station se commande seule.
 
