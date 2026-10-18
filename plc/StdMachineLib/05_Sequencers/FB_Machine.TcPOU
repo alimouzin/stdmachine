@@ -120,6 +120,8 @@ FOR n := 1 TO GVL_Const.MAX_STATIONS DO
 END_FOR
 fbQuality.Init(GVL_Active.stMachine, fbAlarms);
 fbMgr.Init(GVL_Active.stMachine, _ipPlanar);
+GVL_IoRef.ipPlanar := _ipPlanar;
+GVL_IoRef.ipMovers := fbMgr;
 fbSeq.Init(GVL_Active.stMachine, fbMgr, fbQuality, fbAlarms, fbTraces);
 fbCalib.Init(GVL_Active.stMachine, fbAlarms, fbMgr);
 fbManual.Init(nStation := 0, ipHost := THIS^);
@@ -245,8 +247,7 @@ END_IF
 
 // Système planaire
 UpdateOverride();
-_ipPlanar.Cycle(EffectiveOverride);
-fbMgr.Cycle(EffectiveOverride);
+fbMgr.Cycle(EffectiveOverride);         // fait aussi tourner le pilote planaire
 _PlanarAlarms();
 
 // Machine d'états

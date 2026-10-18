@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_Curves" Id="{fdac9464-6754-5c74-9074-5bf470a17f24}">
+    <Declaration><![CDATA[// Courbes de presse (docs/05 § 9) : tampon circulaire GVL_Hmi.aCurve[1..8], dernière courbe de chaque station
+// pour la trace de l'opération (ST_TraceRecord.nCurveId).
+{attribute 'qualified_only'}
+VAR_GLOBAL
+    nNextCurveId : UDINT := 1;
+    nNextSlot : USINT := 1;
+    aLastCurveId : ARRAY[0..GVL_Const.MAX_STATIONS] OF UDINT;
+    aLastCurveTime : ARRAY[0..GVL_Const.MAX_STATIONS] OF LINT;      // début de l'enregistrement (UTC)
+END_VAR
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

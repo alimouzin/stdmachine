@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PlanarMover" Id="{79a9d59a-ca2b-5679-92f3-21b95ab07c20}" SpecialFunc="None">
+    <Declaration><![CDATA[// Mover, type 14, niveau machine (docs/03 § 4.4) : mode manuel des movers (docs/05 § 6.5). L'élément matériel
+// D est le n° du mover ; les mouvements passent par le gestionnaire de movers (GVL_IoRef.ipMovers), qui tient
+// l'occupation des positions planaires à jour.
+FUNCTION_BLOCK FB_PlanarMover EXTENDS FB_ObjectBase
+VAR
+    _nMover : USINT;
+    _stTarget : ST_Position;
+    _stLast : ST_Position;
+    _fSpeed : LREAL;                // mm/s, estimée d'un cycle à l'autre
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{7d430ec6-5a85-5bff-b064-6285ecb75580}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nMover := INT_TO_USINT(LIMIT(0, _refCfg.nDevice, GVL_Const.MAX_MOVERS));
+_OnConfigure := _nMover >= 1;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{909e696e-77b5-54e6-91b8-7413853977a2}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+VAR
+    fPct : LREAL := 100.0;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF GVL_IoRef.ipMovers = 0 THEN
+    _Fail(GVL_Catalog.Err_NotWired, 0);
+    _OnStart := E_ActStatus.Error;
+    RETURN;
+END_IF
+CASE nAction OF
+    GVL_Catalog.PlanarMover_MoveVersPosition:
+        IF _stParams.aKind[1] <> E_ParamKind.Position THEN
+            _Fail(GVL_Catalog.Err_BadParam, 1);
+            _OnStart := E_ActStatus.Error;
+            RETURN;
+        END_IF
+        _stTarget := _stParams.stPos;
+        IF _stParams.aKind[2] = E_ParamKind.SpeedPercent OR _stParams.aKind[2] = E_ParamKind.Real THEN fPct := _stParams.aReal[2]; END_IF
+        IF NOT GVL_IoRef.ipMovers.MoveFree(_nMover, _stTarget, fPct * _fEffOverride / 100.0) THEN
+            _Fail(GVL_Catalog.Err_NotReady, 0);         // position tenue par un autre mover, ou système inactif
+            _OnStart := E_ActStatus.Error;
+            RETURN;
+        END_IF
+        _OnStart := E_ActStatus.Busy;
+    GVL_Catalog.PlanarMover_Stop:
+        GVL_IoRef.ipMovers.StopMover(_nMover);
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.PlanarMover_LirePosition:
+        _SetResultPos(1, GVL_IoRef.ipMovers.Position(_nMover));
+        _OnStart := E_ActStatus.Done;
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{108d425a-0596-5b36-bd1c-6f708a1f9609}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+VAR
+    stPos : ST_Position;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnCycle := E_ActStatus.Busy;
+IF nAction <> GVL_Catalog.PlanarMover_MoveVersPosition THEN _OnCycle := E_ActStatus.Done; RETURN; END_IF
+stPos := GVL_IoRef.ipMovers.Position(_nMover);
+IF NOT GVL_IoRef.ipMovers.Moving(_nMover) THEN
+    IF ABS(stPos.fX - _stTarget.fX) <= 0.5 AND ABS(stPos.fY - _stTarget.fY) <= 0.5 THEN
+        _OnCycle := E_ActStatus.Done;
+    ELSE
+        _Fail(GVL_Catalog.Err_Aborted, 0);              // arrêté avant la cible (collision, arrêt du système)
+        _OnCycle := E_ActStatus.Error;
+    END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnAbort" Id="{d8af1f10-185f-5c0b-b514-982adfc3b6ba}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnAbort
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF GVL_IoRef.ipMovers <> 0 THEN GVL_IoRef.ipMovers.StopMover(_nMover); END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{2fc59144-5162-57b1-b438-6f4194d1f7e9}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+VAR
+    stPos : ST_Position;
+    fDt : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF GVL_IoRef.ipMovers = 0 THEN RETURN; END_IF
+stPos := GVL_IoRef.ipMovers.Position(_nMover);
+fDt := F_CycleMs();
+IF fDt > 0 THEN _fSpeed := SQRT(EXPT(stPos.fX - _stLast.fX, 2) + EXPT(stPos.fY - _stLast.fY, 2)) * 1000.0 / fDt; END_IF
+_stLast := stPos;
+_stStatus.aValue[1] := stPos.fX;
+_stStatus.aValue[2] := stPos.fY;
+_stStatus.aValue[3] := stPos.fC;
+_stStatus.aValue[4] := _fSpeed;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

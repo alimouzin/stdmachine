@@ -27,6 +27,13 @@ END_VAR
       <Declaration><![CDATA[METHOD StopAll
 ]]></Declaration>
     </Method>
+    <Method Name="StopMover" Id="{805f4b8f-c407-58aa-8384-9de63a2828df}">
+      <Declaration><![CDATA[METHOD StopMover                    // arrêt contrôlé d'un mover (mode manuel)
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+    </Method>
     <Method Name="AckError" Id="{91f973cb-223b-5e54-b3f4-a610e2754a14}">
       <Declaration><![CDATA[METHOD AckError
 ]]></Declaration>

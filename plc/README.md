@@ -81,7 +81,10 @@ La tâche PLC doit avoir un temps de cycle de 1 à 10 ms. La zone active (`GVL_A
 | Chargeur, sommes de contrôle, fabrique d'objets, pools, restauration et publication des valeurs rémanentes | Écrit (`FB_Loader`, `FB_Crc32`, `FB_ObjectFactory`, `FB_DefaultPools`) |
 | Calibration machine | Écrit (`FB_MachineCalib`) |
 | Compteurs de production et de temps (`FB_PlantPublisher`, `GVL_Plant`) | À écrire |
-| Objets à communication (vision, Keyence, lecteur, presse, chargeur vibrant, magasin, robot Stäubli…) | À écrire ; protocoles à définir pour Stäubli, visseuse, distributeur, marquage |
+| Objets système planaire et mover (niveau machine) | Écrit (`FB_PlanarSystem`, `FB_PlanarMover`) |
+| Vision Keyence IV et palpeur GT2 (mode signaux), pesage (analogique), éclairage, presse avec courbe, magasin | Écrit |
+| Asyril Eye+, chargeur vibrant (image process ou interface à préciser), mode réseau Keyence et pesage | À écrire |
+| Robot Stäubli, lecteur de code, visseuse, distributeur, marquage | Protocoles à définir |
 | Tests TcUnit | À écrire |
 
 ## Hypothèses à confirmer
@@ -90,7 +93,11 @@ La tâche PLC doit avoir un temps de cycle de 1 à 10 ms. La zone active (`GVL_A
 - Sécurités (`FB_Safety`) : un seul canal par circuit ; l'erreur 101 « Incohérence de canaux » n'est pas encore produite.
 - Pince électrique : refusée à la configuration tant que son interface n'est pas définie.
 - Axe : l'override passe par `MC_Power.Override` (au lieu de `MC_SetOverride` cité dans `docs/04` § 12) ; même effet, un bloc de moins.
-- Types sans bloc dans la bibliothèque (système planaire et mover comme objets, robot externe, vision, palpeur, Asyril, pesage, lecteur, éclairage, presse, visseuse, distributeur, marquage, chargeur vibrant, magasin) : leur pool par défaut a une taille 0, un déploiement qui en contient est refusé (erreur 7).
+- Types sans bloc dans la bibliothèque (robot externe, Asyril Eye+, lecteur de code, visseuse, distributeur, marquage, chargeur vibrant) : leur pool par défaut a une taille 0, un déploiement qui en contient est refusé (erreur 7).
+- Keyence IV et GT2, pesage : seul le mode signaux (ou analogique) est écrit ; le mode réseau refuse la configuration. Keyence IV : « Sélectionner programme » mémorise le n° sans le transmettre (pas de lignes de programme en mode signaux).
+- Palpeur GT2 : valeur brute de l'entrée analogique en micromètres. Pesage : valeur brute en dixièmes de l'unité P1 ; mesure stable si les 10 dernières valeurs tiennent dans 0,5 unité.
+- Presse : valeur brute de la force en newtons ; position de repos = course 0 de l'axe (la fiche parle d'une position nommée sans dire laquelle : proposer un paramètre « Position nommée de repos ») ; axe référencé par TwinCAT et alimenté tant que l'objet n'est ni en erreur ni désactivé.
+- Magasin : la première case est la position nommée P5 de la station ; un plateau neuf (Présenter) libère toutes les cases.
 - Écarts avec `docs/05` et `docs/06` adoptés comme le simulateur : voir D93 ; décisions propres à la bibliothèque : D94.
 
 ## Contrôles faits sans compilateur

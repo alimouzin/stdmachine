@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Light" Id="{bbb57970-f398-5d98-83d6-ff83458b872e}" SpecialFunc="None">
+    <Declaration><![CDATA[// Éclairage, type 35 (docs/03 § 6.6) : S1 DO commande, S2 AO intensité (optionnel, 0 à 100 % = 0 à 32767),
+// S3 DO synchronisation caméra (optionnel, active pendant un flash). État sûr : éteint.
+FUNCTION_BLOCK FB_Light EXTENDS FB_ObjectBase
+VAR
+    _bOn : BOOL;
+    _bSync : BOOL;
+    _fIntensity : LREAL;            // %
+    _fFlashMs : LREAL;
+    _fElapsed : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{87ab404d-f4ea-5598-aefc-6710d3dbc164}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fIntensity := LIMIT(0.0, _refCfg.aParam[2], 100.0);
+_OnConfigure := F_SignalValid(_refCfg.aSignal[1], E_SignalKind.DO);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_DefaultTimeoutMs" Id="{3f2720d8-b8df-54bb-83e8-7ade06e2f388}">
+      <Declaration><![CDATA[METHOD PROTECTED _DefaultTimeoutMs : UDINT
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nAction = GVL_Catalog.Light_Flasher THEN
+    _DefaultTimeoutMs := LREAL_TO_UDINT(MAX(0.0, _ParamReal(1, _refCfg.aParam[3]))) + 200;
+ELSE
+    _DefaultTimeoutMs := 0;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{90ee7f80-c165-506d-8efd-6ccf99e12dec}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE nAction OF
+    GVL_Catalog.Light_Allumer:
+        _fIntensity := LIMIT(0.0, _ParamReal(1, _refCfg.aParam[2]), 100.0);
+        _bOn := TRUE;
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.Light_Eteindre:
+        _bOn := FALSE;
+        _bSync := FALSE;
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.Light_ReglerIntensite:
+        _fIntensity := LIMIT(0.0, _ParamReal(1, _fIntensity), 100.0);
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.Light_Flasher:
+        _fFlashMs := MAX(0.0, _ParamReal(1, _refCfg.aParam[3]));
+        _fIntensity := LIMIT(0.0, _ParamReal(2, _refCfg.aParam[2]), 100.0);
+        _fElapsed := 0;
+        _bOn := TRUE;
+        _bSync := TRUE;
+        _OnStart := E_ActStatus.Busy;
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{a3f892dd-5fb6-5155-8fc8-ecdd2e989ca5}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fElapsed := _fElapsed + F_CycleMs();
+IF _fElapsed >= _fFlashMs THEN
+    _bOn := FALSE;
+    _bSync := FALSE;
+    _OnCycle := E_ActStatus.Done;
+ELSE
+    _OnCycle := E_ActStatus.Busy;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnAbort" Id="{b49ec69b-06d9-578d-a11b-89cfd9b7df5d}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnAbort
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bOn := FALSE;
+_bSync := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_SafeState" Id="{37f83266-a1f1-5fa8-9800-c623e341e28d}">
+      <Declaration><![CDATA[METHOD PROTECTED _SafeState
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bOn := FALSE;
+_bSync := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_WriteHw" Id="{de186d11-cbcc-5d49-aa25-eb1e6a68cfcc}">
+      <Declaration><![CDATA[METHOD PROTECTED _WriteHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[F_WriteDO(_refCfg.aSignal[1], _bOn);
+F_WriteAO(_refCfg.aSignal[2], LREAL_TO_INT(_fIntensity * 32767.0 / 100.0));
+F_WriteDO(_refCfg.aSignal[3], _bSync);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{b0d9ee6f-36d1-5e90-bf76-8f3e1e262788}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := SEL(_bOn, 0.0, 1.0);
+_stStatus.aValue[2] := _fIntensity;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

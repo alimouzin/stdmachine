@@ -86,6 +86,17 @@ END_VAR
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="StopMover" Id="{8df05ac7-4d71-560a-b532-d9d43fabab0e}">
+      <Declaration><![CDATA[METHOD StopMover
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN _aMoving[nMover] := FALSE; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="AckError" Id="{19134d49-c1f1-5b7b-8ae6-0bcad02c1747}">
       <Declaration><![CDATA[METHOD AckError
 ]]></Declaration>

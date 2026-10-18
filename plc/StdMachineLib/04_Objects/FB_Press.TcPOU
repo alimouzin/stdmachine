@@ -1,0 +1,442 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Press" Id="{96f34f86-b783-536a-896b-090b5fb1dc24}" SpecialFunc="None">
+    <Declaration><![CDATA[// Presse, type 40 (docs/03 § 7.1) : D axe NC de la presse, S1 AI capteur de force. Recettes déployées dans
+// GVL_Active.aPressRecipe (8 segments au plus : course cible ou force cible, vitesse, fenêtres de contrôle).
+// Chaque exécution enregistre la courbe force/course (1 000 points au plus) dans GVL_Hmi.aCurve.
+// Hypothèses : la valeur brute de S1 est en newtons ; la position de repos est la course 0 de l'axe (la fiche
+// parle d'une position nommée sans dire laquelle) ; l'axe est référencé par TwinCAT (codeur absolu) et
+// alimenté tant que l'objet n'est ni en erreur ni désactivé ; une fenêtre dont les deux bornes valent 0 n'est
+// pas contrôlée.
+FUNCTION_BLOCK FB_Press EXTENDS FB_ObjectBase
+VAR
+    _pAxis : POINTER TO AXIS_REF;
+    _fbPower : MC_Power;
+    _fbReset : MC_Reset;
+    _fbMoveAbs : MC_MoveAbsolute;
+    _fbMoveVel : MC_MoveVelocity;
+    _fbHalt : MC_Halt;
+    _bEnable : BOOL;
+    _bPowered : BOOL;
+    _bAbs : BOOL;                   // commande de MC_MoveAbsolute
+    _bVel : BOOL;                   // commande de MC_MoveVelocity (segment à force cible)
+    _bHalt : BOOL;
+    _fTarget : LREAL;
+    _fVelo : LREAL;
+    _fForce : LREAL;                // N, après tare
+    _fForceRaw : LREAL;
+    _fStroke : LREAL;               // mm
+    _fForceMax : LREAL;
+    _nRecipe : INT;                 // rang dans aPressRecipe
+    _nRecipeNo : INT;
+    _nSeg : USINT;
+    _nPhase : USINT;                // 0 lancer le segment, 1 en mouvement, 2 arrêt, 3 retour repos
+    _bAllOk : BOOL;
+    _nCurveSlot : USINT;
+    _nCurveId : UDINT;
+    _fOverride : LREAL := 100.0;
+    // Simulation
+    _fSimStroke : LREAL;
+    _fSimVel : LREAL;
+    _fSimContact : LREAL;
+    _fSimStiffness : LREAL := 200.0; // N/mm
+    _bSimBad : BOOL;
+END_VAR
+VAR PERSISTENT
+    _fTare : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{a1f1309d-d80c-5f7e-b780-b79a1ef85e68}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _bNewObject THEN _fTare := 0; END_IF
+_pAxis := F_AxisRef(_refCfg.nDevice);
+_OnConfigure := F_SignalValid(_refCfg.aSignal[1], E_SignalKind.AI) AND (_pAxis <> 0 OR _IsSimulated());
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_IsMotion" Id="{d926284f-b5da-537c-9120-eec32da1ca7c}">
+      <Declaration><![CDATA[METHOD PROTECTED _IsMotion : BOOL
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_IsMotion := nAction = GVL_Catalog.Press_ExecuterRecette OR nAction = GVL_Catalog.Press_RetourRepos;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_DefaultTimeoutMs" Id="{9faf682f-9dbd-5ce8-88be-e10656d21649}">
+      <Declaration><![CDATA[METHOD PROTECTED _DefaultTimeoutMs : UDINT
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE nAction OF
+    GVL_Catalog.Press_ExecuterRecette: _DefaultTimeoutMs := LREAL_TO_UDINT(MAX(1000.0, _refCfg.aParam[2]));
+    GVL_Catalog.Press_RetourRepos: _DefaultTimeoutMs := 5000;
+    GVL_Catalog.Press_TarerLaForce: _DefaultTimeoutMs := 2000;
+ELSE
+    _DefaultTimeoutMs := 0;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{9c83f599-fbc8-58a2-9fb5-f05b07558e0b}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+VAR
+    k : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE nAction OF
+    GVL_Catalog.Press_ExecuterRecette:
+        _nRecipeNo := LREAL_TO_INT(_ParamReal(1, 0));
+        _nRecipe := 0;
+        FOR k := 1 TO GVL_Const.MAX_PRESS_RECIPES DO
+            IF GVL_Active.aPressRecipe[k].bUsed AND GVL_Active.aPressRecipe[k].nStation = _stInfo.nStation
+               AND GVL_Active.aPressRecipe[k].nObject = _stInfo.nLocalId AND GVL_Active.aPressRecipe[k].nRecipeNo = _nRecipeNo THEN
+                _nRecipe := k;
+            END_IF
+        END_FOR
+        IF _nRecipe = 0 OR_ELSE GVL_Active.aPressRecipe[_nRecipe].nSegments = 0 THEN
+            _Fail(GVL_Catalog.Press_Err104, INT_TO_UDINT(_nRecipeNo));
+            _OnStart := E_ActStatus.Error;
+            RETURN;
+        END_IF
+        _nSeg := 1;
+        _nPhase := 0;
+        _bAllOk := TRUE;
+        _fForceMax := 0;
+        _bSimBad := F_SimRandom() >= 0.97;          // simulation : jugement bon à 97 % (docs/03 § 7.1)
+        _fSimContact := _SimContact();
+        _BeginCurve();
+        _OnStart := E_ActStatus.Busy;
+    GVL_Catalog.Press_RetourRepos:
+        _fTarget := 0;
+        _fVelo := MAX(1.0, _refCfg.aParam[4] * LIMIT(1.0, _refCfg.aParam[3], 100.0) / 100.0);
+        _bAbs := FALSE;
+        _nPhase := 3;
+        _OnStart := E_ActStatus.Busy;
+    GVL_Catalog.Press_TarerLaForce:
+        _fTare := _fForceRaw;
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.Press_LireForceEtCourse:
+        _SetResult(1, _fForce);
+        _SetResult(2, _fStroke);
+        _OnStart := E_ActStatus.Done;
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{7f588a27-28b9-5816-8d22-4d0678527396}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+VAR
+    s : REFERENCE TO ST_PressSegment;
+    bReached : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnCycle := E_ActStatus.Busy;
+// Force maximale de sécurité : arrêt immédiat, défaut (erreur 100)
+IF _fForce > MAX(1.0, _refCfg.aParam[1]) THEN
+    _StopMotion();
+    _Fail(GVL_Catalog.Press_Err100, LREAL_TO_UDINT(_fForce));
+    _OnCycle := E_ActStatus.Error;
+    RETURN;
+END_IF
+IF _nPhase = 3 THEN
+    // Retour repos
+    IF NOT _bAbs THEN _bAbs := TRUE; RETURN; END_IF
+    IF _MoveDone() THEN _bAbs := FALSE; _nPhase := 0; _OnCycle := E_ActStatus.Done; END_IF
+    IF _MoveError() THEN _bAbs := FALSE; _Fail(GVL_Catalog.Press_Err101, 0); _OnCycle := E_ActStatus.Error; END_IF
+    RETURN;
+END_IF
+_RecordPoint();
+_fForceMax := MAX(_fForceMax, _fForce);
+s REF= GVL_Active.aPressRecipe[_nRecipe].aSeg[_nSeg];
+CASE _nPhase OF
+    0:  // lancer le segment : course cible en position, force cible en vitesse jusqu'à la force
+        _fVelo := MAX(0.1, _refCfg.aParam[4] * LIMIT(1.0, s.fSpeedPct, 100.0) / 100.0);
+        IF s.eTarget = 0 THEN
+            _fTarget := s.fTarget;
+            _bAbs := TRUE;
+        ELSE
+            _bVel := TRUE;
+        END_IF
+        _nPhase := 1;
+    1:
+        IF s.eTarget = 0 THEN
+            bReached := _MoveDone();
+        ELSE
+            bReached := _fForce >= s.fTarget;
+        END_IF
+        IF _MoveError() THEN
+            _StopMotion();
+            _Fail(GVL_Catalog.Press_Err101, _nSeg);
+            _OnCycle := E_ActStatus.Error;
+            RETURN;
+        END_IF
+        IF bReached THEN
+            _bAbs := FALSE;
+            IF _bVel THEN _bVel := FALSE; _bHalt := TRUE; _nPhase := 2; ELSE _EndSegment(); END_IF
+        ELSIF s.eTarget = 1 AND _fStroke >= _MaxStroke(s) THEN
+            _StopMotion();                                  // force non atteinte avant la course maximale
+            _Fail(GVL_Catalog.Press_Err103, _nSeg);
+            _OnCycle := E_ActStatus.Error;
+            RETURN;
+        END_IF
+    2:
+        IF _HaltDone() THEN
+            _bHalt := FALSE;
+            _EndSegment();
+        END_IF
+END_CASE
+IF _nSeg > GVL_Active.aPressRecipe[_nRecipe].nSegments THEN
+    _EndCurve();
+    _SetJudgement(1, SEL(_bAllOk, E_Judgement.Nok, E_Judgement.Ok));
+    _SetResult(2, _fForce);
+    _SetResult(3, _fStroke);
+    _SetResult(4, _fForceMax);
+    _OnCycle := E_ActStatus.Done;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_EndSegment" Id="{e489f334-ba94-5ed3-895b-be53264c6d5a}">
+      <Declaration><![CDATA[// Fin d'un segment : contrôle des fenêtres de force et de course
+METHOD PRIVATE _EndSegment
+VAR
+    s : REFERENCE TO ST_PressSegment;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[s REF= GVL_Active.aPressRecipe[_nRecipe].aSeg[_nSeg];
+IF NOT (s.fForceMin = 0 AND s.fForceMax = 0) AND (_fForce < s.fForceMin OR _fForce > s.fForceMax) THEN _bAllOk := FALSE; END_IF
+IF NOT (s.fStrokeMin = 0 AND s.fStrokeMax = 0) AND (_fStroke < s.fStrokeMin OR _fStroke > s.fStrokeMax) THEN _bAllOk := FALSE; END_IF
+_nSeg := _nSeg + 1;
+_nPhase := 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_MaxStroke" Id="{59d9d642-c27a-55c5-b425-dfb318714354}">
+      <Declaration><![CDATA[// Course maximale d'un segment à force cible : borne haute de sa fenêtre de course, sinon 200 mm
+METHOD PRIVATE _MaxStroke : LREAL
+VAR_INPUT
+    s : REFERENCE TO ST_PressSegment;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF s.fStrokeMax > 0 THEN _MaxStroke := s.fStrokeMax; ELSE _MaxStroke := 200.0; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnAbort" Id="{06931597-79a9-531f-a36f-0d09111cc7cb}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnAbort
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_StopMotion();
+_EndCurve();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_SafeState" Id="{26dda7e0-22e7-5427-b539-92ea9b772ac5}">
+      <Declaration><![CDATA[METHOD PROTECTED _SafeState
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_StopMotion();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_StopMotion" Id="{0c1fd034-4833-5d86-8830-62b21f4e2a0f}">
+      <Declaration><![CDATA[METHOD PRIVATE _StopMotion
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bAbs := FALSE;
+_bVel := FALSE;
+_bHalt := _bPowered AND NOT _IsSimulated();
+_fSimVel := 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_MoveDone" Id="{db637865-1740-50d1-88a4-e0296815dc48}">
+      <Declaration><![CDATA[METHOD PRIVATE _MoveDone : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _IsSimulated() THEN
+    _MoveDone := ABS(_fSimStroke - _fTarget) < 0.001;
+ELSE
+    _MoveDone := _fbMoveAbs.Done;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_MoveError" Id="{f32cf195-8200-5e2f-9729-52a050e9ef10}">
+      <Declaration><![CDATA[METHOD PRIVATE _MoveError : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_MoveError := NOT _IsSimulated() AND (_fbMoveAbs.Error OR _fbMoveVel.Error OR _fbPower.Error);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_HaltDone" Id="{0daed5fb-dd42-52e7-a996-78b5337a2cd5}">
+      <Declaration><![CDATA[METHOD PRIVATE _HaltDone : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_HaltDone := _IsSimulated() OR _fbHalt.Done OR _fbHalt.Error;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_BeginCurve" Id="{6d65459b-7d44-5f06-8175-27ab839155a8}">
+      <Declaration><![CDATA[// ---------- courbe force/course (docs/05 § 9)
+METHOD PRIVATE _BeginCurve
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nCurveSlot := GVL_Curves.nNextSlot;
+GVL_Curves.nNextSlot := GVL_Curves.nNextSlot MOD GVL_Const.CURVE_BUFFER + 1;
+_nCurveId := GVL_Curves.nNextCurveId;
+GVL_Curves.nNextCurveId := GVL_Curves.nNextCurveId + 1;
+GVL_Hmi.aCurve[_nCurveSlot].nCurveId := 0;          // invalide tant qu'elle s'écrit
+GVL_Hmi.aCurve[_nCurveSlot].nPoints := 0;
+IF _stInfo.nStation <= GVL_Const.MAX_STATIONS THEN
+    GVL_Curves.aLastCurveId[_stInfo.nStation] := _nCurveId;
+    GVL_Curves.aLastCurveTime[_stInfo.nStation] := F_NowUtc();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_RecordPoint" Id="{cc05dab5-83eb-5d08-be9b-b9ea894589f3}">
+      <Declaration><![CDATA[METHOD PRIVATE _RecordPoint
+VAR
+    c : REFERENCE TO ST_PressCurve;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _nCurveSlot = 0 THEN RETURN; END_IF
+c REF= GVL_Hmi.aCurve[_nCurveSlot];
+IF c.nPoints < GVL_Const.CURVE_POINTS THEN
+    c.nPoints := c.nPoints + 1;
+    c.aStroke[c.nPoints] := LREAL_TO_REAL(_fStroke);
+    c.aForce[c.nPoints] := LREAL_TO_REAL(_fForce);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_EndCurve" Id="{5e24e326-0abe-5335-b633-146d6f962ab0}">
+      <Declaration><![CDATA[METHOD PRIVATE _EndCurve
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _nCurveSlot = 0 THEN RETURN; END_IF
+GVL_Hmi.aCurve[_nCurveSlot].nCurveId := _nCurveId;
+_nCurveSlot := 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_ApplyOverride" Id="{52253d92-acc2-55d6-91d7-8fa15532332e}">
+      <Declaration><![CDATA[// ---------- matériel et simulation
+METHOD PROTECTED _ApplyOverride
+VAR_INPUT
+    fPercent : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fOverride := fPercent;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_ReadHw" Id="{3abf55c0-fdc6-56c6-96b2-3139fa68cf01}">
+      <Declaration><![CDATA[METHOD PROTECTED _ReadHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fForceRaw := INT_TO_LREAL(F_ReadAI(_refCfg.aSignal[1]));
+_fForce := _fForceRaw - _fTare;
+IF _pAxis <> 0 THEN _fStroke := _pAxis^.NcToPlc.ActPos; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_WriteHw" Id="{690b9d3d-a748-5675-ad41-b8e4bbf532f9}">
+      <Declaration><![CDATA[METHOD PROTECTED _WriteHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _IsSimulated() OR _pAxis = 0 THEN RETURN; END_IF
+_bEnable := _eState <> E_ObjState.Error AND _eState <> E_ObjState.Disabled;
+_fbPower(Axis := _pAxis^, Enable := _bEnable, Enable_Positive := _bEnable, Enable_Negative := _bEnable, Override := _fOverride);
+_bPowered := _fbPower.Status;
+_fbMoveAbs(Axis := _pAxis^, Execute := _bAbs, Position := _fTarget, Velocity := _fVelo);
+_fbMoveVel(Axis := _pAxis^, Execute := _bVel, Velocity := _fVelo, Direction := MC_Positive_Direction);
+_fbHalt(Axis := _pAxis^, Execute := _bHalt);
+_fbReset(Axis := _pAxis^, Execute := _eState = E_ObjState.Error AND _fbPower.Error);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Simulate" Id="{d52d76b1-b778-52e2-9bc8-45dd3a47d90b}">
+      <Declaration><![CDATA[// Simulation : course intégrée à la vitesse commandée, force nulle avant le contact puis raideur constante
+METHOD PROTECTED _Simulate
+VAR
+    fStep : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bPowered := TRUE;
+fStep := _fVelo * F_CycleMs() / 1000.0 * _fOverride / 100.0;
+IF _bAbs THEN
+    IF _fSimStroke < _fTarget THEN _fSimStroke := MIN(_fTarget, _fSimStroke + fStep); ELSE _fSimStroke := MAX(_fTarget, _fSimStroke - fStep); END_IF
+ELSIF _bVel THEN
+    _fSimStroke := _fSimStroke + fStep;
+END_IF
+_fStroke := _fSimStroke;
+_fForceRaw := MAX(0.0, (_fSimStroke - _fSimContact) * _fSimStiffness) + _fTare;
+IF _Forced(1) THEN _fForceRaw := _ForcedValue(1) + _fTare; END_IF
+_fForce := _fForceRaw - _fTare;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_SimContact" Id="{9c3f1eda-f313-558d-9ee3-3be57998b948}">
+      <Declaration><![CDATA[// Course du contact simulé : au milieu de la fenêtre de force du dernier segment, décalée si le tirage est mauvais
+METHOD PRIVATE _SimContact : LREAL
+VAR
+    s : REFERENCE TO ST_PressSegment;
+    fWanted : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[s REF= GVL_Active.aPressRecipe[_nRecipe].aSeg[GVL_Active.aPressRecipe[_nRecipe].nSegments];
+IF s.eTarget = 0 THEN
+    IF s.fForceMax > 0 THEN fWanted := (s.fForceMin + s.fForceMax) / 2.0; ELSE fWanted := 500.0; END_IF
+    _SimContact := s.fTarget - fWanted / _fSimStiffness;
+    IF _bSimBad THEN _SimContact := _SimContact - 2.0 * MAX(1.0, (s.fForceMax - s.fForceMin)) / _fSimStiffness; END_IF
+ELSE
+    _SimContact := MAX(1.0, s.fStrokeMin + (s.fStrokeMax - s.fStrokeMin) / 2.0 - s.fTarget / _fSimStiffness);
+    IF _bSimBad THEN _SimContact := _SimContact + MAX(1.0, s.fStrokeMax - s.fStrokeMin); END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{dba4c3cc-ff3e-5696-8a91-708dcd566ca6}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := _fForce;
+_stStatus.aValue[2] := _fStroke;
+_stStatus.aValue[3] := INT_TO_LREAL(_nRecipeNo);
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

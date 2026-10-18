@@ -11,7 +11,7 @@ END_VAR
       <ST><![CDATA[IF GVL_IoRef.pAxis = 0 OR nDevice < 1 OR nDevice > GVL_IoRef.nAxes OR nDevice > GVL_Const.MAX_AXES THEN
     F_AxisRef := 0;
 ELSE
-    F_AxisRef := GVL_IoRef.pAxis + INT_TO_UDINT(nDevice - 1) * SIZEOF(AXIS_REF);
+    F_AxisRef := ADR(GVL_IoRef.pAxis^[nDevice]);
 END_IF
 ]]></ST>
     </Implementation>

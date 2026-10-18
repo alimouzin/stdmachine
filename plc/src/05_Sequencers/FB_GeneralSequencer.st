@@ -839,6 +839,8 @@ FOR k := nFirst TO MIN(nLast, GVL_Const.MAX_SLOTS) DO
         stTrace.eVerdict := F_Verdict(m.aSlot[k].aData[1]);
         stTrace.nErrorCode := st^.Response.nErrorCode;
         stTrace.aData := m.aSlot[k].aData;
+        // Courbe de presse enregistrée par la station pendant cette opération (docs/05 § 9)
+        IF GVL_Curves.aLastCurveId[s] <> 0 AND GVL_Curves.aLastCurveTime[s] >= m.tOpStart THEN stTrace.nCurveId := GVL_Curves.aLastCurveId[s]; END_IF
         _refTraces.Add(stTrace);
         IF bClosed THEN
             nOrderIdx := _OrderIndex(m.aSlot[k].nOrder);

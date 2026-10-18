@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PlanarSystem" Id="{2927aa99-575c-50fe-8e35-f09c5c925801}" SpecialFunc="None">
+    <Declaration><![CDATA[// Système planaire, type 13, niveau machine (docs/03 § 4.3) : activation, désactivation, acquittement du pilote
+// planaire (GVL_IoRef.ipPlanar). Les erreurs du système (100 à 102) sont levées par FB_Machine, qui tient l'état.
+FUNCTION_BLOCK FB_PlanarSystem EXTENDS FB_ObjectBase
+VAR
+    _nDetected : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnStart" Id="{530076dd-f5c6-5bf2-a43b-8e0acefe9865}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF GVL_IoRef.ipPlanar = 0 THEN
+    _Fail(GVL_Catalog.Err_NotWired, 0);
+    _OnStart := E_ActStatus.Error;
+    RETURN;
+END_IF
+CASE nAction OF
+    GVL_Catalog.PlanarSystem_ActiverLeSysteme, GVL_Catalog.PlanarSystem_DesactiverLeSysteme, GVL_Catalog.PlanarSystem_AcquitterErreur:
+        _OnStart := _OnCycle(nAction);
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{f4b1f995-2318-53a2-b1da-337bf2abfe6a}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnCycle := E_ActStatus.Busy;
+CASE nAction OF
+    GVL_Catalog.PlanarSystem_ActiverLeSysteme:
+        IF GVL_IoRef.ipPlanar.Activate(TRUE) THEN
+            _SetResult(1, INT_TO_LREAL(_nDetected));
+            _OnCycle := E_ActStatus.Done;
+        END_IF
+    GVL_Catalog.PlanarSystem_DesactiverLeSysteme:
+        GVL_IoRef.ipPlanar.Activate(FALSE);
+        IF NOT GVL_IoRef.ipPlanar.Active THEN _OnCycle := E_ActStatus.Done; END_IF
+    GVL_Catalog.PlanarSystem_AcquitterErreur:
+        GVL_IoRef.ipPlanar.AckError();
+        IF GVL_IoRef.ipPlanar.ErrorCode = 0 THEN _OnCycle := E_ActStatus.Done; END_IF
+ELSE
+    _OnCycle := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{488bb02b-76d8-5cdd-80a7-5a434cb18fa5}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+VAR
+    i : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nDetected := 0;
+IF GVL_IoRef.ipPlanar = 0 THEN RETURN; END_IF
+FOR i := 1 TO GVL_Const.MAX_MOVERS DO
+    IF GVL_IoRef.ipPlanar.MoverDetected(i) THEN _nDetected := _nDetected + 1; END_IF
+END_FOR
+_stStatus.aValue[1] := SEL(GVL_IoRef.ipPlanar.Active, 0.0, 1.0);
+_stStatus.aValue[2] := INT_TO_LREAL(_nDetected);
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

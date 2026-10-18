@@ -3,7 +3,7 @@
   <POU Name="FB_MoverManager" Id="{24cb95b4-4fa8-5433-9fac-8712de13ab39}" SpecialFunc="None">
     <Declaration><![CDATA[// Gestionnaire de movers (docs/05 § 6) : occupation et réservation des positions planaires, envoi des
 // déplacements au pilote planaire, détection des arrivées (fenêtre de position et à l'arrêt 50 ms), timeout.
-FUNCTION_BLOCK FB_MoverManager
+FUNCTION_BLOCK FB_MoverManager IMPLEMENTS I_MoverMotion
 VAR
     _refMachine : REFERENCE TO ST_MachineData;
     ipDriver : I_PlanarDriver;
@@ -209,7 +209,72 @@ VAR_INPUT
 END_VAR
 ]]></Declaration>
       <Implementation>
-        <ST><![CDATA[Moving := nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS AND_THEN _aDest[nMover] <> 0;
+        <ST><![CDATA[Moving := nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS AND_THEN (_aDest[nMover] <> 0 OR (ipDriver <> 0 AND_THEN ipDriver.MoverMoving(nMover)));
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MoveFree" Id="{997358f1-d236-5924-9d83-b8531c865130}">
+      <Declaration><![CDATA[// Mode manuel (docs/05 § 6.5) : le mover quitte ses positions ; arrivé sur une position planaire libre, il la tient
+METHOD MoveFree : BOOL
+VAR_INPUT
+    nMover : USINT;
+    stPos : ST_Position;
+    fSpeedPct : LREAL;
+END_VAR
+VAR
+    k : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MoveFree := FALSE;
+IF ipDriver = 0 OR nMover < 1 OR nMover > GVL_Const.MAX_MOVERS THEN RETURN; END_IF
+// Une position planaire tenue par un autre mover ne peut pas être visée
+FOR k := 1 TO _refMachine.nPlanarPos DO
+    IF _Near(stPos, _refMachine.aPlanarPos[k].stPos) AND aOwner[k] <> 0 AND aOwner[k] <> nMover THEN RETURN; END_IF
+END_FOR
+IF NOT ipDriver.MoveTo(nMover, stPos, _fVelocity * LIMIT(1.0, fSpeedPct, 100.0) / 100.0, _fAcceleration) THEN RETURN; END_IF
+FreeAll(nMover, 0);
+_aDest[nMover] := 0;
+_aTimedOut[nMover] := FALSE;
+FOR k := 1 TO _refMachine.nPlanarPos DO
+    IF _Near(stPos, _refMachine.aPlanarPos[k].stPos) THEN aOwner[k] := nMover; END_IF
+END_FOR
+MoveFree := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StopMover" Id="{41e60bbd-756f-5b47-a960-41c001e6415d}">
+      <Declaration><![CDATA[METHOD StopMover
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF ipDriver <> 0 THEN ipDriver.StopMover(nMover); END_IF
+IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN _aDest[nMover] := 0; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Position" Id="{edff45d2-ecd7-5a13-9efd-949e191b6560}">
+      <Declaration><![CDATA[METHOD Position : ST_Position
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF ipDriver <> 0 THEN Position := ipDriver.MoverPosition(nMover); END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Near" Id="{2f1db68f-25d5-5c81-b394-dea926d8dcdf}">
+      <Declaration><![CDATA[METHOD PRIVATE _Near : BOOL
+VAR_INPUT
+    a : ST_Position;
+    b : ST_Position;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Near := ABS(a.fX - b.fX) <= MAX(_fWindow, 0.5) AND ABS(a.fY - b.fY) <= MAX(_fWindow, 0.5);
 ]]></ST>
       </Implementation>
     </Method>
@@ -222,7 +287,7 @@ END_VAR
       <Implementation>
         <ST><![CDATA[AnyMoving := FALSE;
 FOR i := 1 TO GVL_Const.MAX_MOVERS DO
-    IF _aDest[i] <> 0 THEN AnyMoving := TRUE; END_IF
+    IF Moving(i) THEN AnyMoving := TRUE; END_IF
 END_FOR
 ]]></ST>
       </Implementation>

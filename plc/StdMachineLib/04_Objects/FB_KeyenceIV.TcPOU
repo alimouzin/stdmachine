@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_KeyenceIV" Id="{050bb146-dfd2-5dee-b536-cba744f785ba}" SpecialFunc="None">
+    <Declaration><![CDATA[// Vision Keyence IV, type 30 (docs/03 § 6.1), mode signaux : S1 DO déclenchement, S2 DI prêt, S3 DI résultat OK,
+// S4 DI résultat NOK. Le mode réseau (P1 = 1) n'est pas encore écrit : la configuration est refusée.
+// Hypothèse : en mode signaux, le programme ne se change pas par les signaux ; « Sélectionner programme »
+// mémorise le n° demandé (affiché, rendu par la HMI) sans le transmettre à l'appareil.
+FUNCTION_BLOCK FB_KeyenceIV EXTENDS FB_ObjectBase
+VAR
+    _bTrigger : BOOL;
+    _bReady : BOOL;
+    _bOk : BOOL;
+    _bNok : BOOL;
+    _fWaitMs : LREAL;
+    _nProgram : INT;
+    _eLast : E_Judgement;
+    _fLastValue : LREAL;
+    _bSimResult : BOOL;             // simulation : un résultat est présent
+    _bSimOk : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{4be9f994-0c05-5271-9af1-d15027b3392a}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nProgram := LREAL_TO_INT(_refCfg.aParam[2]);
+_OnConfigure := _refCfg.aParam[1] = 0
+                AND F_SignalValid(_refCfg.aSignal[1], E_SignalKind.DO)
+                AND F_SignalValid(_refCfg.aSignal[3], E_SignalKind.DI)
+                AND F_SignalValid(_refCfg.aSignal[4], E_SignalKind.DI);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{51063724-7b7a-53a3-9570-5a1b0f94c70b}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE nAction OF
+    GVL_Catalog.KeyenceIV_SelectionnerProgramme:
+        _nProgram := LREAL_TO_INT(_ParamReal(1, _refCfg.aParam[2]));
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.KeyenceIV_Declencher:
+        IF F_SignalValid(_refCfg.aSignal[2], E_SignalKind.DI) AND NOT _bReady THEN
+            _Fail(GVL_Catalog.KeyenceIV_Err100, 0);
+            _OnStart := E_ActStatus.Error;
+            RETURN;
+        END_IF
+        _fWaitMs := 0;
+        _bTrigger := TRUE;
+        _bSimResult := FALSE;
+        _OnStart := E_ActStatus.Busy;
+    GVL_Catalog.KeyenceIV_LireDernierResultat:
+        _SetJudgement(1, _eLast);
+        _SetResult(2, _fLastValue);
+        _OnStart := E_ActStatus.Done;
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{f7d5fe4e-de84-5207-b6a2-6a547fd52742}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnCycle := E_ActStatus.Busy;
+_fWaitMs := _fWaitMs + F_CycleMs();
+// Le résultat est lu après l'attente P3, quand l'une des deux sorties du capteur est active
+IF _fWaitMs < MAX(0.0, _refCfg.aParam[3]) OR NOT (_bOk XOR _bNok) THEN RETURN; END_IF
+_bTrigger := FALSE;
+IF _bOk THEN _eLast := E_Judgement.Ok; ELSE _eLast := E_Judgement.Nok; END_IF
+_fLastValue := 0;                   // pas de valeur mesurée en mode signaux
+_SetJudgement(1, _eLast);
+_SetResult(2, _fLastValue);
+_OnCycle := E_ActStatus.Done;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnAbort" Id="{c6f64b0b-6717-5888-94cd-284831f226b9}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnAbort
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bTrigger := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_SafeState" Id="{39c09a8e-e45d-51c5-90ac-51b4a0fc39bd}">
+      <Declaration><![CDATA[METHOD PROTECTED _SafeState
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bTrigger := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_ReadHw" Id="{cdea831f-2426-5e8d-9061-bf3b08585229}">
+      <Declaration><![CDATA[METHOD PROTECTED _ReadHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bReady := F_ReadDI(_refCfg.aSignal[2]);
+_bOk := F_ReadDI(_refCfg.aSignal[3]);
+_bNok := F_ReadDI(_refCfg.aSignal[4]);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_WriteHw" Id="{1e2a3df2-ab32-5b9c-a1a8-d23f00542ea3}">
+      <Declaration><![CDATA[METHOD PROTECTED _WriteHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[F_WriteDO(_refCfg.aSignal[1], _bTrigger);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Simulate" Id="{3fe926bc-7142-5978-a379-2f7e1687af15}">
+      <Declaration><![CDATA[// Simulation : prêt ; à chaque déclenchement, jugement bon avec une probabilité de 95 % (docs/03 § 6.1)
+METHOD PROTECTED _Simulate
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _bTrigger AND NOT _bSimResult THEN
+    _bSimResult := TRUE;
+    _bSimOk := F_SimRandom() < 0.95;
+END_IF
+_bReady := TRUE;
+_bOk := _bSimResult AND _bSimOk;
+_bNok := _bSimResult AND NOT _bSimOk;
+IF _Forced(2) THEN _bReady := _ForcedValue(2) >= 0.5; END_IF
+IF _Forced(3) THEN _bOk := _ForcedValue(3) >= 0.5; END_IF
+IF _Forced(4) THEN _bNok := _ForcedValue(4) >= 0.5; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{005c4424-27be-5331-836d-52f77dec1dd5}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := TO_LREAL(_eLast);
+_stStatus.aValue[2] := INT_TO_LREAL(_nProgram);
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
