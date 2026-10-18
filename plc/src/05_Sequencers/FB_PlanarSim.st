@@ -140,6 +140,14 @@ END_VAR
 _nError := nCode;
 END_METHOD
 
+// Nombre de movers posés sur le plan simulé (configuration machine)
+METHOD SetMoverCount
+VAR_INPUT
+    nCount : USINT;
+END_VAR
+nMovers := MIN(nCount, GVL_Const.MAX_MOVERS);
+END_METHOD
+
 PROPERTY Active : BOOL
 GET
 Active := _bActive;

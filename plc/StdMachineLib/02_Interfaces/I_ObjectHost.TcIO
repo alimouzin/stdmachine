@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_ObjectHost" Id="{cefa9e00-a8e4-54fa-965f-9583d78e9364}">
+    <Declaration><![CDATA[// Registre d'objets d'une station ou de la machine (docs/04 § 9), rempli par FB_ObjectFactory
+INTERFACE I_ObjectHost
+]]></Declaration>
+    <Method Name="ClearObjects" Id="{9406d252-8b99-581d-8dfd-ba79230f9c9b}">
+      <Declaration><![CDATA[METHOD ClearObjects
+]]></Declaration>
+    </Method>
+    <Method Name="SetObject" Id="{63477ae5-4f9f-5517-b7aa-9b2eaf5ae7a8}">
+      <Declaration><![CDATA[METHOD SetObject
+VAR_INPUT
+    nLocalId : UINT;
+    ipObj : I_Object;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

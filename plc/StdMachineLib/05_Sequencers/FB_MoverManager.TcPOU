@@ -20,27 +20,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Paramètres du système planaire (type 13 : P1 vitesse, P2 accélération, P3 fenêtre)
-
-
-
-
-// Libère toutes les positions d'un mover sauf nKeep
-
-// Réserve la destination puis envoie le déplacement (docs/05 § 6.2)
-
-
-// Position atteinte ce cycle (0 sinon)
-
-
-
-
-// Arrêt contrôlé de tous les movers (Abort) : les destinations sont abandonnées, les réservations gardées
-
-// Position planaire connue où se trouve le mover (Reset machine, docs/05 § 6.3), 0 sinon
-
-// Position tampon libre la plus proche du mover, 0 si aucune
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Init" Id="{1db790d4-01c7-5719-81e6-cd5331c12c2d}">
       <Declaration><![CDATA[METHOD Init
@@ -56,7 +36,8 @@ ipDriver := ipPlanar;
       </Implementation>
     </Method>
     <Method Name="Configure" Id="{ce46c316-5dad-57d8-a9db-bb3bcc59bd1d}">
-      <Declaration><![CDATA[METHOD Configure
+      <Declaration><![CDATA[// Paramètres du système planaire (type 13 : P1 vitesse, P2 accélération, P3 fenêtre)
+METHOD Configure
 VAR
     i : UINT;
 END_VAR
@@ -108,7 +89,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="FreeAll" Id="{da8cc0c1-e47c-561e-b007-92a7095bcbf7}">
-      <Declaration><![CDATA[METHOD FreeAll
+      <Declaration><![CDATA[// Libère toutes les positions d'un mover sauf nKeep
+METHOD FreeAll
 VAR_INPUT
     nMover : USINT;
     nKeep : INT;
@@ -125,7 +107,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="MoveTo" Id="{a3724697-bf17-581a-a6d6-a933dec11a07}">
-      <Declaration><![CDATA[METHOD MoveTo : BOOL
+      <Declaration><![CDATA[// Réserve la destination puis envoie le déplacement (docs/05 § 6.2)
+METHOD MoveTo : BOOL
 VAR_INPUT
     nMover : USINT;
     nPos : INT;
@@ -197,7 +180,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="Arrived" Id="{1cba8766-d186-5f45-bcd5-89e4769818bd}">
-      <Declaration><![CDATA[METHOD Arrived : INT
+      <Declaration><![CDATA[// Position atteinte ce cycle (0 sinon)
+METHOD Arrived : INT
 VAR_INPUT
     nMover : USINT;
 END_VAR
@@ -244,7 +228,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="StopAll" Id="{21c5f5aa-551c-58dd-8223-3289d1414d00}">
-      <Declaration><![CDATA[METHOD StopAll
+      <Declaration><![CDATA[// Arrêt contrôlé de tous les movers (Abort) : les destinations sont abandonnées, les réservations gardées
+METHOD StopAll
 VAR
     i : USINT;
 END_VAR
@@ -256,7 +241,8 @@ FOR i := 1 TO GVL_Const.MAX_MOVERS DO _aDest[i] := 0; END_FOR
       </Implementation>
     </Method>
     <Method Name="PositionAt" Id="{307e628f-acae-59b5-9d66-38d1eeb786fb}">
-      <Declaration><![CDATA[METHOD PositionAt : INT
+      <Declaration><![CDATA[// Position planaire connue où se trouve le mover (Reset machine, docs/05 § 6.3), 0 sinon
+METHOD PositionAt : INT
 VAR_INPUT
     nMover : USINT;
 END_VAR
@@ -279,7 +265,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="NearestFree" Id="{e5cedbf5-8cdb-5923-8d45-1a45c78a4d61}">
-      <Declaration><![CDATA[METHOD NearestFree : INT
+      <Declaration><![CDATA[// Position tampon libre la plus proche du mover, 0 si aucune
+METHOD NearestFree : INT
 VAR_INPUT
     nMover : USINT;
     eKind : E_PlanarPosKind;

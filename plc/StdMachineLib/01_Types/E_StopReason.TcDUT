@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_StopReason" Id="{6a393fed-e6e7-5736-95ef-9f474b82608d}">
+    <Declaration><![CDATA[// Raison du dernier arrêt de la machine (docs/05 § 5.2, docs/14 § 4) : la cause système quand aucune alarme
+// ne l'explique. Publiée dans ST_MachineStatus pour la HMI (toasts « OF terminé », « Machine vidée ») (D94)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_StopReason :
+(
+    None := 0,
+    Alarm := 1,             // première alarme cause : nStopCauseGlobalId, nStopCauseCode
+    Operator := 2,
+    OrderComplete := 3,
+    Drained := 4,
+    Quality := 5
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

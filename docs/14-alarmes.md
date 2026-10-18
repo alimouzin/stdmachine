@@ -56,6 +56,7 @@ Un code d'objet n'a de sens qu'avec le type de l'objet : le code 101 d'une press
 | 906 | Nombre maximal de répétitions atteint (« Répéter tant que ») | Station | Défaut de station | N° de carte |
 | 907 | Préparation annulée par l'arrêt (`05` § 4.2 bis) | Station | Information | N° de mover |
 | 908 | Demande à l'opérateur annulée (calibration, `05` § 10.1) | Station ou machine | Selon la politique d'échec de la carte | N° de carte |
+| 909 | Calibration de station refusée ou en échec (calibration machine, `05` § 10.1 ; D94) | Machine | Selon la politique d'échec de la carte (avertissement) | Table |
 | 910 | Pièce présente en fin de process | Machine | Avertissement | N° de mover |
 | 911 | Mover à vider | Machine | Avertissement (opérateur attendu) | N° de mover |
 | 912 | Calibration à refaire | Station ou machine | Avertissement | N° de calibration |

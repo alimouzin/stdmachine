@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_MachineCalib" Id="{7e98ead2-eb20-5200-a575-c676a835c53b}" SpecialFunc="None">
+    <Declaration><![CDATA[// Calibration machine (docs/05 § 10.1) : contexte unique, en Maintenance, machine Idle. Instructions reconnues :
+// CalibStation (lance la calibration d'une station et l'attend), Route (le mover choisi au lancement seulement),
+// Prompt, WaitTime, Jump, Alarm, End et les marqueurs ; toute autre instruction échoue (905).
+FUNCTION_BLOCK FB_MachineCalib
+VAR_OUTPUT
+    bRunning : BOOL;
+END_VAR
+VAR
+    _refMachine : REFERENCE TO ST_MachineData;
+    _refAlarms : REFERENCE TO FB_AlarmManager;
+    _refMgr : REFERENCE TO FB_MoverManager;
+    aStation : ARRAY[1..GVL_Const.MAX_STATIONS] OF POINTER TO FB_Station;
+    _nTable : INT;
+    _nCalib : USINT;                // rang dans la liste des calibrations machine, 0 = table lancée sans déclaration
+    _nPC : INT;
+    _nWait : USINT;                 // 0 aucune, 1 durée, 2 station, 3 demande, 4 déplacement
+    _fWaitMs : LREAL;
+    _fElapsedMs : LREAL;
+    _nStation : USINT;
+    _nRetry : USINT;
+    _nMover : USINT;
+    _pMover : POINTER TO ST_MoverCtx;
+    _nDest : INT;
+    _sUser : STRING(24);
+    stPrompt : ST_PromptState;
+    _nPromptSeq : UDINT;
+    _bAnswered : BOOL;
+    _bConfirm : BOOL;
+END_VAR
+VAR PERSISTENT
+    aCalib : ARRAY[1..GVL_Const.CALIB_PER_STATION] OF ST_CalibStatus;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Init" Id="{1c9a4564-ddcd-550f-a3a0-266d45075579}">
+      <Declaration><![CDATA[METHOD Init
+VAR_INPUT
+    refMachine : REFERENCE TO ST_MachineData;
+    refAlarms : REFERENCE TO FB_AlarmManager;
+    refMgr : REFERENCE TO FB_MoverManager;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_refMachine REF= refMachine;
+_refAlarms REF= refAlarms;
+_refMgr REF= refMgr;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetStation" Id="{4c8c530b-ee63-5d6e-a4e9-d32029638003}">
+      <Declaration><![CDATA[METHOD SetStation
+VAR_INPUT
+    nStation : USINT;
+    pStation : POINTER TO FB_Station;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nStation >= 1 AND nStation <= GVL_Const.MAX_STATIONS THEN aStation[nStation] := pStation; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="OnDeploy" Id="{9fe8307b-a072-51c5-a3bd-921bcd6b7ca6}">
+      <Declaration><![CDATA[// Nouveau déploiement : états des calibrations retrouvés par identifiant
+METHOD OnDeploy
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Abort();
+FOR i := 1 TO GVL_Const.CALIB_PER_STATION DO
+    IF i <= _refMachine.nCalibCount AND aCalib[i].nId <> _refMachine.aCalib[i].nId THEN
+        MEMSET(ADR(aCalib[i]), 0, SIZEOF(aCalib[i]));
+        aCalib[i].nId := _refMachine.aCalib[i].nId;
+    END_IF
+    IF i <= _refMachine.nCalibCount THEN aCalib[i].nValidityDays := _refMachine.aCalib[i].nValidityDays; END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Start" Id="{c2b1fd36-328e-5e63-adc7-0ee1505a9e26}">
+      <Declaration><![CDATA[METHOD Start : E_RejectReason
+VAR_INPUT
+    nTable : USINT;
+    nMover : USINT;
+    pMover : POINTER TO ST_MoverCtx;
+    sUser : STRING(24);
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF bRunning THEN Start := E_RejectReason.Busy; RETURN; END_IF
+IF nTable < 1 OR nTable > GVL_Const.MAX_TABLES OR_ELSE NOT _refMachine.aTable[nTable].bUsed
+   OR_ELSE _refMachine.aTable[nTable].eKind <> E_TableKind.MachineCalibration THEN
+    Start := E_RejectReason.NotConfigured;
+    RETURN;
+END_IF
+_nTable := nTable;
+_nPC := _refMachine.aTable[nTable].nStart;
+_nCalib := 0;
+FOR i := 1 TO MIN(_refMachine.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    IF _refMachine.aCalib[i].nTable = nTable THEN _nCalib := INT_TO_USINT(i); END_IF
+END_FOR
+_nMover := nMover;
+_pMover := pMover;
+_sUser := sUser;
+_nWait := 0;
+_nRetry := 0;
+_bAnswered := FALSE;
+stPrompt.nPromptId := 0;
+IF _nCalib > 0 THEN aCalib[_nCalib].eState := E_CalibState.Running; END_IF
+bRunning := TRUE;
+Start := E_RejectReason.None;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Abort" Id="{ffd24650-c286-5326-b9d0-6e4ae29c91b1}">
+      <Declaration><![CDATA[METHOD Abort
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF bRunning THEN _Fail(0); END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AnswerPrompt" Id="{94b1fcc3-b1be-57ed-9263-1ff9774884c5}">
+      <Declaration><![CDATA[METHOD AnswerPrompt : BOOL
+VAR_INPUT
+    nPromptId : UDINT;
+    bConfirm : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[AnswerPrompt := FALSE;
+IF stPrompt.nPromptId = 0 OR stPrompt.nPromptId <> nPromptId THEN RETURN; END_IF
+_bAnswered := TRUE;
+_bConfirm := bConfirm;
+AnswerPrompt := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Cycle" Id="{74f5f8b6-dd9c-55e0-b0c2-e53416d77357}">
+      <Declaration><![CDATA[METHOD Cycle
+VAR_INPUT
+    bHmiLost : BOOL;
+END_VAR
+VAR
+    nGuard : INT;
+    ins : REFERENCE TO ST_Instr;
+    st : POINTER TO FB_Station;
+    nCalibTable : USINT;
+    k : INT;
+    eSev : E_Severity;
+    aZero : ARRAY[1..GVL_Const.MAX_PARAMS] OF LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bRunning THEN RETURN; END_IF
+FOR nGuard := 1 TO GVL_Const.MAX_INSTR_PER_CYCLE DO
+    IF _nPC < _refMachine.aTable[_nTable].nStart OR _nPC >= _refMachine.aTable[_nTable].nStart + _refMachine.aTable[_nTable].nLength THEN
+        _Fail(905);
+        RETURN;
+    END_IF
+    ins REF= _refMachine.aInstr[_nPC];
+    CASE ins.eOp OF
+        E_Op.Nop, E_Op.StepBegin, E_Op.StepEnd:
+            _nPC := _nPC + 1;
+        E_Op.Jump:
+            _nPC := DINT_TO_INT(ins.aArg[1]);
+        E_Op.WaitTime:
+            IF _nWait = 0 THEN
+                _nWait := 1;
+                _fWaitMs := ins.aParam[1].fValue;
+                _fElapsedMs := 0;
+            END_IF
+            _fElapsedMs := _fElapsedMs + F_CycleMs();
+            IF _fElapsedMs < _fWaitMs THEN RETURN; END_IF
+            _nWait := 0;
+            _nPC := _nPC + 1;
+        E_Op.Prompt:
+            IF _nWait = 0 THEN
+                _nWait := 3;
+                _nPromptSeq := _nPromptSeq + 1;
+                stPrompt.nPromptId := _nPromptSeq;
+                stPrompt.nText := DINT_TO_INT(ins.aArg[1]);
+                stPrompt.bInput := ins.aArg[2] = 1;
+                _bAnswered := FALSE;
+            END_IF
+            IF bHmiLost OR (_bAnswered AND NOT _bConfirm) THEN
+                stPrompt.nPromptId := 0;
+                _nWait := 0;
+                IF NOT _Failure(ins, 908) THEN RETURN; END_IF
+            ELSIF _bAnswered THEN
+                stPrompt.nPromptId := 0;
+                _nWait := 0;
+                _nPC := _nPC + 1;
+            ELSE
+                RETURN;
+            END_IF
+        E_Op.CalibStation:
+            _nStation := DINT_TO_USINT(ins.aArg[1]);
+            IF _nStation < 1 OR _nStation > GVL_Const.MAX_STATIONS OR_ELSE aStation[_nStation] = 0 THEN _Fail(905); RETURN; END_IF
+            st := aStation[_nStation];
+            IF _nWait = 0 THEN
+                k := DINT_TO_INT(ins.aArg[2]);
+                nCalibTable := 0;
+                IF k >= 1 AND k <= GVL_Const.CALIB_PER_STATION THEN nCalibTable := st^.Data.aCalib[k].nTable; END_IF
+                IF st^.Launch(nCalibTable, 0, 0, 0, aZero, _sUser) <> E_RejectReason.None THEN
+                    IF NOT _Failure(ins, 909) THEN RETURN; END_IF
+                ELSE
+                    _nWait := 2;
+                    RETURN;
+                END_IF
+            ELSIF st^.Response.eStatus = E_OpStatus.Done THEN
+                st^.AckResponse();
+                _nWait := 0;
+                _nRetry := 0;
+                _nPC := _nPC + 1;
+            ELSIF st^.Response.eStatus = E_OpStatus.Failed OR st^.Response.eStatus = E_OpStatus.Aborted THEN
+                st^.AckResponse();
+                _nWait := 0;
+                IF NOT _Failure(ins, 909) THEN RETURN; END_IF
+            ELSE
+                RETURN;
+            END_IF
+        E_Op.Route:
+            IF NOT _Route(ins) THEN RETURN; END_IF
+        E_Op.Alarm:
+            IF ins.aArg[2] = 1 THEN eSev := E_Severity.Warning; ELSE eSev := E_Severity.MachineFault; END_IF
+            IF __ISVALIDREF(_refAlarms) THEN _refAlarms.RaiseEvent(0, DINT_TO_UINT(ins.aArg[3]), DINT_TO_UDINT(ins.aArg[1]), eSev); END_IF
+            IF ins.aArg[2] >= 2 THEN _Fail(0); RETURN; END_IF
+            _nPC := _nPC + 1;
+        E_Op.End:
+            _Succeed();
+            RETURN;
+    ELSE
+        _Fail(905);
+        RETURN;
+    END_CASE
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Route" Id="{94010562-e4ae-5d47-bcaa-b782f4b8ee2d}">
+      <Declaration><![CDATA[// Route du mover choisi : déplacement en position de travail d'une station de la fonction, puis lancement de
+// l'opération sur la station (comme un lancement HMI) ; TRUE quand l'instruction est terminée
+METHOD PRIVATE _Route : BOOL
+VAR_INPUT
+    ins : REFERENCE TO ST_Instr;
+END_VAR
+VAR
+    g : DINT;
+    s : USINT;
+    k : INT;
+    nTable : USINT;
+    aParam : ARRAY[1..GVL_Const.MAX_PARAMS] OF LREAL;
+    st : POINTER TO FB_Station;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Route := FALSE;
+IF _nMover = 0 OR _pMover = 0 THEN _Fail(905); RETURN; END_IF
+g := ins.aArg[1];
+IF _nWait = 0 THEN
+    _nStation := 0;
+    FOR s := 1 TO GVL_Const.MAX_STATIONS DO
+        IF _nStation = 0 AND g >= 1 AND g <= GVL_Const.MAX_GROUPS AND_THEN (SHR(_refMachine.aGroup[g].nStationMask, s - 1) AND 1) = 1 THEN
+            _nStation := s;
+        END_IF
+    END_FOR
+    IF _nStation = 0 OR_ELSE aStation[_nStation] = 0 THEN _Fail(905); RETURN; END_IF
+    _nDest := _refMachine.aStation[_nStation].nWorkPos;
+    IF NOT _refMgr.MoveTo(_nMover, _nDest) THEN RETURN; END_IF      // position occupée : on réessaie
+    _nWait := 4;
+    RETURN;
+END_IF
+st := aStation[_nStation];
+IF _nWait = 4 THEN
+    IF _refMgr.Moving(_nMover) THEN RETURN; END_IF
+    nTable := 0;
+    FOR k := 1 TO st^.Data.nOpMapCount DO
+        IF st^.Data.aOpMap[k].nGroup = DINT_TO_USINT(g) AND st^.Data.aOpMap[k].nOperationNo = DINT_TO_USINT(ins.aArg[2]) THEN nTable := st^.Data.aOpMap[k].nTable; END_IF
+    END_FOR
+    FOR k := 1 TO GVL_Const.MAX_PARAMS DO aParam[k] := ins.aParam[k].fValue; END_FOR
+    IF st^.Launch(nTable, _nMover, _pMover, DINT_TO_USINT(ins.aArg[3]), aParam, _sUser) <> E_RejectReason.None THEN
+        _nWait := 0;
+        _Route := _Failure(ins, 909);
+        RETURN;
+    END_IF
+    _nWait := 2;
+    RETURN;
+END_IF
+IF st^.Response.eStatus = E_OpStatus.Done THEN
+    st^.AckResponse();
+    _nWait := 0;
+    _nPC := _nPC + 1;
+    _Route := TRUE;
+ELSIF st^.Response.eStatus = E_OpStatus.Failed OR st^.Response.eStatus = E_OpStatus.Aborted THEN
+    st^.AckResponse();
+    _nWait := 0;
+    _Route := _Failure(ins, 909);
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Failure" Id="{af676292-ef82-514f-b99a-4b823b5e3b6a}">
+      <Declaration><![CDATA[// Politique d'échec de la carte (docs/05 § 3.6) ; TRUE si l'exécution continue ce cycle
+METHOD PRIVATE _Failure : BOOL
+VAR_INPUT
+    ins : REFERENCE TO ST_Instr;
+    nCode : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Failure := FALSE;
+CASE ins.eOnFail OF
+    E_FailPolicy.Retry:
+        IF _nRetry < ins.nRetries THEN
+            _nRetry := _nRetry + 1;
+            RETURN;                                     // même PC : relance au cycle suivant
+        END_IF
+        _Fail(nCode);
+    E_FailPolicy.Ignore:
+        _nRetry := 0;
+        _nPC := _nPC + 1;
+        _Failure := TRUE;
+    E_FailPolicy.Goto:
+        _nRetry := 0;
+        _nPC := ins.nFailTarget;
+        _Failure := TRUE;
+ELSE
+    _Fail(nCode);
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Succeed" Id="{ddfbf462-90b7-5444-be04-0c603baf7532}">
+      <Declaration><![CDATA[METHOD PRIVATE _Succeed
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _nCalib > 0 THEN
+    aCalib[_nCalib].eState := E_CalibState.Valid;
+    aCalib[_nCalib].tLast := F_NowUtc();
+    aCalib[_nCalib].sUser := _sUser;
+END_IF
+stPrompt.nPromptId := 0;
+bRunning := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Fail" Id="{837d0f5b-4ec0-5ef4-8985-faed41b2106a}">
+      <Declaration><![CDATA[METHOD PRIVATE _Fail
+VAR_INPUT
+    nCode : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _nCalib > 0 THEN aCalib[_nCalib].eState := E_CalibState.Failed; END_IF
+IF nCode <> 0 AND __ISVALIDREF(_refAlarms) THEN _refAlarms.RaiseEvent(0, nCode, INT_TO_UDINT(_nTable), E_Severity.Warning); END_IF
+stPrompt.nPromptId := 0;
+_nWait := 0;
+bRunning := FALSE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CheckCalibrations" Id="{c1786e97-4b45-55d4-b70d-622a384abad9}">
+      <Declaration><![CDATA[// Calibrations machine échues ou jamais faites : avertissement 912 (docs/05 § 10.1)
+METHOD CheckCalibrations
+VAR_INPUT
+    tNow : LINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO MIN(_refMachine.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    IF aCalib[i].eState = E_CalibState.Valid AND aCalib[i].nValidityDays > 0
+       AND tNow - aCalib[i].tLast > UINT_TO_LINT(aCalib[i].nValidityDays) * 864000000000 THEN
+        aCalib[i].eState := E_CalibState.Expired;
+    END_IF
+    IF (aCalib[i].eState = E_CalibState.Expired OR aCalib[i].eState = E_CalibState.Never) AND __ISVALIDREF(_refAlarms) THEN
+        _refAlarms.RaiseEvent(0, 912, INT_TO_UDINT(i), E_Severity.Warning);
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PublishRetained" Id="{6298d757-a103-5fe4-ac42-26613f629066}">
+      <Declaration><![CDATA[METHOD PublishRetained
+VAR_IN_OUT
+    stOut : ST_RetainedValues;
+END_VAR
+VAR
+    i : INT;
+    stItem : ST_RetainedItem;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO MIN(_refMachine.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    MEMSET(ADR(stItem), 0, SIZEOF(stItem));
+    stItem.eKind := E_RetainedKind.Calibration;
+    stItem.nId := aCalib[i].nId;
+    stItem.aValue[1] := F_CalibStateNum(aCalib[i].eState);
+    stItem.tStamp := aCalib[i].tLast;
+    stItem.sUser := aCalib[i].sUser;
+    F_AddRetained(stOut, stItem);
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Restore" Id="{b8a4e6e0-28dd-5fc7-9cf2-b4fc3bfbd3bb}">
+      <Declaration><![CDATA[METHOD Restore : BOOL
+VAR_IN_OUT
+    stItem : ST_RetainedItem;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Restore := FALSE;
+IF stItem.eKind <> E_RetainedKind.Calibration OR stItem.nId = 0 THEN RETURN; END_IF
+FOR i := 1 TO MIN(_refMachine.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    IF aCalib[i].nId = stItem.nId THEN
+        aCalib[i].eState := F_CalibStateOf(stItem.aValue[1]);
+        aCalib[i].tLast := stItem.tStamp;
+        aCalib[i].sUser := stItem.sUser;
+        Restore := TRUE;
+        RETURN;
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Publish" Id="{4f3ff638-5002-5468-8579-a504992c92a2}">
+      <Declaration><![CDATA[METHOD Publish
+VAR_IN_OUT
+    stStatus : ST_MachineStatus;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stStatus.nCalib := _refMachine.nCalibCount;
+stStatus.aCalib := aCalib;
+stStatus.stPrompt := stPrompt;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

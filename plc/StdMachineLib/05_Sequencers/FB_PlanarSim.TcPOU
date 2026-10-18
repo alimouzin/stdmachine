@@ -19,8 +19,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Essai : retirer un mover du plan, ou provoquer une collision (docs/12 § 5)
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Activate" Id="{c5896b0a-72b8-52a1-837f-c7be428c8088}">
       <Declaration><![CDATA[METHOD Activate : BOOL
@@ -168,7 +167,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="SetAbsent" Id="{0f24c5a0-f7ac-5059-ad2e-11e82fb1edc7}">
-      <Declaration><![CDATA[METHOD SetAbsent
+      <Declaration><![CDATA[// Essai : retirer un mover du plan, ou provoquer une collision (docs/12 § 5)
+METHOD SetAbsent
 VAR_INPUT
     nMover : USINT;
     bAbsent : BOOL;
@@ -187,6 +187,18 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[_nError := nCode;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetMoverCount" Id="{3a552606-d2a1-5466-bd9a-60bf79b544f8}">
+      <Declaration><![CDATA[// Nombre de movers posés sur le plan simulé (configuration machine)
+METHOD SetMoverCount
+VAR_INPUT
+    nCount : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nMovers := MIN(nCount, GVL_Const.MAX_MOVERS);
 ]]></ST>
       </Implementation>
     </Method>

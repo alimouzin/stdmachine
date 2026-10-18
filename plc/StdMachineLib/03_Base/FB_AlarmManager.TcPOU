@@ -13,24 +13,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Alarme sur condition (erreur d'objet) : reste active jusqu'à Clear
-
-// Alarme sur événement (séquenceurs, process) : close dès qu'elle est acquittée
-
-// La cause a disparu
-
-// Acquittement d'un avertissement par l'opérateur (nGlobalId 0 = tous les avertissements)
-
-// Acquittement des défauts d'une station (Clearing) ou de la machine (nStation 0 : toutes les alarmes de défaut)
-
-// Politique Refaire, Pièce mauvaise, Aller à, Ignorer : l'alarme passe en information (docs/05 § 3.6)
-
-// Première alarme de défaut active d'une station (ou de la machine), pour la raison d'arrêt (docs/14 § 4)
-
-
-
-// ---------- interne
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Bind" Id="{397c5d1b-b5f8-5f6a-b6b9-f35a5f224083}">
       <Declaration><![CDATA[METHOD Bind
@@ -55,7 +38,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="Raise" Id="{2ee67bf8-473f-5e6c-9e11-137f7c4862eb}">
-      <Declaration><![CDATA[METHOD Raise
+      <Declaration><![CDATA[// Alarme sur condition (erreur d'objet) : reste active jusqu'à Clear
+METHOD Raise
 VAR_INPUT
     nGlobalId : UDINT;
     nCode : UINT;
@@ -69,7 +53,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="RaiseEvent" Id="{a9842974-2d73-5c66-93a9-41a799428f6f}">
-      <Declaration><![CDATA[METHOD RaiseEvent
+      <Declaration><![CDATA[// Alarme sur événement (séquenceurs, process) : close dès qu'elle est acquittée
+METHOD RaiseEvent
 VAR_INPUT
     nGlobalId : UDINT;
     nCode : UINT;
@@ -83,7 +68,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="Clear" Id="{799d58bb-9f3f-5f6f-bae8-9872cbd16739}">
-      <Declaration><![CDATA[METHOD Clear
+      <Declaration><![CDATA[// La cause a disparu
+METHOD Clear
 VAR_INPUT
     nGlobalId : UDINT;
     nCode : UINT;
@@ -108,7 +94,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="AckWarning" Id="{6f6f58ab-9b64-519e-b345-36083834b39b}">
-      <Declaration><![CDATA[METHOD AckWarning
+      <Declaration><![CDATA[// Acquittement d'un avertissement par l'opérateur (nGlobalId 0 = tous les avertissements)
+METHOD AckWarning
 VAR_INPUT
     nGlobalId : UDINT;
     nCode : UINT;
@@ -132,7 +119,8 @@ END_WHILE
       </Implementation>
     </Method>
     <Method Name="AckFaults" Id="{4f8a2d57-1d3a-509c-8f4d-1bb7bbb8274b}">
-      <Declaration><![CDATA[METHOD AckFaults
+      <Declaration><![CDATA[// Acquittement des défauts d'une station (Clearing) ou de la machine (nStation 0 : toutes les alarmes de défaut)
+METHOD AckFaults
 VAR_INPUT
     nStation : UINT;
     bAll : BOOL;                     // machine : défauts de toutes les stations aussi
@@ -158,7 +146,8 @@ END_WHILE
       </Implementation>
     </Method>
     <Method Name="Downgrade" Id="{38aef1dd-eaac-5480-b43d-eaf6bf3132c8}">
-      <Declaration><![CDATA[METHOD Downgrade
+      <Declaration><![CDATA[// Politique Refaire, Pièce mauvaise, Aller à, Ignorer : l'alarme passe en information (docs/05 § 3.6)
+METHOD Downgrade
 VAR_INPUT
     nGlobalId : UDINT;
     nCode : UINT;
@@ -177,7 +166,8 @@ _Close(i, '');
       </Implementation>
     </Method>
     <Method Name="FirstFault" Id="{edc45c42-d1aa-5ba8-ae1e-e98b613aee08}">
-      <Declaration><![CDATA[METHOD FirstFault : INT
+      <Declaration><![CDATA[// Première alarme de défaut active d'une station (ou de la machine), pour la raison d'arrêt (docs/14 § 4)
+METHOD FirstFault : INT
 VAR_INPUT
     nStation : UINT;
     bAnyStation : BOOL;
@@ -214,7 +204,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="_Raise" Id="{29596cee-a435-5425-9cc9-f72a42b4df00}">
-      <Declaration><![CDATA[METHOD PRIVATE _Raise
+      <Declaration><![CDATA[// ---------- interne
+METHOD PRIVATE _Raise
 VAR_INPUT
     nGlobalId : UDINT;
     nCode : UINT;

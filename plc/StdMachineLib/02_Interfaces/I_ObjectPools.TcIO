@@ -4,18 +4,26 @@
     <Declaration><![CDATA[// Pools d'objets (docs/04 § 9) : instances déclarées une fois pour toutes, attribuées au déploiement par
 // FB_ObjectFactory. La bibliothèque fournit FB_DefaultPools ; un projet peut donner les siens.
 INTERFACE I_ObjectPools
-// Nombre d'éléments du pool d'un type, 0 = type absent
-// Élément nIndex (1..PoolSize) du pool d'un type
 ]]></Declaration>
     <Method Name="PoolSize" Id="{888f9d33-7137-502f-8d7b-b3bbf14089a3}">
-      <Declaration><![CDATA[METHOD PoolSize : UINT
+      <Declaration><![CDATA[// Nombre d'éléments du pool d'un type, 0 = type absent
+METHOD PoolSize : UINT
+VAR_INPUT
+    nType : UINT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="PoolId" Id="{8bae74f9-df38-5424-b4c6-964c7c87ba5a}">
+      <Declaration><![CDATA[// N° du pool d'un type : deux types qui partagent un pool (axe linéaire et rotatif, modules) ont le même n°
+METHOD PoolId : UINT
 VAR_INPUT
     nType : UINT;
 END_VAR
 ]]></Declaration>
     </Method>
     <Method Name="Element" Id="{3b21351e-821d-5cc2-99b8-5f44f9ff9eb7}">
-      <Declaration><![CDATA[METHOD Element : I_Object
+      <Declaration><![CDATA[// Élément nIndex (1..PoolSize) du pool d'un type
+METHOD Element : I_Object
 VAR_INPUT
     nType : UINT;
     nIndex : UINT;

@@ -2,6 +2,15 @@
 // fonctions, files et priorités, préparation, fin d'opération (création et clôture des pièces, traces, qualité),
 // table d'OF, fin des pièces en cours, variables de mover, mover à vider, mover hors service.
 FUNCTION_BLOCK FB_GeneralSequencer
+VAR_INPUT
+    bDrain : BOOL;                  // fin des pièces en cours (docs/05 § 5.7), posé et levé par FB_Machine
+END_VAR
+VAR_OUTPUT
+    bStopRequest : BOOL;            // impulsion : arrêt automatique demandé à la machine
+    nStopReason : UINT;             // 1 OF terminé, 2 machine vidée, 3 arrêt qualité
+    bMachineFault : BOOL;           // mover en défaut, alarme de process « défaut machine »
+    nFaultCode : UINT;
+END_VAR
 VAR
     _refMachine : REFERENCE TO ST_MachineData;
     _refMgr : REFERENCE TO FB_MoverManager;
@@ -11,11 +20,6 @@ VAR
     aStation : ARRAY[1..GVL_Const.MAX_STATIONS] OF POINTER TO FB_Station;
     _aLastReceived : ARRAY[1..GVL_Const.MAX_STATIONS] OF LINT;
     _aNoStationMs : ARRAY[1..GVL_Const.MAX_MOVERS] OF LREAL;
-    bDrain : BOOL;                  // fin des pièces en cours (docs/05 § 5.7)
-    bStopRequest : BOOL;            // impulsion : arrêt automatique demandé à la machine
-    nStopReason : UINT;             // 1 OF terminé, 2 machine vidée, 3 arrêt qualité
-    bMachineFault : BOOL;           // mover en défaut, alarme de process « défaut machine »
-    nFaultCode : UINT;
     _bExecute : BOOL;
     _bOrderDonePending : BOOL;      // l'OF actif vient de passer Done : arrêt quand plus aucune pièce
     _aGroupUsed : ARRAY[1..GVL_Const.MAX_GROUPS] OF BOOL;     // fonctions visées par une Route du process général
@@ -1288,17 +1292,19 @@ FOR i := 1 TO _refMachine.nMovers DO
 END_FOR
 END_METHOD
 
-// Fonction utilisée par le process général sans station disponible (docs/05 § 5.2) ; 0 = aucune.
-// bIdle : pour Resetting → Idle, chaque fonction utilisée doit avoir au moins une station en Idle.
-// Une station volontairement retirée (hors production, arrêt qualité) ne compte jamais comme un défaut.
+// Fonction utilisée par le process général à laquelle il manque une station (docs/05 § 5.2) ; 0 = aucune.
+// nCheck 1 : aucune station disponible (pas Aborted ni Stopped), défaut 913 en Execute ;
+// nCheck 2 : aucune station en Idle (Resetting → Idle) ; nCheck 3 : toutes ses stations Aborted (Resetting).
+// Une station volontairement retirée (hors production, arrêt qualité) ne déclenche jamais le défaut.
 METHOD MissingGroup : USINT
 VAR_INPUT
-    bIdle : BOOL;
+    nCheck : USINT;
 END_VAR
 VAR
     g : USINT;
     s : USINT;
     bOk : BOOL;
+    bAny : BOOL;
     bWithdrawn : BOOL;
     eSt : E_State;
 END_VAR
@@ -1306,20 +1312,24 @@ MissingGroup := 0;
 FOR g := 1 TO GVL_Const.MAX_GROUPS DO
     IF _aGroupUsed[g] THEN
         bOk := FALSE;
+        bAny := FALSE;
         bWithdrawn := FALSE;
         FOR s := 1 TO GVL_Const.MAX_STATIONS DO
             IF (SHR(_refMachine.aGroup[g].nStationMask, s - 1) AND 1) = 1 AND_THEN aStation[s] <> 0 THEN
+                bAny := TRUE;
                 eSt := aStation[s]^.State;
                 IF aStation[s]^.OutOfProduction OR aStation[s]^.QualityLock THEN
                     bWithdrawn := TRUE;
-                ELSIF bIdle THEN
-                    bOk := bOk OR eSt = E_State.Idle;
-                ELSE
-                    bOk := bOk OR (eSt <> E_State.Aborted AND eSt <> E_State.Stopped);
                 END_IF
+                CASE nCheck OF
+                    1: bOk := bOk OR (eSt <> E_State.Aborted AND eSt <> E_State.Stopped);
+                    2: bOk := bOk OR eSt = E_State.Idle;
+                ELSE
+                    bOk := bOk OR eSt <> E_State.Aborted;
+                END_CASE
             END_IF
         END_FOR
-        IF NOT bOk AND NOT (bWithdrawn AND NOT bIdle) THEN
+        IF NOT bOk AND NOT (bWithdrawn AND nCheck <> 2) AND (bAny OR nCheck <> 3) THEN
             MissingGroup := g;
             RETURN;
         END_IF
@@ -1343,6 +1353,15 @@ END_FOR
 IF _refMachine.nRejectGroup >= 1 AND _refMachine.nRejectGroup <= GVL_Const.MAX_GROUPS THEN _aGroupUsed[_refMachine.nRejectGroup] := TRUE; END_IF
 END_METHOD
 
+// Contexte d'un mover, pour un lancement HMI d'opération avec mover (docs/05 § 8)
+METHOD MoverPtr : POINTER TO ST_MoverCtx
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+MoverPtr := 0;
+IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN MoverPtr := ADR(aMover[nMover]); END_IF
+END_METHOD
+
 METHOD MoverInError : BOOL
 VAR
     i : USINT;
@@ -1362,6 +1381,16 @@ nFaultCode := 0;
 FOR i := 1 TO GVL_Const.MAX_MOVERS DO
     IF aMover[i].eState = E_MoverState.Error THEN aMover[i].eState := E_MoverState.Ready; END_IF
 END_FOR
+END_METHOD
+
+// Table d'OF publiée dans le statut de la machine (docs/06 § 6.3)
+METHOD PublishOrders
+VAR_IN_OUT
+    stStatus : ST_MachineStatus;
+END_VAR
+stStatus.aOrder := aOrder;
+stStatus.nActiveOrder := 0;
+IF nActiveOrder >= 1 AND nActiveOrder <= GVL_Const.MAX_ORDERS THEN stStatus.nActiveOrder := aOrder[nActiveOrder].nOrder; END_IF
 END_METHOD
 
 METHOD PRIVATE _Publish
@@ -1403,6 +1432,51 @@ FOR i := 1 TO GVL_Const.MAX_MOVERS DO
     GVL_Hmi.aMoverStatus[i].aVar := aMover[i].aVar;
     GVL_Hmi.aMoverStatus[i].aVarPos := aMover[i].aVarPos;
     GVL_Hmi.aMoverStatus[i].aVarId := aMover[i].aVarId;
+END_FOR
+END_METHOD
+
+// ================================================================== valeurs rémanentes (docs/02 § 7.4, docs/05 § 10 étape 6)
+
+METHOD PublishRetained
+VAR_IN_OUT
+    stOut : ST_RetainedValues;
+END_VAR
+VAR
+    i : USINT;
+    v : USINT;
+    stItem : ST_RetainedItem;
+END_VAR
+FOR i := 1 TO _refMachine.nMovers DO
+    FOR v := 1 TO MIN(_refMachine.nMoverVar, GVL_Const.MAX_MOVER_VARS) DO
+        IF aMover[i].aVarId[v] <> 0 THEN
+            MEMSET(ADR(stItem), 0, SIZEOF(stItem));
+            stItem.eKind := E_RetainedKind.MoverVar;
+            stItem.nMover := i;
+            stItem.nId := aMover[i].aVarId[v];
+            stItem.aValue[1] := aMover[i].aVar[v];
+            stItem.stPos := aMover[i].aVarPos[v];
+            F_AddRetained(stOut, stItem);
+        END_IF
+    END_FOR
+END_FOR
+END_METHOD
+
+METHOD Restore : BOOL
+VAR_IN_OUT
+    stItem : ST_RetainedItem;
+END_VAR
+VAR
+    v : USINT;
+END_VAR
+Restore := FALSE;
+IF stItem.eKind <> E_RetainedKind.MoverVar OR stItem.nMover < 1 OR stItem.nMover > _refMachine.nMovers OR stItem.nId = 0 THEN RETURN; END_IF
+FOR v := 1 TO MIN(_refMachine.nMoverVar, GVL_Const.MAX_MOVER_VARS) DO
+    IF aMover[stItem.nMover].aVarId[v] = stItem.nId THEN
+        aMover[stItem.nMover].aVar[v] := stItem.aValue[1];
+        aMover[stItem.nMover].aVarPos[v] := stItem.stPos;
+        Restore := TRUE;
+        RETURN;
+    END_IF
 END_FOR
 END_METHOD
 END_FUNCTION_BLOCK

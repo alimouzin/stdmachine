@@ -50,6 +50,8 @@ Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 
 
 - D92 : **l'agent A écrit aussi la bibliothèque PLC** (`plc/`, sans TwinCAT, à l'aveugle). L'agent B n'y touche pas ; s'il a TwinCAT, il peut l'importer et signaler les erreurs de compilation dans la section ci-dessous. Les structures d'échange de `plc/src/01_Types` font foi pour le futur client ADS.
 
+- D93, D94 (PLC) : pour le futur client ADS et le simulateur, `ST_MachineStatus` gagne `eStopReason` (`E_StopReason`) et `bHmiLost` ; codes d'erreur de déploiement 1 à 22 en tête de `plc/src/05_Sequencers/FB_Loader.st` ; nouveau code d'alarme 909. Écarts de `05`/`06` adoptés par le PLC comme par le simulateur (`Launch` sans passage en Execute, `SetOut aArg[2]`, `SavePos aArg[2..5]`, compteurs de boucle cachés au niveau machine).
+
 ## Écarts constatés par le code
 
 (B ajoute ici, en ajout seulement : document, section, problème, solution retenue.)

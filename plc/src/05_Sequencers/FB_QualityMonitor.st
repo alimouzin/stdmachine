@@ -2,14 +2,16 @@
 // par station (constatés et imputés), fonction, mover, machine, et budget de rebuts par OF.
 // Les réactions sont rendues par les sorties ; le séquenceur général les applique.
 FUNCTION_BLOCK FB_QualityMonitor
-VAR
-    _refMachine : REFERENCE TO ST_MachineData;
-    _refAlarms : REFERENCE TO FB_AlarmManager;
+VAR_OUTPUT
     aStationHold : ARRAY[1..GVL_Const.MAX_STATIONS] OF BOOL;   // réaction « arrêt qualité de la station »
     aMoverOut : ARRAY[1..GVL_Const.MAX_MOVERS] OF BOOL;        // réaction « mover hors service »
     bLoadingLocked : BOOL;                                     // réaction « arrêt du chargement »
     bMachineStop : BOOL;                                       // impulsion : réaction « arrêter la machine »
     bAnyReaction : BOOL;                                       // balise bleu clignotant
+END_VAR
+VAR
+    _refMachine : REFERENCE TO ST_MachineData;
+    _refAlarms : REFERENCE TO FB_AlarmManager;
 END_VAR
 VAR PERSISTENT
     stTracks : ST_QualityStatus;

@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DefaultPools" Id="{4ad4d4bd-efa7-5e83-809b-89320fc2a5ad}" SpecialFunc="None">
+    <Declaration><![CDATA[// Pools d'objets par défaut de la bibliothèque (docs/04 § 9). Un projet qui a besoin d'autres tailles écrit
+// son propre bloc qui implémente I_ObjectPools et le donne à FB_Machine.SetPools.
+// Les axes linéaires et rotatifs partagent un pool ; tous les modules (types 100 et plus) partagent celui des groupes.
+FUNCTION_BLOCK FB_DefaultPools IMPLEMENTS I_ObjectPools
+VAR CONSTANT
+    N_DI : UINT := 256;
+    N_DO : UINT := 256;
+    N_AI : UINT := 32;
+    N_AO : UINT := 32;
+    N_CYLINDER : UINT := 64;
+    N_AXIS : UINT := 64;
+    N_VACUUM : UINT := 32;
+    N_GRIPPER : UINT := 16;
+    N_BEACON : UINT := 17;
+    N_SAFETY : UINT := 17;
+    N_TIMER : UINT := 32;
+    N_COUNTER : UINT := 32;
+    N_GROUP : UINT := 64;
+END_VAR
+VAR
+    aDigitalInput : ARRAY[1..N_DI] OF FB_DigitalInput;
+    aDigitalOutput : ARRAY[1..N_DO] OF FB_DigitalOutput;
+    aAnalogInput : ARRAY[1..N_AI] OF FB_AnalogInput;
+    aAnalogOutput : ARRAY[1..N_AO] OF FB_AnalogOutput;
+    aCylinder : ARRAY[1..N_CYLINDER] OF FB_Cylinder;
+    aAxis : ARRAY[1..N_AXIS] OF FB_Axis;
+    aVacuum : ARRAY[1..N_VACUUM] OF FB_VacuumBlow;
+    aGripper : ARRAY[1..N_GRIPPER] OF FB_Gripper;
+    aBeacon : ARRAY[1..N_BEACON] OF FB_Beacon;
+    aSafety : ARRAY[1..N_SAFETY] OF FB_Safety;
+    aTimer : ARRAY[1..N_TIMER] OF FB_Timer;
+    aCounter : ARRAY[1..N_COUNTER] OF FB_Counter;
+    aGroup : ARRAY[1..N_GROUP] OF FB_Group;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="PoolId" Id="{ff78e8be-6b01-5411-927f-07675c047901}">
+      <Declaration><![CDATA[METHOD PoolId : UINT
+VAR_INPUT
+    nType : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nType = GVL_Catalog.Type_RotaryAxis THEN
+    PoolId := GVL_Catalog.Type_LinearAxis;
+ELSIF nType >= GVL_Catalog.Type_Group THEN
+    PoolId := GVL_Catalog.Type_Group;
+ELSE
+    PoolId := nType;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PoolSize" Id="{90f8e99b-9fe5-555b-8627-708897a74537}">
+      <Declaration><![CDATA[METHOD PoolSize : UINT
+VAR_INPUT
+    nType : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE PoolId(nType) OF
+    GVL_Catalog.Type_DigitalInput: PoolSize := N_DI;
+    GVL_Catalog.Type_DigitalOutput: PoolSize := N_DO;
+    GVL_Catalog.Type_AnalogInput: PoolSize := N_AI;
+    GVL_Catalog.Type_AnalogOutput: PoolSize := N_AO;
+    GVL_Catalog.Type_Cylinder: PoolSize := N_CYLINDER;
+    GVL_Catalog.Type_LinearAxis: PoolSize := N_AXIS;
+    GVL_Catalog.Type_VacuumBlow: PoolSize := N_VACUUM;
+    GVL_Catalog.Type_Gripper: PoolSize := N_GRIPPER;
+    GVL_Catalog.Type_Beacon: PoolSize := N_BEACON;
+    GVL_Catalog.Type_Safety: PoolSize := N_SAFETY;
+    GVL_Catalog.Type_Timer: PoolSize := N_TIMER;
+    GVL_Catalog.Type_Counter: PoolSize := N_COUNTER;
+    GVL_Catalog.Type_Group: PoolSize := N_GROUP;
+ELSE
+    PoolSize := 0;                  // type pas encore écrit dans la bibliothèque
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Element" Id="{1e16e34d-1cbb-5276-b996-481397f883e0}">
+      <Declaration><![CDATA[METHOD Element : I_Object
+VAR_INPUT
+    nType : UINT;
+    nIndex : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Element := 0;
+IF nIndex < 1 OR nIndex > PoolSize(nType) THEN RETURN; END_IF
+CASE PoolId(nType) OF
+    GVL_Catalog.Type_DigitalInput: Element := aDigitalInput[nIndex];
+    GVL_Catalog.Type_DigitalOutput: Element := aDigitalOutput[nIndex];
+    GVL_Catalog.Type_AnalogInput: Element := aAnalogInput[nIndex];
+    GVL_Catalog.Type_AnalogOutput: Element := aAnalogOutput[nIndex];
+    GVL_Catalog.Type_Cylinder: Element := aCylinder[nIndex];
+    GVL_Catalog.Type_LinearAxis: Element := aAxis[nIndex];
+    GVL_Catalog.Type_VacuumBlow: Element := aVacuum[nIndex];
+    GVL_Catalog.Type_Gripper: Element := aGripper[nIndex];
+    GVL_Catalog.Type_Beacon: Element := aBeacon[nIndex];
+    GVL_Catalog.Type_Safety: Element := aSafety[nIndex];
+    GVL_Catalog.Type_Timer: Element := aTimer[nIndex];
+    GVL_Catalog.Type_Counter: Element := aCounter[nIndex];
+    GVL_Catalog.Type_Group: Element := aGroup[nIndex];
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

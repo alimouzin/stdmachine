@@ -11,8 +11,7 @@ VAR PERSISTENT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Remise à zéro au changement d'OF (P3), appelée par le séquenceur général
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="_OnConfigure" Id="{5874a95d-240a-5805-aeba-6a20d700f8b9}">
       <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
@@ -54,7 +53,8 @@ _OnStart := E_ActStatus.Done;
       </Implementation>
     </Method>
     <Method Name="OnOrderChange" Id="{34058cfc-d7a4-5f6e-b84e-205a8d85859f}">
-      <Declaration><![CDATA[METHOD OnOrderChange
+      <Declaration><![CDATA[// Remise à zéro au changement d'OF (P3), appelée par le séquenceur général
+METHOD OnOrderChange
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF _refCfg.aParam[3] = 1 THEN _fValue := _refCfg.aParam[1]; END_IF

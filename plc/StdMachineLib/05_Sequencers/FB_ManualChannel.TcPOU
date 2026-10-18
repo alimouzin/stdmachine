@@ -16,8 +16,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Apprentissage : position actuelle des axes indiqués, composantes choisies (docs/05 § 7)
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Init" Id="{85061e2a-2e6f-5385-820b-e64a9c2674bd}">
       <Declaration><![CDATA[METHOD Init
@@ -120,7 +119,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_Teach" Id="{e70542e3-7988-59af-ae7f-5893752f609f}">
-      <Declaration><![CDATA[METHOD PRIVATE _Teach : BOOL
+      <Declaration><![CDATA[// Apprentissage : position actuelle des axes indiqués, composantes choisies (docs/05 § 7)
+METHOD PRIVATE _Teach : BOOL
 VAR_INPUT
     req : REFERENCE TO ST_ManualRequest;
 END_VAR

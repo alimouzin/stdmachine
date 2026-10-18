@@ -5,36 +5,23 @@
 // par station (constatés et imputés), fonction, mover, machine, et budget de rebuts par OF.
 // Les réactions sont rendues par les sorties ; le séquenceur général les applique.
 FUNCTION_BLOCK FB_QualityMonitor
-VAR
-    _refMachine : REFERENCE TO ST_MachineData;
-    _refAlarms : REFERENCE TO FB_AlarmManager;
+VAR_OUTPUT
     aStationHold : ARRAY[1..GVL_Const.MAX_STATIONS] OF BOOL;   // réaction « arrêt qualité de la station »
     aMoverOut : ARRAY[1..GVL_Const.MAX_MOVERS] OF BOOL;        // réaction « mover hors service »
     bLoadingLocked : BOOL;                                     // réaction « arrêt du chargement »
     bMachineStop : BOOL;                                       // impulsion : réaction « arrêter la machine »
     bAnyReaction : BOOL;                                       // balise bleu clignotant
 END_VAR
+VAR
+    _refMachine : REFERENCE TO ST_MachineData;
+    _refAlarms : REFERENCE TO FB_AlarmManager;
+END_VAR
 VAR PERSISTENT
     stTracks : ST_QualityStatus;
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Un résultat (docs/10 § 9, « À chaque résultat »)
-
-// Budget de rebuts de l'OF (docs/10 § 4.3) : avertissement à 80 %, arrêt du chargement à 100 %
-
-// Libération (docs/10 § 6) : remise à zéro de la portée, surveillance renforcée pour 10 résultats
-
-// Remise à zéro manuelle d'une portée (droit quality.reset)
-
-// Changement de référence produit (D87) : toutes les portées repartent de zéro, sauf les verrous en cours
-
-
-
-
-
-// Codes 950 à 958 (docs/10 § 8, docs/14 § 3.1)
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Init" Id="{2d246b67-07b3-564c-b7d8-70c479bc5711}">
       <Declaration><![CDATA[METHOD Init
@@ -91,7 +78,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="Record" Id="{eb60317e-78b1-569b-98b6-5a296d14c937}">
-      <Declaration><![CDATA[METHOD Record
+      <Declaration><![CDATA[// Un résultat (docs/10 § 9, « À chaque résultat »)
+METHOD Record
 VAR_INPUT
     eScope : E_QualityScope;
     nIndex : INT;
@@ -154,7 +142,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="RecordOrder" Id="{8e0381b3-55cd-5ccd-a2fa-760021c57bb4}">
-      <Declaration><![CDATA[METHOD RecordOrder
+      <Declaration><![CDATA[// Budget de rebuts de l'OF (docs/10 § 4.3) : avertissement à 80 %, arrêt du chargement à 100 %
+METHOD RecordOrder
 VAR_INPUT
     refOrder : REFERENCE TO ST_OrderState;
     bBad : BOOL;
@@ -189,7 +178,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="Release" Id="{8ccf6df6-6b9b-5434-95a0-d0cc772c276b}">
-      <Declaration><![CDATA[METHOD Release : BOOL
+      <Declaration><![CDATA[// Libération (docs/10 § 6) : remise à zéro de la portée, surveillance renforcée pour 10 résultats
+METHOD Release : BOOL
 VAR_INPUT
     eScope : E_QualityScope;
     nIndex : INT;
@@ -220,7 +210,8 @@ _UpdateAny();
       </Implementation>
     </Method>
     <Method Name="Reset" Id="{fa63e2b0-433c-5c45-93f0-765921db0ad3}">
-      <Declaration><![CDATA[METHOD Reset
+      <Declaration><![CDATA[// Remise à zéro manuelle d'une portée (droit quality.reset)
+METHOD Reset
 VAR_INPUT
     eScope : E_QualityScope;
     nIndex : INT;
@@ -237,7 +228,8 @@ t.eLevel := E_QualityLevel.Normal;
       </Implementation>
     </Method>
     <Method Name="ResetAllWindows" Id="{e56ea015-14b7-51db-901e-93579c684c87}">
-      <Declaration><![CDATA[METHOD ResetAllWindows
+      <Declaration><![CDATA[// Changement de référence produit (D87) : toutes les portées repartent de zéro, sauf les verrous en cours
+METHOD ResetAllWindows
 VAR
     i : INT;
 END_VAR
@@ -313,7 +305,8 @@ bAnyReaction := bAnyReaction OR stTracks.stMachine.bLocked;
       </Implementation>
     </Method>
     <Method Name="_AlarmCode" Id="{a1075b56-3e32-503e-927d-c614f8b36529}">
-      <Declaration><![CDATA[METHOD PRIVATE _AlarmCode : UINT
+      <Declaration><![CDATA[// Codes 950 à 958 (docs/10 § 8, docs/14 § 3.1)
+METHOD PRIVATE _AlarmCode : UINT
 VAR_INPUT
     eScope : E_QualityScope;
     nIndex : INT;

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_AddRetained" Id="{b84de05c-d694-5883-9360-1b164d340ec2}" SpecialFunc="None">
+    <Declaration><![CDATA[// Ajoute une valeur à la liste publiée pour la sauvegarde par la HMI (docs/02 § 7.4)
+FUNCTION F_AddRetained : BOOL
+VAR_IN_OUT
+    stOut : ST_RetainedValues;
+    stItem : ST_RetainedItem;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_AddRetained := FALSE;
+IF stOut.nCount >= 2048 THEN RETURN; END_IF
+stOut.nCount := stOut.nCount + 1;
+stOut.aItem[stOut.nCount] := stItem;
+F_AddRetained := TRUE;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

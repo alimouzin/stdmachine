@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Crc32" Id="{82f8ad8c-1c0d-55bf-ba35-120fa363033d}" SpecialFunc="None">
+    <Declaration><![CDATA[// CRC-32 IEEE 802.3 (polynôme réfléchi 16#EDB88320, init et xor final 16#FFFFFFFF), calculé par tranches pour
+// ne pas dépasser le temps de cycle (docs/06 § 1). Même résultat que System.IO.Hashing.Crc32 côté HMI.
+FUNCTION_BLOCK FB_Crc32
+VAR
+    _aTable : ARRAY[0..255] OF DWORD;
+    _bTable : BOOL;
+    _pData : POINTER TO BYTE;
+    _nSize : UDINT;
+    _nDone : UDINT;
+    _nCrc : DWORD;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Begin" Id="{a382f1a5-00fd-5e18-b944-51293a353448}">
+      <Declaration><![CDATA[METHOD Begin
+VAR_INPUT
+    pData : POINTER TO BYTE;
+    nSize : UDINT;
+END_VAR
+VAR
+    i : UINT;
+    k : USINT;
+    c : DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT _bTable THEN
+    FOR i := 0 TO 255 DO
+        c := UINT_TO_DWORD(i);
+        FOR k := 1 TO 8 DO
+            IF (c AND 1) = 1 THEN c := SHR(c, 1) XOR 16#EDB88320; ELSE c := SHR(c, 1); END_IF
+        END_FOR
+        _aTable[i] := c;
+    END_FOR
+    _bTable := TRUE;
+END_IF
+_pData := pData;
+_nSize := nSize;
+_nDone := 0;
+_nCrc := 16#FFFFFFFF;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Step" Id="{072abbf6-1468-5f10-9830-45feabff4280}">
+      <Declaration><![CDATA[// Traite au plus nBudget octets ; TRUE quand tout est calculé
+METHOD Step : BOOL
+VAR_INPUT
+    nBudget : UDINT;
+END_VAR
+VAR
+    nEnd : UDINT;
+    p : POINTER TO BYTE;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nEnd := MIN(_nSize, _nDone + nBudget);
+p := _pData + _nDone;
+WHILE _nDone < nEnd DO
+    _nCrc := _aTable[DWORD_TO_USINT((_nCrc XOR BYTE_TO_DWORD(p^)) AND 16#FF)] XOR SHR(_nCrc, 8);
+    p := p + 1;
+    _nDone := _nDone + 1;
+END_WHILE
+Step := _nDone >= _nSize;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Value" Id="{03bf8dd2-0d71-55c3-9702-177837bef2ab}">
+      <Declaration><![CDATA[PROPERTY Value : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{fe123055-6b38-5d8f-a106-7fadcfd92645}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Value := DWORD_TO_UDINT(_nCrc XOR 16#FFFFFFFF);
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

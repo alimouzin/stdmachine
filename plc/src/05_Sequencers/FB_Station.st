@@ -2,7 +2,7 @@
 // pas à pas, calibrations, canal manuel (docs/05 § 2 à 4, § 7, § 8, § 10.1).
 // Contexte 1 : opération, initialisation, arrêt, vidage, calibration ; contexte 2 : cycle de fond ;
 // contextes 3 à 8 : branches des blocs En parallèle.
-FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider, I_ManualHost
+FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider, I_ManualHost, I_ObjectHost
 VAR
     nNumber : USINT;
     _refData : REFERENCE TO ST_StationData;
@@ -1103,7 +1103,7 @@ VAR
     pPart : POINTER TO ST_Part;
 END_VAR
 I REF= _refData.aInstr[_aCtx[nCtx].nPC];
-bPos := _ResolvePos(I.aParam[1], stPos);
+bPos := _ResolvePos(stVal := I.aParam[1], stPos => stPos);
 fValue := _Resolve(I.aParam[1]);
 CASE I.aBind[1].eTarget OF
     E_BindTarget.Var:
@@ -1150,7 +1150,7 @@ VAR
     bPos : BOOL;
 END_VAR
 I REF= _refData.aInstr[_aCtx[nCtx].nPC];
-bPos := _ResolvePos(I.aParam[1], stPos);
+bPos := _ResolvePos(stVal := I.aParam[1], stPos => stPos);
 _WriteOutput(DINT_TO_INT(I.aArg[1]), DINT_TO_INT(I.aArg[2]), _Resolve(I.aParam[1]), stPos, bPos);
 END_METHOD
 
@@ -1445,7 +1445,7 @@ FOR k := 1 TO GVL_Const.MAX_PARAMS DO
             stParams.aKind[k] := E_ParamKind.Text;
             IF n >= 1 AND n <= GVL_Const.MAX_TEXTS THEN stParams.sText := _refData.aText[n]; END_IF
     ELSE
-        IF _ResolvePos(I.aParam[k], stPos) THEN
+        IF _ResolvePos(stVal := I.aParam[k], stPos => stPos) THEN
             stParams.aKind[k] := E_ParamKind.Position;
             stParams.stPos := stPos;
             stParams.aReal[k] := I.aParam[k].fValue;        // décalage (hauteur d'approche)
@@ -1725,4 +1725,92 @@ GET
 Alarms REF= _refAlarms;
 END_GET
 END_PROPERTY
+
+// Calibrations échues ou jamais faites : avertissement 912, à chaque Reset et une fois par jour (docs/05 § 10.1)
+METHOD CheckCalibrations
+VAR_INPUT
+    tNow : LINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+IF NOT __ISVALIDREF(_refData) THEN RETURN; END_IF
+FOR i := 1 TO MIN(_refData.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    IF aCalib[i].eState = E_CalibState.Valid AND aCalib[i].nValidityDays > 0
+       AND tNow - aCalib[i].tLast > UINT_TO_LINT(aCalib[i].nValidityDays) * 864000000000 THEN
+        aCalib[i].eState := E_CalibState.Expired;
+    END_IF
+    IF (aCalib[i].eState = E_CalibState.Expired OR aCalib[i].eState = E_CalibState.Never) AND __ISVALIDREF(_refAlarms) THEN
+        _refAlarms.RaiseEvent(_GlobalId(), 912, INT_TO_UDINT(i), E_Severity.Warning);
+    END_IF
+END_FOR
+END_METHOD
+
+// ================================================================== valeurs rémanentes (docs/02 § 7.4, docs/05 § 10 étape 6)
+
+// Variables persistantes et états des calibrations, ajoutés à la liste publiée pour la HMI
+METHOD PublishRetained
+VAR_IN_OUT
+    stOut : ST_RetainedValues;
+END_VAR
+VAR
+    i : INT;
+    stItem : ST_RetainedItem;
+END_VAR
+IF NOT __ISVALIDREF(_refData) THEN RETURN; END_IF
+FOR i := 1 TO GVL_Const.MAX_VARS DO
+    IF _refData.aVar[i].bRetain AND aVarId[i] <> 0 THEN
+        MEMSET(ADR(stItem), 0, SIZEOF(stItem));
+        stItem.eKind := E_RetainedKind.StationVar;
+        stItem.nStation := nNumber;
+        stItem.nId := aVarId[i];
+        stItem.aValue[1] := aVar[i];
+        stItem.stPos := aVarPos[i];
+        F_AddRetained(stOut, stItem);
+    END_IF
+END_FOR
+FOR i := 1 TO MIN(_refData.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    MEMSET(ADR(stItem), 0, SIZEOF(stItem));
+    stItem.eKind := E_RetainedKind.Calibration;
+    stItem.nStation := nNumber;
+    stItem.nId := aCalib[i].nId;
+    stItem.aValue[1] := F_CalibStateNum(aCalib[i].eState);
+    stItem.tStamp := aCalib[i].tLast;
+    stItem.sUser := aCalib[i].sUser;
+    F_AddRetained(stOut, stItem);
+END_FOR
+END_METHOD
+
+// Restauration d'une valeur sauvegardée, retrouvée par identifiant ; FALSE si l'élément n'existe plus
+METHOD Restore : BOOL
+VAR_IN_OUT
+    stItem : ST_RetainedItem;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+Restore := FALSE;
+IF NOT __ISVALIDREF(_refData) OR stItem.nId = 0 THEN RETURN; END_IF
+CASE stItem.eKind OF
+    E_RetainedKind.StationVar:
+        FOR i := 1 TO GVL_Const.MAX_VARS DO
+            IF aVarId[i] = stItem.nId AND _refData.aVar[i].bRetain THEN
+                aVar[i] := stItem.aValue[1];
+                aVarPos[i] := stItem.stPos;
+                Restore := TRUE;
+                RETURN;
+            END_IF
+        END_FOR
+    E_RetainedKind.Calibration:
+        FOR i := 1 TO MIN(_refData.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+            IF aCalib[i].nId = stItem.nId THEN
+                aCalib[i].eState := F_CalibStateOf(stItem.aValue[1]);
+                aCalib[i].tLast := stItem.tStamp;
+                aCalib[i].sUser := stItem.sUser;
+                Restore := TRUE;
+                RETURN;
+            END_IF
+        END_FOR
+END_CASE
+END_METHOD
 END_FUNCTION_BLOCK

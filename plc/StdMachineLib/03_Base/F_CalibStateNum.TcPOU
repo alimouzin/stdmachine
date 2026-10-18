@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_CalibStateNum" Id="{594d18aa-c0f9-55d3-bbb9-1c97c66aac9d}" SpecialFunc="None">
+    <Declaration><![CDATA[// État de calibration ↔ nombre, pour la sauvegarde des valeurs par la HMI (ST_RetainedItem.aValue[1])
+FUNCTION F_CalibStateNum : LREAL
+VAR_INPUT
+    eState : E_CalibState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[CASE eState OF
+    E_CalibState.Valid: F_CalibStateNum := 1;
+    E_CalibState.Expired: F_CalibStateNum := 2;
+    E_CalibState.Failed: F_CalibStateNum := 3;
+    E_CalibState.Running: F_CalibStateNum := 4;
+ELSE
+    F_CalibStateNum := 0;
+END_CASE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

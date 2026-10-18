@@ -5,6 +5,15 @@
 // fonctions, files et priorités, préparation, fin d'opération (création et clôture des pièces, traces, qualité),
 // table d'OF, fin des pièces en cours, variables de mover, mover à vider, mover hors service.
 FUNCTION_BLOCK FB_GeneralSequencer
+VAR_INPUT
+    bDrain : BOOL;                  // fin des pièces en cours (docs/05 § 5.7), posé et levé par FB_Machine
+END_VAR
+VAR_OUTPUT
+    bStopRequest : BOOL;            // impulsion : arrêt automatique demandé à la machine
+    nStopReason : UINT;             // 1 OF terminé, 2 machine vidée, 3 arrêt qualité
+    bMachineFault : BOOL;           // mover en défaut, alarme de process « défaut machine »
+    nFaultCode : UINT;
+END_VAR
 VAR
     _refMachine : REFERENCE TO ST_MachineData;
     _refMgr : REFERENCE TO FB_MoverManager;
@@ -14,11 +23,6 @@ VAR
     aStation : ARRAY[1..GVL_Const.MAX_STATIONS] OF POINTER TO FB_Station;
     _aLastReceived : ARRAY[1..GVL_Const.MAX_STATIONS] OF LINT;
     _aNoStationMs : ARRAY[1..GVL_Const.MAX_MOVERS] OF LREAL;
-    bDrain : BOOL;                  // fin des pièces en cours (docs/05 § 5.7)
-    bStopRequest : BOOL;            // impulsion : arrêt automatique demandé à la machine
-    nStopReason : UINT;             // 1 OF terminé, 2 machine vidée, 3 arrêt qualité
-    bMachineFault : BOOL;           // mover en défaut, alarme de process « défaut machine »
-    nFaultCode : UINT;
     _bExecute : BOOL;
     _bOrderDonePending : BOOL;      // l'OF actif vient de passer Done : arrêt quand plus aucune pièce
     _aGroupUsed : ARRAY[1..GVL_Const.MAX_GROUPS] OF BOOL;     // fonctions visées par une Route du process général
@@ -32,89 +36,11 @@ VAR PERSISTENT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// ================================================================== mise en place
-
-
-
-// Reset machine (docs/05 § 6.3) : chaque mover détecté reçoit sa position ; les contextes et les pièces sont gardés
-
-// Nouveau déploiement (docs/05 § 10) : variables de mover reprises par identifiant et type ; movers remis à
-// l'étape 1 si le process général a changé de taille
-
-// ================================================================== cycle
-
-
-// ================================================================== process général d'un mover (docs/05 § 5.3)
-
-
-// ================================================================== routage (docs/05 § 5.4)
-
-
-
-
-
-
-
-
-
-
-
-// Retour en Execute d'un mover Halted : il reprend selon la position où il se trouve, sans perdre son PC
-
-// File : servie par priorité de la fonction visée (la plus haute d'abord), puis ordre d'arrivée
-
-// ================================================================== demande d'opération
-
-
-
-
-// ================================================================== fin d'une opération (docs/05 § 5.5)
-
-
-
-// Variables de mover à règle « quand le mover est vide » (docs/05 § 5.8)
-
-
-
-// ================================================================== valeurs et conditions du process général
-
-
-
-
-// Un Si qui teste le verdict traite lui-même la pièce mauvaise : pas de redirection automatique (docs/02 § 6.2)
-
-
-
-// ================================================================== OF (docs/05 § 5.6)
-
-
-
-
-
-
-
-// ================================================================== commandes HMI
-
-// Retrait des pièces d'un mover à vider confirmé par l'opérateur (docs/02 § 10)
-
-
-
-// ================================================================== état
-
-
-// Une opération d'entrée est-elle en cours ou engagée ? (fin des pièces : on la laisse finir, docs/05 § 5.7)
-
-
-
-// Fonction utilisée par le process général sans station disponible (docs/05 § 5.2) ; 0 = aucune.
-// bIdle : pour Resetting → Idle, chaque fonction utilisée doit avoir au moins une station en Idle.
-// Une station volontairement retirée (hors production, arrêt qualité) ne compte jamais comme un défaut.
-
-// Fonctions visées par une Route du process général (après chaque déploiement)
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Init" Id="{1ee455aa-bbce-5275-bedd-550e66b27388}">
-      <Declaration><![CDATA[METHOD Init
+      <Declaration><![CDATA[// ================================================================== mise en place
+METHOD Init
 VAR_INPUT
     refMachine : REFERENCE TO ST_MachineData;
     refMgr : REFERENCE TO FB_MoverManager;
@@ -145,7 +71,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="OnReset" Id="{66177e5c-10b5-578d-8fed-8d9d7a360950}">
-      <Declaration><![CDATA[METHOD OnReset
+      <Declaration><![CDATA[// Reset machine (docs/05 § 6.3) : chaque mover détecté reçoit sa position ; les contextes et les pièces sont gardés
+METHOD OnReset
 VAR
     i : USINT;
     nPos : INT;
@@ -186,7 +113,9 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="OnDeploy" Id="{7cd85ec8-b9d4-594f-95ca-cc92686260bb}">
-      <Declaration><![CDATA[METHOD OnDeploy
+      <Declaration><![CDATA[// Nouveau déploiement (docs/05 § 10) : variables de mover reprises par identifiant et type ; movers remis à
+// l'étape 1 si le process général a changé de taille
+METHOD OnDeploy
 VAR_INPUT
     bRestartMovers : BOOL;
 END_VAR
@@ -236,7 +165,8 @@ ScanGroups();
       </Implementation>
     </Method>
     <Method Name="Cycle" Id="{3186ec8d-5774-5d15-8880-229f1386f191}">
-      <Declaration><![CDATA[METHOD Cycle
+      <Declaration><![CDATA[// ================================================================== cycle
+METHOD Cycle
 VAR_INPUT
     eState : E_State;               // état de la machine
 END_VAR
@@ -310,7 +240,8 @@ _Publish();
       </Implementation>
     </Method>
     <Method Name="_RunMover" Id="{d8414d75-3e1c-59ca-991c-536b42d0931d}">
-      <Declaration><![CDATA[METHOD PRIVATE _RunMover
+      <Declaration><![CDATA[// ================================================================== process général d'un mover (docs/05 § 5.3)
+METHOD PRIVATE _RunMover
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -404,7 +335,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="_StartRoute" Id="{580b9f29-39fe-575d-ad71-984d907a88e5}">
-      <Declaration><![CDATA[METHOD PRIVATE _StartRoute
+      <Declaration><![CDATA[// ================================================================== routage (docs/05 § 5.4)
+METHOD PRIVATE _StartRoute
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -690,7 +622,8 @@ m.tWaitStart := F_NowUtc();
       </Implementation>
     </Method>
     <Method Name="_Resume" Id="{dae9b58e-45f4-559f-b4ae-8a30ceb9b96e}">
-      <Declaration><![CDATA[METHOD PRIVATE _Resume
+      <Declaration><![CDATA[// Retour en Execute d'un mover Halted : il reprend selon la position où il se trouve, sans perdre son PC
+METHOD PRIVATE _Resume
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -717,7 +650,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_Queued" Id="{12e4e2b2-bf97-59a1-80d3-1b0adc2e6fe4}">
-      <Declaration><![CDATA[METHOD PRIVATE _Queued
+      <Declaration><![CDATA[// File : servie par priorité de la fonction visée (la plus haute d'abord), puis ordre d'arrivée
+METHOD PRIVATE _Queued
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -763,7 +697,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="_PostIfPrepare" Id="{08dc3c72-7474-5c19-a7b4-1b9d68791c3d}">
-      <Declaration><![CDATA[METHOD PRIVATE _PostIfPrepare
+      <Declaration><![CDATA[// ================================================================== demande d'opération
+METHOD PRIVATE _PostIfPrepare
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -875,7 +810,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_FinishOperation" Id="{9ed842e4-3f66-58d2-baf8-1c986fdbf158}">
-      <Declaration><![CDATA[METHOD PRIVATE _FinishOperation
+      <Declaration><![CDATA[// ================================================================== fin d'une opération (docs/05 § 5.5)
+METHOD PRIVATE _FinishOperation
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -1044,7 +980,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_ResetOnEmpty" Id="{8f0fa71d-4a86-5314-b75f-1acb2011751b}">
-      <Declaration><![CDATA[METHOD PRIVATE _ResetOnEmpty
+      <Declaration><![CDATA[// Variables de mover à règle « quand le mover est vide » (docs/05 § 5.8)
+METHOD PRIVATE _ResetOnEmpty
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -1100,7 +1037,8 @@ aMover[i].bToEmptyPark := FALSE;
       </Implementation>
     </Method>
     <Method Name="_FirstPart" Id="{e08901f6-21d8-5e94-9717-2b5a163ec2b2}">
-      <Declaration><![CDATA[METHOD PRIVATE _FirstPart : POINTER TO ST_Part
+      <Declaration><![CDATA[// ================================================================== valeurs et conditions du process général
+METHOD PRIVATE _FirstPart : POINTER TO ST_Part
 VAR_INPUT
     i : USINT;
 END_VAR
@@ -1184,7 +1122,8 @@ _EvalCond := bAll;
       </Implementation>
     </Method>
     <Method Name="_MarkVerdictTested" Id="{0830e565-147c-5052-a58f-d478753bb6ab}">
-      <Declaration><![CDATA[METHOD PRIVATE _MarkVerdictTested
+      <Declaration><![CDATA[// Un Si qui teste le verdict traite lui-même la pièce mauvaise : pas de redirection automatique (docs/02 § 6.2)
+METHOD PRIVATE _MarkVerdictTested
 VAR_INPUT
     i : USINT;
     n : INT;
@@ -1258,7 +1197,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="Activate" Id="{9058fb12-16e7-5ce9-9168-0660ff104f40}">
-      <Declaration><![CDATA[METHOD Activate : E_RejectReason
+      <Declaration><![CDATA[// ================================================================== OF (docs/05 § 5.6)
+METHOD Activate : E_RejectReason
 VAR_INPUT
     stReq : ST_OrderRequest;
 END_VAR
@@ -1390,7 +1330,9 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="ConfirmRemoved" Id="{eeff54d9-5f49-53b5-a019-091c345c9c23}">
-      <Declaration><![CDATA[METHOD ConfirmRemoved : E_RejectReason
+      <Declaration><![CDATA[// ================================================================== commandes HMI
+// Retrait des pièces d'un mover à vider confirmé par l'opérateur (docs/02 § 10)
+METHOD ConfirmRemoved : E_RejectReason
 VAR_INPUT
     nMover : USINT;
 END_VAR
@@ -1461,7 +1403,8 @@ IF NOT bOut AND aMover[nMover].eState = E_MoverState.OutOfService AND NOT aMover
       </Implementation>
     </Method>
     <Method Name="PartsInProcess" Id="{5099e4c4-5eba-5268-9582-e6eb125384ad}">
-      <Declaration><![CDATA[METHOD PartsInProcess : UINT
+      <Declaration><![CDATA[// ================================================================== état
+METHOD PartsInProcess : UINT
 VAR
     i : USINT;
     k : USINT;
@@ -1478,7 +1421,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="EntryInProgress" Id="{e5fab53e-b947-588b-ac51-ac8bddfbdffb}">
-      <Declaration><![CDATA[METHOD EntryInProgress : BOOL
+      <Declaration><![CDATA[// Une opération d'entrée est-elle en cours ou engagée ? (fin des pièces : on la laisse finir, docs/05 § 5.7)
+METHOD EntryInProgress : BOOL
 VAR
     i : USINT;
 END_VAR
@@ -1525,14 +1469,19 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="MissingGroup" Id="{98caae96-151c-5960-aa9b-14cbfa7bc041}">
-      <Declaration><![CDATA[METHOD MissingGroup : USINT
+      <Declaration><![CDATA[// Fonction utilisée par le process général à laquelle il manque une station (docs/05 § 5.2) ; 0 = aucune.
+// nCheck 1 : aucune station disponible (pas Aborted ni Stopped), défaut 913 en Execute ;
+// nCheck 2 : aucune station en Idle (Resetting → Idle) ; nCheck 3 : toutes ses stations Aborted (Resetting).
+// Une station volontairement retirée (hors production, arrêt qualité) ne déclenche jamais le défaut.
+METHOD MissingGroup : USINT
 VAR_INPUT
-    bIdle : BOOL;
+    nCheck : USINT;
 END_VAR
 VAR
     g : USINT;
     s : USINT;
     bOk : BOOL;
+    bAny : BOOL;
     bWithdrawn : BOOL;
     eSt : E_State;
 END_VAR
@@ -1542,20 +1491,24 @@ END_VAR
 FOR g := 1 TO GVL_Const.MAX_GROUPS DO
     IF _aGroupUsed[g] THEN
         bOk := FALSE;
+        bAny := FALSE;
         bWithdrawn := FALSE;
         FOR s := 1 TO GVL_Const.MAX_STATIONS DO
             IF (SHR(_refMachine.aGroup[g].nStationMask, s - 1) AND 1) = 1 AND_THEN aStation[s] <> 0 THEN
+                bAny := TRUE;
                 eSt := aStation[s]^.State;
                 IF aStation[s]^.OutOfProduction OR aStation[s]^.QualityLock THEN
                     bWithdrawn := TRUE;
-                ELSIF bIdle THEN
-                    bOk := bOk OR eSt = E_State.Idle;
-                ELSE
-                    bOk := bOk OR (eSt <> E_State.Aborted AND eSt <> E_State.Stopped);
                 END_IF
+                CASE nCheck OF
+                    1: bOk := bOk OR (eSt <> E_State.Aborted AND eSt <> E_State.Stopped);
+                    2: bOk := bOk OR eSt = E_State.Idle;
+                ELSE
+                    bOk := bOk OR eSt <> E_State.Aborted;
+                END_CASE
             END_IF
         END_FOR
-        IF NOT bOk AND NOT (bWithdrawn AND NOT bIdle) THEN
+        IF NOT bOk AND NOT (bWithdrawn AND nCheck <> 2) AND (bAny OR nCheck <> 3) THEN
             MissingGroup := g;
             RETURN;
         END_IF
@@ -1565,7 +1518,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="ScanGroups" Id="{5dcf7109-aaf8-54be-a1ba-c05692b4d4b1}">
-      <Declaration><![CDATA[METHOD ScanGroups
+      <Declaration><![CDATA[// Fonctions visées par une Route du process général (après chaque déploiement)
+METHOD ScanGroups
 VAR
     k : INT;
     g : DINT;
@@ -1580,6 +1534,19 @@ FOR k := 1 TO MIN(_refMachine.nInstrCount, GVL_Const.MAX_INSTR) DO
     END_IF
 END_FOR
 IF _refMachine.nRejectGroup >= 1 AND _refMachine.nRejectGroup <= GVL_Const.MAX_GROUPS THEN _aGroupUsed[_refMachine.nRejectGroup] := TRUE; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MoverPtr" Id="{32f65173-a406-53ba-975d-5e247bb5a1d2}">
+      <Declaration><![CDATA[// Contexte d'un mover, pour un lancement HMI d'opération avec mover (docs/05 § 8)
+METHOD MoverPtr : POINTER TO ST_MoverCtx
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MoverPtr := 0;
+IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN MoverPtr := ADR(aMover[nMover]); END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -1609,6 +1576,20 @@ nFaultCode := 0;
 FOR i := 1 TO GVL_Const.MAX_MOVERS DO
     IF aMover[i].eState = E_MoverState.Error THEN aMover[i].eState := E_MoverState.Ready; END_IF
 END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PublishOrders" Id="{dfc686f0-d001-58a6-b5e4-7781b5e275ff}">
+      <Declaration><![CDATA[// Table d'OF publiée dans le statut de la machine (docs/06 § 6.3)
+METHOD PublishOrders
+VAR_IN_OUT
+    stStatus : ST_MachineStatus;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[stStatus.aOrder := aOrder;
+stStatus.nActiveOrder := 0;
+IF nActiveOrder >= 1 AND nActiveOrder <= GVL_Const.MAX_ORDERS THEN stStatus.nActiveOrder := aOrder[nActiveOrder].nOrder; END_IF
 ]]></ST>
       </Implementation>
     </Method>
@@ -1654,6 +1635,58 @@ FOR i := 1 TO GVL_Const.MAX_MOVERS DO
     GVL_Hmi.aMoverStatus[i].aVar := aMover[i].aVar;
     GVL_Hmi.aMoverStatus[i].aVarPos := aMover[i].aVarPos;
     GVL_Hmi.aMoverStatus[i].aVarId := aMover[i].aVarId;
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PublishRetained" Id="{03065034-0ff5-5203-9aad-e31175704659}">
+      <Declaration><![CDATA[// ================================================================== valeurs rémanentes (docs/02 § 7.4, docs/05 § 10 étape 6)
+METHOD PublishRetained
+VAR_IN_OUT
+    stOut : ST_RetainedValues;
+END_VAR
+VAR
+    i : USINT;
+    v : USINT;
+    stItem : ST_RetainedItem;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO _refMachine.nMovers DO
+    FOR v := 1 TO MIN(_refMachine.nMoverVar, GVL_Const.MAX_MOVER_VARS) DO
+        IF aMover[i].aVarId[v] <> 0 THEN
+            MEMSET(ADR(stItem), 0, SIZEOF(stItem));
+            stItem.eKind := E_RetainedKind.MoverVar;
+            stItem.nMover := i;
+            stItem.nId := aMover[i].aVarId[v];
+            stItem.aValue[1] := aMover[i].aVar[v];
+            stItem.stPos := aMover[i].aVarPos[v];
+            F_AddRetained(stOut, stItem);
+        END_IF
+    END_FOR
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Restore" Id="{57b379c0-36b7-51e3-bd9d-6238aacd09dc}">
+      <Declaration><![CDATA[METHOD Restore : BOOL
+VAR_IN_OUT
+    stItem : ST_RetainedItem;
+END_VAR
+VAR
+    v : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Restore := FALSE;
+IF stItem.eKind <> E_RetainedKind.MoverVar OR stItem.nMover < 1 OR stItem.nMover > _refMachine.nMovers OR stItem.nId = 0 THEN RETURN; END_IF
+FOR v := 1 TO MIN(_refMachine.nMoverVar, GVL_Const.MAX_MOVER_VARS) DO
+    IF aMover[stItem.nMover].aVarId[v] = stItem.nId THEN
+        aMover[stItem.nMover].aVar[v] := stItem.aValue[1];
+        aMover[stItem.nMover].aVarPos[v] := stItem.stPos;
+        Restore := TRUE;
+        RETURN;
+    END_IF
 END_FOR
 ]]></ST>
       </Implementation>

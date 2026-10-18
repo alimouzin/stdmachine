@@ -5,7 +5,7 @@
 // pas à pas, calibrations, canal manuel (docs/05 § 2 à 4, § 7, § 8, § 10.1).
 // Contexte 1 : opération, initialisation, arrêt, vidage, calibration ; contexte 2 : cycle de fond ;
 // contextes 3 à 8 : branches des blocs En parallèle.
-FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider, I_ManualHost
+FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider, I_ManualHost, I_ObjectHost
 VAR
     nNumber : USINT;
     _refData : REFERENCE TO ST_StationData;
@@ -65,126 +65,11 @@ VAR PERSISTENT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// ================================================================== mise en place
-
-
-
-
-// Nouveau déploiement (docs/05 § 10, étape 4) : contextes et variables remis à l'état initial, sauf les
-// variables persistantes retrouvées par leur identifiant et leur type.
-
-// Hôte du canal manuel (I_ManualHost)
-
-
-// ================================================================== commandes
-
-
-
-
-
-// Changement d'OF : les objets concernés (compteurs) réagissent
-
-// Défaut venu de l'extérieur (Abort machine, essai)
-
-// ================================================================== demandes d'opération (docs/05 § 4.1)
-
-
-// L'opération (fonction, n°) a-t-elle une préparation (instruction WaitMover) ? (docs/05 § 4.1)
-
-// Le mover est arrivé en position de travail (préparation, docs/05 § 4.1)
-
-// Le séquenceur général a lu la réponse
-
-// Maintenance : lancer une table (opération, initialisation, vidage, calibration), docs/05 § 8
-
-
-
-// ================================================================== cycle
-
-
-
-
-
-// Stopping : l'opération en cours se termine ; une préparation qui attend son mover est annulée (code 907) ;
-// puis la table Arrêt tourne sur le contexte 1 (docs/05 § 4.2 et 4.2 bis)
-
-
-
-
-
-
-
-// Calibration : copie de travail validée seulement à la fin réussie (docs/05 § 10.1)
-
-// Objets appelés dans l'ordre des n° locaux (parents d'abord) ; état agrégé des modules (docs/04 § 8)
-
-// ================================================================== interpréteur (docs/05 § 3)
-
-
-// Exécute ou fait avancer l'instruction au PC ; TRUE si le contexte est bloqué jusqu'au cycle suivant
-
-
-// Faut-il s'arrêter ici en pas à pas ?
-
-
-
-
-// ---------------------------------------------------------------- Action
-
-
-// Politique d'échec de l'instruction (docs/05 § 3.6)
-
-// Pièce mauvaise : fin de l'opération ; dans une branche, saut au Join et marque (docs/05 § 3.6)
-
-// ---------------------------------------------------------------- Fork / Join
-
-
-
-// ---------------------------------------------------------------- SetVar, SetOut, Alarm, Prompt, SavePos
-
-
-// Sortie d'un bloc composé (docs/02 § 5.5) : aArg[1] rang, aArg[2] variable cachée d'un sous-process (0 = opération)
-
-
-
-
-// Demande à l'opérateur (calibration, docs/05 § 10.1) : aArg[1] texte, aArg[2] 0 confirmation, 1 saisie
-
-// Enregistrer la position actuelle (calibration) : aArg[1] position nommée, aArg[2..5] objets qui donnent X, Y, Z, C
-
-
-// ---------------------------------------------------------------- variables (copie de travail pendant une calibration)
-
-
-
-
-
-// ---------------------------------------------------------------- valeurs (docs/05 § 3.4)
-
-
-// Vrai si la valeur est une position (position nommée, variable ou variable de mover de type position) ;
-// stPos reçoit la position, le décalage fValue n'y est pas ajouté (l'objet l'ajoute à la composante utilisée).
-
-
-// Rangement des résultats (docs/05 § 3.5)
-
-
-
-
-// ---------------------------------------------------------------- conditions (docs/05 § 3.7)
-
-
-// ================================================================== verrouillages (I_InterlockProvider, docs/02 § 4.5)
-
-
-// ================================================================== publication (docs/05 § 4.5)
-
-
-// ================================================================== accès
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Init" Id="{573252a1-32cc-54ea-9525-a1139b061a37}">
-      <Declaration><![CDATA[METHOD Init
+      <Declaration><![CDATA[// ================================================================== mise en place
+METHOD Init
 VAR_INPUT
     nStation : USINT;
     refData : REFERENCE TO ST_StationData;
@@ -235,7 +120,9 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="OnDeploy" Id="{ad1e289f-9997-51b0-872c-0765dced1880}">
-      <Declaration><![CDATA[METHOD OnDeploy
+      <Declaration><![CDATA[// Nouveau déploiement (docs/05 § 10, étape 4) : contextes et variables remis à l'état initial, sauf les
+// variables persistantes retrouvées par leur identifiant et leur type.
+METHOD OnDeploy
 VAR
     i : INT;
     k : INT;
@@ -280,7 +167,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="ObjectAt" Id="{e6041a14-0401-5e3f-9546-f5248a9d77a3}">
-      <Declaration><![CDATA[METHOD ObjectAt : I_Object
+      <Declaration><![CDATA[// Hôte du canal manuel (I_ManualHost)
+METHOD ObjectAt : I_Object
 VAR_INPUT
     nLocalId : UINT;
 END_VAR
@@ -303,7 +191,8 @@ IF nIndex >= 1 AND nIndex <= GVL_Const.MAX_NAMED_POS AND __ISVALIDREF(_refData) 
       </Implementation>
     </Method>
     <Method Name="Command" Id="{13d6c53f-e3f8-5a32-9d96-7e9a769a3cc3}">
-      <Declaration><![CDATA[METHOD Command : E_RejectReason
+      <Declaration><![CDATA[// ================================================================== commandes
+METHOD Command : E_RejectReason
 VAR_INPUT
     eCmd : E_Cmd;
 END_VAR
@@ -357,7 +246,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="OnOrderChange" Id="{aac25509-17d6-5d87-93f8-89e407329871}">
-      <Declaration><![CDATA[METHOD OnOrderChange
+      <Declaration><![CDATA[// Changement d'OF : les objets concernés (compteurs) réagissent
+METHOD OnOrderChange
 VAR
     i : UINT;
     ipAware : I_OrderAware;
@@ -373,7 +263,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="RaiseFault" Id="{bb0a9447-049d-518d-b12d-e338ca572f23}">
-      <Declaration><![CDATA[METHOD RaiseFault
+      <Declaration><![CDATA[// Défaut venu de l'extérieur (Abort machine, essai)
+METHOD RaiseFault
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[_bFault := TRUE;
@@ -381,7 +272,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="Offer" Id="{c3b49697-8870-54f4-acd6-72a7e5254ef1}">
-      <Declaration><![CDATA[METHOD Offer : BOOL
+      <Declaration><![CDATA[// ================================================================== demandes d'opération (docs/05 § 4.1)
+METHOD Offer : BOOL
 VAR_INPUT
     stReq : ST_OpRequest;
     pMover : POINTER TO ST_MoverCtx;
@@ -406,7 +298,8 @@ Offer := TRUE;
       </Implementation>
     </Method>
     <Method Name="PrepareWanted" Id="{d958c317-d59a-52de-ae17-a8db9caa4ce7}">
-      <Declaration><![CDATA[METHOD PrepareWanted : BOOL
+      <Declaration><![CDATA[// L'opération (fonction, n°) a-t-elle une préparation (instruction WaitMover) ? (docs/05 § 4.1)
+METHOD PrepareWanted : BOOL
 VAR_INPUT
     nGroup : USINT;
     nOperation : USINT;
@@ -424,7 +317,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="MoverArrived" Id="{e122050f-f512-53b5-98cf-33e39136af66}">
-      <Declaration><![CDATA[METHOD MoverArrived
+      <Declaration><![CDATA[// Le mover est arrivé en position de travail (préparation, docs/05 § 4.1)
+METHOD MoverArrived
 VAR_INPUT
     nReqId : UDINT;
 END_VAR
@@ -435,7 +329,8 @@ END_VAR
       </Implementation>
     </Method>
     <Method Name="AckResponse" Id="{d2777ee2-dca8-50c3-bfdc-e655b6534b6a}">
-      <Declaration><![CDATA[METHOD AckResponse
+      <Declaration><![CDATA[// Le séquenceur général a lu la réponse
+METHOD AckResponse
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF _stResp.eStatus = E_OpStatus.Done OR _stResp.eStatus = E_OpStatus.Failed OR _stResp.eStatus = E_OpStatus.Aborted THEN
@@ -445,7 +340,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="Launch" Id="{99814033-61ae-5aa6-a8b8-8ef91ed6afdb}">
-      <Declaration><![CDATA[METHOD Launch : E_RejectReason
+      <Declaration><![CDATA[// Maintenance : lancer une table (opération, initialisation, vidage, calibration), docs/05 § 8
+METHOD Launch : E_RejectReason
 VAR_INPUT
     nTable : USINT;
     nMover : USINT;                 // 0 = sans mover
@@ -531,7 +427,8 @@ _StartContext(1, nTable);
       </Implementation>
     </Method>
     <Method Name="Cycle" Id="{eb17fe45-f16d-57f1-a0a1-67b3368a7e51}">
-      <Declaration><![CDATA[METHOD Cycle
+      <Declaration><![CDATA[// ================================================================== cycle
+METHOD Cycle
 VAR
     eCmd : E_Cmd;
     eBefore : E_State;
@@ -671,7 +568,9 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_AdvanceStopTable" Id="{34ea9a4d-6d98-5368-956c-06756b26cf1e}">
-      <Declaration><![CDATA[METHOD PRIVATE _AdvanceStopTable
+      <Declaration><![CDATA[// Stopping : l'opération en cours se termine ; une préparation qui attend son mover est annulée (code 907) ;
+// puis la table Arrêt tourne sur le contexte 1 (docs/05 § 4.2 et 4.2 bis)
+METHOD PRIVATE _AdvanceStopTable
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF fbPack.eState <> E_State.Stopping THEN RETURN; END_IF
@@ -792,7 +691,8 @@ _stPrompt.nPromptId := 0;
       </Implementation>
     </Method>
     <Method Name="_CommitCalibration" Id="{58c73f8a-4fad-5a37-bffa-8ff401dd9fa7}">
-      <Declaration><![CDATA[METHOD PRIVATE _CommitCalibration
+      <Declaration><![CDATA[// Calibration : copie de travail validée seulement à la fin réussie (docs/05 § 10.1)
+METHOD PRIVATE _CommitCalibration
 VAR_INPUT
     bOk : BOOL;
 END_VAR
@@ -828,7 +728,8 @@ MEMSET(ADR(_aWorkPosSet), 0, SIZEOF(_aWorkPosSet));
       </Implementation>
     </Method>
     <Method Name="_UpdateObjects" Id="{a047e779-d7dc-57dc-a14a-b5d08e889726}">
-      <Declaration><![CDATA[METHOD PRIVATE _UpdateObjects
+      <Declaration><![CDATA[// Objets appelés dans l'ordre des n° locaux (parents d'abord) ; état agrégé des modules (docs/04 § 8)
+METHOD PRIVATE _UpdateObjects
 VAR
     i : UINT;
     nParent : UINT;
@@ -865,7 +766,8 @@ SetState(eStationAgg);
       </Implementation>
     </Method>
     <Method Name="_RunInterpreter" Id="{8409ad55-e509-587e-b681-e2aaab8afbd4}">
-      <Declaration><![CDATA[METHOD PRIVATE _RunInterpreter
+      <Declaration><![CDATA[// ================================================================== interpréteur (docs/05 § 3)
+METHOD PRIVATE _RunInterpreter
 VAR_INPUT
     fCycleMs : LREAL;
 END_VAR
@@ -899,7 +801,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="_ExecuteOne" Id="{7f4395fd-8a4a-5ef9-858d-48141a29a710}">
-      <Declaration><![CDATA[METHOD PRIVATE _ExecuteOne : BOOL
+      <Declaration><![CDATA[// Exécute ou fait avancer l'instruction au PC ; TRUE si le contexte est bloqué jusqu'au cycle suivant
+METHOD PRIVATE _ExecuteOne : BOOL
 VAR_INPUT
     nCtx : USINT;
     fCycleMs : LREAL;
@@ -1069,7 +972,8 @@ c.nPC := c.nPC + 1;
       </Implementation>
     </Method>
     <Method Name="_StepWanted" Id="{4112af23-e258-56a6-b42e-b389119a3cde}">
-      <Declaration><![CDATA[METHOD PRIVATE _StepWanted : BOOL
+      <Declaration><![CDATA[// Faut-il s'arrêter ici en pas à pas ?
+METHOD PRIVATE _StepWanted : BOOL
 VAR_IN_OUT
     c : ST_Context;
 END_VAR
@@ -1123,7 +1027,8 @@ _bFault := TRUE;
       </Implementation>
     </Method>
     <Method Name="_ExecAction" Id="{7276b9d5-b443-503b-8f2d-846b4dac2f28}">
-      <Declaration><![CDATA[METHOD PRIVATE _ExecAction : BOOL
+      <Declaration><![CDATA[// ---------------------------------------------------------------- Action
+METHOD PRIVATE _ExecAction : BOOL
 VAR_INPUT
     nCtx : USINT;
 END_VAR
@@ -1176,7 +1081,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_HandleFailure" Id="{9ec4ac82-6b92-5b3c-abb1-5e3e3fe76f48}">
-      <Declaration><![CDATA[METHOD PRIVATE _HandleFailure : BOOL
+      <Declaration><![CDATA[// Politique d'échec de l'instruction (docs/05 § 3.6)
+METHOD PRIVATE _HandleFailure : BOOL
 VAR_INPUT
     nCtx : USINT;
     nCode : UINT;
@@ -1236,7 +1142,8 @@ _HandleFailure := TRUE;
       </Implementation>
     </Method>
     <Method Name="_JumpToEnd" Id="{c6023b73-6d53-551d-b6b1-b80280f6a515}">
-      <Declaration><![CDATA[METHOD PRIVATE _JumpToEnd
+      <Declaration><![CDATA[// Pièce mauvaise : fin de l'opération ; dans une branche, saut au Join et marque (docs/05 § 3.6)
+METHOD PRIVATE _JumpToEnd
 VAR_INPUT
     nCtx : USINT;
 END_VAR
@@ -1263,7 +1170,8 @@ c.nPC := _refData.aTable[nTable].nStart + _refData.aTable[nTable].nLength - 1;  
       </Implementation>
     </Method>
     <Method Name="_Fork" Id="{527a59cc-1f84-5680-8949-b6ae5ebcd336}">
-      <Declaration><![CDATA[METHOD PRIVATE _Fork : BOOL
+      <Declaration><![CDATA[// ---------------------------------------------------------------- Fork / Join
+METHOD PRIVATE _Fork : BOOL
 VAR_INPUT
     nCtx : USINT;
 END_VAR
@@ -1356,7 +1264,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="_SetVar" Id="{eea4455b-b274-5ed3-85cf-f5f6f15e75cf}">
-      <Declaration><![CDATA[METHOD PRIVATE _SetVar
+      <Declaration><![CDATA[// ---------------------------------------------------------------- SetVar, SetOut, Alarm, Prompt, SavePos
+METHOD PRIVATE _SetVar
 VAR_INPUT
     nCtx : USINT;
 END_VAR
@@ -1371,7 +1280,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[I REF= _refData.aInstr[_aCtx[nCtx].nPC];
-bPos := _ResolvePos(I.aParam[1], stPos);
+bPos := _ResolvePos(stVal := I.aParam[1], stPos => stPos);
 fValue := _Resolve(I.aParam[1]);
 CASE I.aBind[1].eTarget OF
     E_BindTarget.Var:
@@ -1409,7 +1318,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_SetOut" Id="{0f4115cb-f5e9-532b-a886-95423053b993}">
-      <Declaration><![CDATA[METHOD PRIVATE _SetOut
+      <Declaration><![CDATA[// Sortie d'un bloc composé (docs/02 § 5.5) : aArg[1] rang, aArg[2] variable cachée d'un sous-process (0 = opération)
+METHOD PRIVATE _SetOut
 VAR_INPUT
     nCtx : USINT;
 END_VAR
@@ -1421,7 +1331,7 @@ END_VAR
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[I REF= _refData.aInstr[_aCtx[nCtx].nPC];
-bPos := _ResolvePos(I.aParam[1], stPos);
+bPos := _ResolvePos(stVal := I.aParam[1], stPos => stPos);
 _WriteOutput(DINT_TO_INT(I.aArg[1]), DINT_TO_INT(I.aArg[2]), _Resolve(I.aParam[1]), stPos, bPos);
 ]]></ST>
       </Implementation>
@@ -1500,7 +1410,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="_Prompt" Id="{b80e9fd7-73a0-50c1-8036-53507d1fd92b}">
-      <Declaration><![CDATA[METHOD PRIVATE _Prompt : BOOL
+      <Declaration><![CDATA[// Demande à l'opérateur (calibration, docs/05 § 10.1) : aArg[1] texte, aArg[2] 0 confirmation, 1 saisie
+METHOD PRIVATE _Prompt : BOOL
 VAR_INPUT
     nCtx : USINT;
 END_VAR
@@ -1539,7 +1450,8 @@ _Prompt := FALSE;
       </Implementation>
     </Method>
     <Method Name="_SavePos" Id="{21a08a50-f9f7-5a46-a686-426f18c37b64}">
-      <Declaration><![CDATA[METHOD PRIVATE _SavePos
+      <Declaration><![CDATA[// Enregistrer la position actuelle (calibration) : aArg[1] position nommée, aArg[2..5] objets qui donnent X, Y, Z, C
+METHOD PRIVATE _SavePos
 VAR_INPUT
     nCtx : USINT;
 END_VAR
@@ -1586,7 +1498,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="_ReadVar" Id="{7eed90f5-3384-5a6e-bd88-0157c7cb28c9}">
-      <Declaration><![CDATA[METHOD PRIVATE _ReadVar : LREAL
+      <Declaration><![CDATA[// ---------------------------------------------------------------- variables (copie de travail pendant une calibration)
+METHOD PRIVATE _ReadVar : LREAL
 VAR_INPUT
     n : INT;
 END_VAR
@@ -1648,7 +1561,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="_Resolve" Id="{c685bd99-cce2-5964-a0e5-cbb681ba78e0}">
-      <Declaration><![CDATA[METHOD PRIVATE _Resolve : LREAL
+      <Declaration><![CDATA[// ---------------------------------------------------------------- valeurs (docs/05 § 3.4)
+METHOD PRIVATE _Resolve : LREAL
 VAR_INPUT
     stVal : ST_Value;
 END_VAR
@@ -1694,7 +1608,9 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="_ResolvePos" Id="{7336f7e1-5ff6-5d8f-94f8-8734ecc797a3}">
-      <Declaration><![CDATA[METHOD PRIVATE _ResolvePos : BOOL
+      <Declaration><![CDATA[// Vrai si la valeur est une position (position nommée, variable ou variable de mover de type position) ;
+// stPos reçoit la position, le décalage fValue n'y est pas ajouté (l'objet l'ajoute à la composante utilisée).
+METHOD PRIVATE _ResolvePos : BOOL
 VAR_INPUT
     stVal : ST_Value;
 END_VAR
@@ -1760,7 +1676,7 @@ FOR k := 1 TO GVL_Const.MAX_PARAMS DO
             stParams.aKind[k] := E_ParamKind.Text;
             IF n >= 1 AND n <= GVL_Const.MAX_TEXTS THEN stParams.sText := _refData.aText[n]; END_IF
     ELSE
-        IF _ResolvePos(I.aParam[k], stPos) THEN
+        IF _ResolvePos(stVal := I.aParam[k], stPos => stPos) THEN
             stParams.aKind[k] := E_ParamKind.Position;
             stParams.stPos := stPos;
             stParams.aReal[k] := I.aParam[k].fValue;        // décalage (hauteur d'approche)
@@ -1774,7 +1690,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="_StoreResults" Id="{08e8cbf8-132c-51e0-94f5-d541d6e56652}">
-      <Declaration><![CDATA[METHOD PRIVATE _StoreResults
+      <Declaration><![CDATA[// Rangement des résultats (docs/05 § 3.5)
+METHOD PRIVATE _StoreResults
 VAR_INPUT
     nCtx : USINT;
     ipObj : I_Object;
@@ -1879,7 +1796,8 @@ _refAlarms.SetContext(stCtx);
       </Implementation>
     </Method>
     <Method Name="_EvalCond" Id="{98781488-146f-5aaf-8adb-424d577b80c0}">
-      <Declaration><![CDATA[METHOD PRIVATE _EvalCond : BOOL
+      <Declaration><![CDATA[// ---------------------------------------------------------------- conditions (docs/05 § 3.7)
+METHOD PRIVATE _EvalCond : BOOL
 VAR_INPUT
     n : INT;
 END_VAR
@@ -1907,7 +1825,8 @@ _EvalCond := bAll;
       </Implementation>
     </Method>
     <Method Name="Check" Id="{6a68d422-fc67-5cdc-8fa0-303660a6bb8b}">
-      <Declaration><![CDATA[METHOD Check : INT
+      <Declaration><![CDATA[// ================================================================== verrouillages (I_InterlockProvider, docs/02 § 4.5)
+METHOD Check : INT
 VAR_INPUT
     nLocalId : UINT;
     nAction : UINT;
@@ -1939,7 +1858,8 @@ END_FOR
       </Implementation>
     </Method>
     <Method Name="_Publish" Id="{4a163fc1-a972-503b-9cbe-f415e324b5b0}">
-      <Declaration><![CDATA[METHOD PRIVATE _Publish
+      <Declaration><![CDATA[// ================================================================== publication (docs/05 § 4.5)
+METHOD PRIVATE _Publish
 VAR
     i : USINT;
     nNext : INT;
@@ -1996,7 +1916,8 @@ END_FOR
       </Implementation>
     </Method>
     <Property Name="State" Id="{4ca66758-23a8-5b9f-9aae-ffa2cbbd1726}">
-      <Declaration><![CDATA[PROPERTY State : E_State
+      <Declaration><![CDATA[// ================================================================== accès
+PROPERTY State : E_State
 ]]></Declaration>
       <Get Name="Get" Id="{02b99927-b585-5d78-b328-26c403e16a24}">
         <Declaration><![CDATA[VAR
@@ -2138,5 +2059,104 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <Method Name="CheckCalibrations" Id="{92b64135-db3b-5657-9069-6997c961ec98}">
+      <Declaration><![CDATA[// Calibrations échues ou jamais faites : avertissement 912, à chaque Reset et une fois par jour (docs/05 § 10.1)
+METHOD CheckCalibrations
+VAR_INPUT
+    tNow : LINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refData) THEN RETURN; END_IF
+FOR i := 1 TO MIN(_refData.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    IF aCalib[i].eState = E_CalibState.Valid AND aCalib[i].nValidityDays > 0
+       AND tNow - aCalib[i].tLast > UINT_TO_LINT(aCalib[i].nValidityDays) * 864000000000 THEN
+        aCalib[i].eState := E_CalibState.Expired;
+    END_IF
+    IF (aCalib[i].eState = E_CalibState.Expired OR aCalib[i].eState = E_CalibState.Never) AND __ISVALIDREF(_refAlarms) THEN
+        _refAlarms.RaiseEvent(_GlobalId(), 912, INT_TO_UDINT(i), E_Severity.Warning);
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PublishRetained" Id="{c2f4693c-a761-5ffe-b453-57161ac12300}">
+      <Declaration><![CDATA[// ================================================================== valeurs rémanentes (docs/02 § 7.4, docs/05 § 10 étape 6)
+// Variables persistantes et états des calibrations, ajoutés à la liste publiée pour la HMI
+METHOD PublishRetained
+VAR_IN_OUT
+    stOut : ST_RetainedValues;
+END_VAR
+VAR
+    i : INT;
+    stItem : ST_RetainedItem;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refData) THEN RETURN; END_IF
+FOR i := 1 TO GVL_Const.MAX_VARS DO
+    IF _refData.aVar[i].bRetain AND aVarId[i] <> 0 THEN
+        MEMSET(ADR(stItem), 0, SIZEOF(stItem));
+        stItem.eKind := E_RetainedKind.StationVar;
+        stItem.nStation := nNumber;
+        stItem.nId := aVarId[i];
+        stItem.aValue[1] := aVar[i];
+        stItem.stPos := aVarPos[i];
+        F_AddRetained(stOut, stItem);
+    END_IF
+END_FOR
+FOR i := 1 TO MIN(_refData.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+    MEMSET(ADR(stItem), 0, SIZEOF(stItem));
+    stItem.eKind := E_RetainedKind.Calibration;
+    stItem.nStation := nNumber;
+    stItem.nId := aCalib[i].nId;
+    stItem.aValue[1] := F_CalibStateNum(aCalib[i].eState);
+    stItem.tStamp := aCalib[i].tLast;
+    stItem.sUser := aCalib[i].sUser;
+    F_AddRetained(stOut, stItem);
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Restore" Id="{7a89190a-61c3-505d-a71a-f40a377521da}">
+      <Declaration><![CDATA[// Restauration d'une valeur sauvegardée, retrouvée par identifiant ; FALSE si l'élément n'existe plus
+METHOD Restore : BOOL
+VAR_IN_OUT
+    stItem : ST_RetainedItem;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Restore := FALSE;
+IF NOT __ISVALIDREF(_refData) OR stItem.nId = 0 THEN RETURN; END_IF
+CASE stItem.eKind OF
+    E_RetainedKind.StationVar:
+        FOR i := 1 TO GVL_Const.MAX_VARS DO
+            IF aVarId[i] = stItem.nId AND _refData.aVar[i].bRetain THEN
+                aVar[i] := stItem.aValue[1];
+                aVarPos[i] := stItem.stPos;
+                Restore := TRUE;
+                RETURN;
+            END_IF
+        END_FOR
+    E_RetainedKind.Calibration:
+        FOR i := 1 TO MIN(_refData.nCalibCount, GVL_Const.CALIB_PER_STATION) DO
+            IF aCalib[i].nId = stItem.nId THEN
+                aCalib[i].eState := F_CalibStateOf(stItem.aValue[1]);
+                aCalib[i].tLast := stItem.tStamp;
+                aCalib[i].sUser := stItem.sUser;
+                Restore := TRUE;
+                RETURN;
+            END_IF
+        END_FOR
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
   </POU>
 </TcPlcObject>

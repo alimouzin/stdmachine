@@ -13,8 +13,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// Seuils d'alarme : avertissements surveillés en continu, sans mettre l'objet en erreur
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="_OnConfigure" Id="{d091819f-7f51-5958-a76f-4ad0762c4590}">
       <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
@@ -129,7 +128,8 @@ _fValue := fSum / INT_TO_LREAL(_nSamples);
       </Implementation>
     </Method>
     <Method Name="_Monitor" Id="{1c3aa978-4de3-5b0e-b8b8-8e7655b13fa9}">
-      <Declaration><![CDATA[METHOD PROTECTED _Monitor
+      <Declaration><![CDATA[// Seuils d'alarme : avertissements surveillés en continu, sans mettre l'objet en erreur
+METHOD PROTECTED _Monitor
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF _ipAlarms = 0 THEN RETURN; END_IF

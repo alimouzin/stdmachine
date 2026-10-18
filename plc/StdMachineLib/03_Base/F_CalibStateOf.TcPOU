@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_CalibStateOf" Id="{298b929f-60ee-5b92-bf51-cd05cbb89e95}" SpecialFunc="None">
+    <Declaration><![CDATA[// Nombre → état de calibration (restauration) ; une calibration en cours à la sauvegarde revient « jamais faite »
+FUNCTION F_CalibStateOf : E_CalibState
+VAR_INPUT
+    fValue : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF fValue > 2.5 AND fValue < 3.5 THEN
+    F_CalibStateOf := E_CalibState.Failed;
+ELSIF fValue > 1.5 AND fValue < 2.5 THEN
+    F_CalibStateOf := E_CalibState.Expired;
+ELSIF fValue > 0.5 AND fValue < 1.5 THEN
+    F_CalibStateOf := E_CalibState.Valid;
+ELSE
+    F_CalibStateOf := E_CalibState.Never;
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -20,8 +20,7 @@ VAR
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// État sûr : maintien (docs/03, catalogue)
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="_OnConfigure" Id="{8fe2d4a0-f4ef-5bd2-b7e8-193fabf509c9}">
       <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
@@ -123,7 +122,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="_SafeState" Id="{3b5c1422-adef-53bd-ad90-a7410f95f377}">
-      <Declaration><![CDATA[METHOD PROTECTED _SafeState
+      <Declaration><![CDATA[// État sûr : maintien (docs/03, catalogue)
+METHOD PROTECTED _SafeState
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[;

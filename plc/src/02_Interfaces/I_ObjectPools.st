@@ -7,6 +7,12 @@ VAR_INPUT
     nType : UINT;
 END_VAR
 END_METHOD
+// N° du pool d'un type : deux types qui partagent un pool (axe linéaire et rotatif, modules) ont le même n°
+METHOD PoolId : UINT
+VAR_INPUT
+    nType : UINT;
+END_VAR
+END_METHOD
 // Élément nIndex (1..PoolSize) du pool d'un type
 METHOD Element : I_Object
 VAR_INPUT

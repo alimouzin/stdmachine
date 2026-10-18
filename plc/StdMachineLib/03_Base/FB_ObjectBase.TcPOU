@@ -38,31 +38,7 @@ VAR PERSISTENT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// ---------- Compteurs de maintenance (I_Maintained)
-
-
-
-
-
-// Restauration des valeurs sauvegardées par la HMI (docs/05 § 10, étape 6)
-
-// ---------- Fin d'action et erreurs
-
-
-
-
-
-
-// ---------- Aides
-
-
-
-
-
-
-
-// ---------- Méthodes à redéfinir par les types (valeurs par défaut tirées du catalogue)
-]]></ST>
+      <ST><![CDATA[]]></ST>
     </Implementation>
     <Method Name="Configure" Id="{29ef38b2-324e-5cb9-9b86-4bb62ec9501e}">
       <Declaration><![CDATA[METHOD Configure : BOOL
@@ -398,7 +374,8 @@ END_VAR
       </Get>
     </Property>
     <Property Name="StableId" Id="{9206849c-4e17-5068-a9f7-5745c678063e}">
-      <Declaration><![CDATA[PROPERTY StableId : UDINT
+      <Declaration><![CDATA[// ---------- Compteurs de maintenance (I_Maintained)
+PROPERTY StableId : UDINT
 ]]></Declaration>
       <Get Name="Get" Id="{fd21c533-e1f2-585d-9f3e-b85fc31c2d12}">
         <Declaration><![CDATA[VAR
@@ -450,7 +427,8 @@ END_VAR
       </Get>
     </Property>
     <Method Name="RestoreCounters" Id="{98fbc969-df36-5b82-b8d3-847c22bf8902}">
-      <Declaration><![CDATA[METHOD RestoreCounters
+      <Declaration><![CDATA[// Restauration des valeurs sauvegardées par la HMI (docs/05 § 10, étape 6)
+METHOD RestoreCounters
 VAR_INPUT
     nActions : UDINT;
     nErrors : UDINT;
@@ -465,7 +443,8 @@ _fMotionHours := fHours;
       </Implementation>
     </Method>
     <Method Name="_EndAction" Id="{98df1099-e7e1-5def-a562-c1fa242ae2db}">
-      <Declaration><![CDATA[METHOD PROTECTED _EndAction
+      <Declaration><![CDATA[// ---------- Fin d'action et erreurs
+METHOD PROTECTED _EndAction
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[IF _eActStatus = E_ActStatus.Done THEN
@@ -539,7 +518,8 @@ _stResults.nCount := MAX(_stResults.nCount, nIndex);
       </Implementation>
     </Method>
     <Method Name="_IsSimulated" Id="{f0c87efb-8a3b-5a58-9e48-56edc2ca7f98}">
-      <Declaration><![CDATA[METHOD PROTECTED _IsSimulated : BOOL
+      <Declaration><![CDATA[// ---------- Aides
+METHOD PROTECTED _IsSimulated : BOOL
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[_IsSimulated := GVL_Sim.bAllSimulated OR (__ISVALIDREF(_refCfg) AND_THEN _refCfg.bSimulated);
@@ -612,7 +592,8 @@ END_IF
       </Implementation>
     </Method>
     <Method Name="_OnConfigure" Id="{60794253-a6a2-5804-b0d4-33a7ff372bde}">
-      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+      <Declaration><![CDATA[// ---------- Méthodes à redéfinir par les types (valeurs par défaut tirées du catalogue)
+METHOD PROTECTED _OnConfigure : BOOL
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[_OnConfigure := TRUE;

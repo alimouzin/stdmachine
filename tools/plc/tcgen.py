@@ -72,28 +72,37 @@ def split_decl_impl(lines):
 
 
 def parse_members(lines, owner):
-    """Sépare le corps du bloc, ses méthodes et ses propriétés."""
-    body, members, i = [], [], 0
+    """Sépare le corps du bloc, ses méthodes et ses propriétés. Les commentaires qui précèdent juste une
+    méthode ou une propriété vont dans sa déclaration, pas dans le corps du bloc."""
+    body, members, pending, i = [], [], [], 0
+
+    def take_comments():
+        comments = [l for l in pending if l.strip() != ""]
+        pending.clear()
+        return comments
+
     while i < len(lines):
         line = lines[i]
         s = line.strip()
-        if s.startswith("METHOD "):
+        if s.startswith("METHOD ") or s.startswith("PROPERTY "):
+            kind = "method" if s.startswith("METHOD ") else "property"
+            end = "END_METHOD" if kind == "method" else "END_PROPERTY"
             j = i
-            while not lines[j].strip().startswith("END_METHOD"):
+            while not lines[j].strip().startswith(end):
                 j += 1
-            name = re.match(r"METHOD\s+(?:(?:PUBLIC|PRIVATE|PROTECTED|INTERNAL|ABSTRACT|FINAL)\s+)*(\w+)", s).group(1)
-            members.append(("method", name, lines[i:j]))
+            name = re.match(r"(?:METHOD|PROPERTY)\s+(?:(?:PUBLIC|PRIVATE|PROTECTED|INTERNAL|ABSTRACT|FINAL)\s+)*(\w+)", s).group(1)
+            members.append((kind, name, lines[i:j], take_comments()))
             i = j + 1
-        elif s.startswith("PROPERTY "):
-            j = i
-            while not lines[j].strip().startswith("END_PROPERTY"):
-                j += 1
-            name = re.match(r"PROPERTY\s+(?:(?:PUBLIC|PRIVATE|PROTECTED|INTERNAL|ABSTRACT|FINAL)\s+)*(\w+)", s).group(1)
-            members.append(("property", name, lines[i:j]))
-            i = j + 1
+        elif s == "" or s.startswith("//"):
+            pending.append(line)
+            i += 1
         else:
+            body.extend(pending)
+            pending.clear()
             body.append(line)
             i += 1
+    if not members:
+        body.extend(pending)
     return body, members
 
 
@@ -111,19 +120,21 @@ def accessor(lines, kind):
     return out
 
 
-def method_xml(owner, name, lines, interface):
+def method_xml(owner, name, lines, interface, comments=()):
+    prefix = "".join(c.rstrip() + "\n" for c in comments)
     if interface:
-        decl = "\n".join(lines).rstrip() + "\n"
+        decl = prefix + "\n".join(lines).rstrip() + "\n"
         return '    <Method Name=%s Id="%s">\n      <Declaration>%s</Declaration>\n    </Method>\n' % (
             quoteattr(name), guid(owner, "m", name), cdata(decl))
     decl, impl = split_decl_impl(lines)
+    decl = prefix + decl
     return ('    <Method Name=%s Id="%s">\n      <Declaration>%s</Declaration>\n'
             '      <Implementation>\n        <ST>%s</ST>\n      </Implementation>\n    </Method>\n') % (
         quoteattr(name), guid(owner, "m", name), cdata(decl), cdata(impl))
 
 
-def property_xml(owner, name, lines, interface):
-    header = lines[0].rstrip() + "\n"
+def property_xml(owner, name, lines, interface, comments=()):
+    header = "".join(c.rstrip() + "\n" for c in comments) + lines[0].rstrip() + "\n"
     out = '    <Property Name=%s Id="%s">\n      <Declaration>%s</Declaration>\n' % (
         quoteattr(name), guid(owner, "p", name), cdata(header))
     for kind, tag in (("GET", "Get"), ("SET", "Set")):
@@ -176,8 +187,9 @@ def convert(text, filename):
         body, members = parse_members(lines, name)
         out = '<?xml version="1.0" encoding="utf-8"?>\n<TcPlcObject %s>\n  <Itf Name=%s Id="%s">\n    <Declaration>%s</Declaration>\n' % (
             VERSION, quoteattr(name), guid(name), cdata("\n".join(body).strip() + "\n"))
-        for kind, mname, mlines in members:
-            out += method_xml(name, mname, mlines, True) if kind == "method" else property_xml(name, mname, mlines, True)
+        for kind, mname, mlines, mcomments in members:
+            out += (method_xml(name, mname, mlines, True, mcomments) if kind == "method"
+                    else property_xml(name, mname, mlines, True, mcomments))
         return name, ".TcIO", out + "  </Itf>\n</TcPlcObject>\n"
 
     for kw in ("FUNCTION_BLOCK", "FUNCTION", "PROGRAM"):
@@ -190,8 +202,9 @@ def convert(text, filename):
             out = ('<?xml version="1.0" encoding="utf-8"?>\n<TcPlcObject %s>\n  <POU Name=%s Id="%s" SpecialFunc="None">\n'
                    '    <Declaration>%s</Declaration>\n    <Implementation>\n      <ST>%s</ST>\n    </Implementation>\n') % (
                 VERSION, quoteattr(name), guid(name), cdata(decl), cdata(impl))
-            for kind, mname, mlines in members:
-                out += method_xml(name, mname, mlines, False) if kind == "method" else property_xml(name, mname, mlines, False)
+            for kind, mname, mlines, mcomments in members:
+                out += (method_xml(name, mname, mlines, False, mcomments) if kind == "method"
+                        else property_xml(name, mname, mlines, False, mcomments))
             return name, ".TcPOU", out + "  </POU>\n</TcPlcObject>\n"
 
     raise ValueError("%s : type d'objet inconnu (« %s »)" % (filename, first))

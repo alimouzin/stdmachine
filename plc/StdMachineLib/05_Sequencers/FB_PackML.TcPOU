@@ -64,14 +64,11 @@ IF eNext <> eState THEN
     bEntry := TRUE;
     tSince := F_NowUtc();
 END_IF
-
-// Accepterait-on cette commande dans l'état courant ? (pour refuser avant de l'appliquer, sans changer d'état)
-
-// Remet l'automate à Stopped (déploiement, démarrage du PLC)
 ]]></ST>
     </Implementation>
     <Method Name="Accepts" Id="{5f2e9d7b-7041-58d4-b828-3eb1948a9e5d}">
-      <Declaration><![CDATA[METHOD Accepts : BOOL
+      <Declaration><![CDATA[// Accepterait-on cette commande dans l'état courant ? (pour refuser avant de l'appliquer, sans changer d'état)
+METHOD Accepts : BOOL
 VAR_INPUT
     eCommand : E_Cmd;
 END_VAR
@@ -91,7 +88,8 @@ END_CASE
       </Implementation>
     </Method>
     <Method Name="ForceStopped" Id="{88e05527-02f9-56cf-8bd1-df500d139544}">
-      <Declaration><![CDATA[METHOD ForceStopped
+      <Declaration><![CDATA[// Remet l'automate à Stopped (déploiement, démarrage du PLC)
+METHOD ForceStopped
 ]]></Declaration>
       <Implementation>
         <ST><![CDATA[eState := E_State.Stopped;

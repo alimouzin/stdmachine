@@ -10,6 +10,7 @@ STRUCT
     tStateSince : LINT;
     nStopCauseGlobalId : UDINT;     // cause première (docs/14 § 4)
     nStopCauseCode : UINT;
+    eStopReason : E_StopReason;     // D94
     nActiveOrder : UDINT;           // n° interne, 0 = aucun
     aOrder : ARRAY[1..GVL_Const.MAX_ORDERS] OF ST_OrderState;
     bDrain : BOOL;                  // fin des pièces en cours (docs/05 § 5.7)
@@ -24,5 +25,6 @@ STRUCT
     nCalib : USINT;
     aCalib : ARRAY[1..GVL_Const.CALIB_PER_STATION] OF ST_CalibStatus;
     stPrompt : ST_PromptState;      // calibration machine
+    bHmiLost : BOOL;                // battement de la HMI perdu (alarme 917)
 END_STRUCT
 END_TYPE
