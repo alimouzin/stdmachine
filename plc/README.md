@@ -34,6 +34,10 @@ Les identifiants (GUID) sont dérivés des noms : deux générations donnent les
 3. Clic droit sur le projet › Ajouter › Élément existant, puis choisir les fichiers de `StdMachineLib/` dossier par dossier, en gardant la même arborescence.
 4. Compiler et corriger. Signaler chaque correction (fichier, ligne, message) pour qu'elle soit reportée dans `src/`, sinon la prochaine génération l'écrase.
 
+## Tests
+
+Les suites TcUnit sont dans `src/07_Tests` (`StdMachineLib/07_Tests`). Elles ne vont pas dans la bibliothèque livrée : créer un projet PLC de test qui référence `StdMachineLib` et **TcUnit** (1.3 ou plus récent), y importer `07_Tests`, et appeler `PRG_StdMachineTests` dans une tâche de 1 à 10 ms. Les résultats s'affichent dans la liste d'erreurs de TwinCAT. Le scénario de bout en bout écrit dans `GVL_Hmi` et `GVL_Active` comme le ferait la HMI : ne pas le lancer sur une machine réelle.
+
 ## Projet de la machine
 
 Le projet de la machine (`StdMachinePlc`, `docs/04` § 2) déclare l'image E/S et les pools matériels, les donne à la bibliothèque, puis appelle `FB_Machine` à chaque cycle :
@@ -85,7 +89,7 @@ La tâche PLC doit avoir un temps de cycle de 1 à 10 ms. La zone active (`GVL_A
 | Vision Keyence IV et palpeur GT2 (mode signaux), pesage (analogique), éclairage, presse avec courbe, magasin | Écrit |
 | Asyril Eye+, chargeur vibrant (image process ou interface à préciser), mode réseau Keyence et pesage | À écrire |
 | Robot Stäubli, lecteur de code, visseuse, distributeur, marquage | Protocoles à définir |
-| Tests TcUnit | À écrire |
+| Tests TcUnit | Écrits : PackML, CRC-32 et fonctions de base, alarmes, objets en simulation (temporisation, vérin, éclairage, magasin), scénario de bout en bout (déploiement, OF de 3 pièces, arrêt « OF terminé ») ; à compléter type par type (`docs/04` § 13) |
 
 ## Hypothèses à confirmer
 

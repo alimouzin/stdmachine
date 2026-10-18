@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PackMLTest" Id="{505cc3b9-00bc-57bd-a283-185d10622784}" SpecialFunc="None">
+    <Declaration><![CDATA[// Tests de la machine d'états PackML réduite (docs/05 § 2)
+FUNCTION_BLOCK FB_PackMLTest EXTENDS TcUnit.FB_TestSuite
+VAR
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[ResetThenIdle();
+StartHoldRestart();
+StopCompletes();
+FaultAborts();
+ClearReturnsStopped();
+RejectedCommands();
+]]></ST>
+    </Implementation>
+    <Method Name="ResetThenIdle" Id="{25d3cd9a-0c97-5799-bdbe-7220aad41858}">
+      <Declaration><![CDATA[METHOD PRIVATE ResetThenIdle
+VAR
+    fb : FB_PackML;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('ResetThenIdle');
+fb(eCmd := E_Cmd.Reset, bStateComplete := FALSE, bFault := FALSE);
+AssertTrue(Condition := fb.eState = E_State.Resetting AND fb.bEntry, Message := 'Reset depuis Stopped : Resetting');
+fb(eCmd := E_Cmd.None, bStateComplete := FALSE, bFault := FALSE);
+AssertTrue(Condition := fb.eState = E_State.Resetting AND NOT fb.bEntry, Message := 'Resetting tant que le travail n est pas fini');
+fb(eCmd := E_Cmd.None, bStateComplete := TRUE, bFault := FALSE);
+AssertTrue(Condition := fb.eState = E_State.Idle, Message := 'Resetting termine : Idle');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StartHoldRestart" Id="{00616596-9b6d-5f78-8d5a-7db2855a1bc1}">
+      <Declaration><![CDATA[METHOD PRIVATE StartHoldRestart
+VAR
+    fb : FB_PackML;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('StartHoldRestart');
+fb(eCmd := E_Cmd.Reset);
+fb(eCmd := E_Cmd.None, bStateComplete := TRUE);
+fb(eCmd := E_Cmd.Start, bStateComplete := FALSE);
+AssertTrue(Condition := fb.eState = E_State.Execute, Message := 'Start depuis Idle : Execute');
+fb(eCmd := E_Cmd.Hold);
+AssertTrue(Condition := fb.eState = E_State.Held, Message := 'Hold : Held');
+fb(eCmd := E_Cmd.Start);
+AssertTrue(Condition := fb.eState = E_State.Execute, Message := 'Start depuis Held : Execute');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StopCompletes" Id="{07059549-4d61-51d0-8e2e-fdefa21c968c}">
+      <Declaration><![CDATA[METHOD PRIVATE StopCompletes
+VAR
+    fb : FB_PackML;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('StopCompletes');
+fb(eCmd := E_Cmd.Reset);
+fb(eCmd := E_Cmd.None, bStateComplete := TRUE);
+fb(eCmd := E_Cmd.Start, bStateComplete := FALSE);
+fb(eCmd := E_Cmd.Stop);
+AssertTrue(Condition := fb.eState = E_State.Stopping, Message := 'Stop : Stopping');
+fb(eCmd := E_Cmd.None, bStateComplete := TRUE);
+AssertTrue(Condition := fb.eState = E_State.Stopped, Message := 'Stopping termine : Stopped');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FaultAborts" Id="{687a0d18-d101-5d9a-af8e-c3b4a0a1d99b}">
+      <Declaration><![CDATA[METHOD PRIVATE FaultAborts
+VAR
+    fb : FB_PackML;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('FaultAborts');
+fb(eCmd := E_Cmd.Reset);
+fb(eCmd := E_Cmd.None, bStateComplete := TRUE);
+fb(eCmd := E_Cmd.Start, bStateComplete := FALSE);
+fb(eCmd := E_Cmd.None, bFault := TRUE);
+AssertTrue(Condition := fb.eState = E_State.Aborted, Message := 'Defaut en Execute : Aborted');
+fb(eCmd := E_Cmd.Start, bFault := FALSE);
+AssertTrue(Condition := fb.eState = E_State.Aborted, Message := 'Start refuse en Aborted');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ClearReturnsStopped" Id="{c8f2fbb8-8412-51e8-b388-72067a481109}">
+      <Declaration><![CDATA[METHOD PRIVATE ClearReturnsStopped
+VAR
+    fb : FB_PackML;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('ClearReturnsStopped');
+fb(eCmd := E_Cmd.Abort);
+AssertTrue(Condition := fb.eState = E_State.Aborted, Message := 'Abort depuis Stopped : Aborted');
+fb(eCmd := E_Cmd.Clear);
+AssertTrue(Condition := fb.eState = E_State.Clearing, Message := 'Clear : Clearing');
+fb(eCmd := E_Cmd.None, bStateComplete := TRUE);
+AssertTrue(Condition := fb.eState = E_State.Stopped, Message := 'Clearing termine : Stopped');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="RejectedCommands" Id="{b14d1110-34a5-552e-b51c-852ad77aa115}">
+      <Declaration><![CDATA[METHOD PRIVATE RejectedCommands
+VAR
+    fb : FB_PackML;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('RejectedCommands');
+AssertFalse(Condition := fb.Accepts(E_Cmd.Start), Message := 'Start refuse en Stopped');
+AssertFalse(Condition := fb.Accepts(E_Cmd.Hold), Message := 'Hold refuse en Stopped');
+AssertTrue(Condition := fb.Accepts(E_Cmd.Reset), Message := 'Reset accepte en Stopped');
+fb(eCmd := E_Cmd.Start);
+AssertTrue(Condition := fb.eState = E_State.Stopped, Message := 'Start sans effet en Stopped');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

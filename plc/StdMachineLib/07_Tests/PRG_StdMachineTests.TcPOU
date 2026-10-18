@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="PRG_StdMachineTests" Id="{66efb054-ea66-5fdb-ae2e-ec84ef032cdb}" SpecialFunc="None">
+    <Declaration><![CDATA[// Programme de test TcUnit (docs/04 § 14) : à appeler dans la tâche du projet de test, qui référence
+// StdMachineLib et TcUnit. Chaque suite déclarée ici est exécutée par TcUnit.RUN().
+PROGRAM PRG_StdMachineTests
+VAR
+    fbPackML : FB_PackMLTest;
+    fbHelpers : FB_HelpersTest;
+    fbAlarms : FB_AlarmManagerTest;
+    fbObjects : FB_ObjectsSimTest;
+    fbScenario : FB_ScenarioEntryExitTest;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[TcUnit.RUN();
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

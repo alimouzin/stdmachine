@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_ObjectsSimTest" Id="{ef89a369-d055-5971-a16e-38bb7344fbcc}" SpecialFunc="None">
+    <Declaration><![CDATA[// Tests d'objets en simulation (docs/04 § 14) : cas nominal, Abort pendant l'action, override 0 % puis reprise,
+// paramètre invalide, action inconnue. Tests sur plusieurs cycles : l'état est gardé dans le bloc de test.
+FUNCTION_BLOCK FB_ObjectsSimTest EXTENDS TcUnit.FB_TestSuite
+VAR
+    // Temporisation
+    stCfgTimer : ST_ObjConfig;
+    fbTimer : FB_Timer;
+    stParTimer : ST_ActParams;
+    nTimerStep : INT;
+    fTimerMs : LREAL;
+    // Vérin sans capteur
+    stCfgCyl : ST_ObjConfig;
+    fbCyl : FB_Cylinder;
+    stParCyl : ST_ActParams;
+    nCylStep : INT;
+    fCylMs : LREAL;
+    // Vérin interrompu
+    stCfgCylAbort : ST_ObjConfig;
+    fbCylAbort : FB_Cylinder;
+    nAbortStep : INT;
+    // Éclairage
+    stCfgLight : ST_ObjConfig;
+    fbLight : FB_Light;
+    stParLight : ST_ActParams;
+    nLightStep : INT;
+    fLightMs : LREAL;
+    // Magasin
+    stCfgMag : ST_ObjConfig;
+    fbMag : FB_Magazine;
+    stParMag : ST_ActParams;
+    nMagStep : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[TimerWaitsItsDuration();
+CylinderOverrideZeroWaits();
+CylinderAbortDuringMove();
+LightFlashEnds();
+MagazineCells();
+]]></ST>
+    </Implementation>
+    <Method Name="_Cfg" Id="{70ff5bf6-4342-5acf-9f28-e40ec0440275}">
+      <Declaration><![CDATA[METHOD PRIVATE _Cfg
+VAR_IN_OUT
+    stCfg : ST_ObjConfig;
+END_VAR
+VAR_INPUT
+    nType : UINT;
+    nLocalId : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MEMSET(ADR(stCfg), 0, SIZEOF(stCfg));
+stCfg.nType := nType;
+stCfg.nLocalId := nLocalId;
+stCfg.nStableId := 1000 + nLocalId;
+stCfg.sName := 'Essai';
+stCfg.bSimulated := TRUE;
+stCfg.fOverride := 100;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TimerWaitsItsDuration" Id="{b1f2ac0d-3559-5761-a9c2-6d89deda4753}">
+      <Declaration><![CDATA[METHOD PRIVATE TimerWaitsItsDuration
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('TimerWaitsItsDuration');
+CASE nTimerStep OF
+    0:
+        _Cfg(stCfgTimer, GVL_Catalog.Type_Timer, 1);
+        AssertTrue(Condition := fbTimer.Configure(refCfg := stCfgTimer, nStation := 1, nPoolIndex := 1, ipParent := 0, ipLocks := 0, ipAlarms := 0),
+                   Message := 'Configuration acceptee');
+        stParTimer.aKind[1] := E_ParamKind.Real;
+        stParTimer.aReal[1] := 100;
+        AssertTrue(Condition := fbTimer.Start(GVL_Catalog.Timer_Attendre, stParTimer, FALSE) = E_StartResult.Accepted, Message := 'Attendre accepte');
+        nTimerStep := 1;
+    1:
+        fbTimer.Cycle();
+        fTimerMs := fTimerMs + F_CycleMs();
+        IF fbTimer.ActStatus = E_ActStatus.Done THEN
+            AssertTrue(Condition := fTimerMs >= 95.0 AND fTimerMs <= 300.0, Message := 'Duree respectee');
+            TEST_FINISHED();
+            nTimerStep := 2;
+        ELSIF fTimerMs > 2000.0 THEN
+            AssertTrue(Condition := FALSE, Message := 'Attendre ne finit pas');
+            TEST_FINISHED();
+            nTimerStep := 2;
+        END_IF
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CylinderOverrideZeroWaits" Id="{9a462d89-6d0c-5e66-ac72-a140c9abe614}">
+      <Declaration><![CDATA[// Override 0 % : le vérin ne part pas ; à 100 % il finit (docs/04 § 7.4)
+METHOD PRIVATE CylinderOverrideZeroWaits
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('CylinderOverrideZeroWaits');
+CASE nCylStep OF
+    0:
+        _Cfg(stCfgCyl, GVL_Catalog.Type_Cylinder, 2);
+        stCfgCyl.aSignal[1].eKind := E_SignalKind.DO;
+        stCfgCyl.aSignal[1].nIndex := 0;
+        stCfgCyl.aParam[3] := 200;           // temps de mouvement sans capteur
+        stCfgCyl.fOverride := 0;
+        AssertTrue(Condition := fbCyl.Configure(refCfg := stCfgCyl, nStation := 1, nPoolIndex := 1, ipParent := 0, ipLocks := 0, ipAlarms := 0),
+                   Message := 'Configuration acceptee');
+        AssertTrue(Condition := fbCyl.Start(GVL_Catalog.Cylinder_MoveTravail, stParCyl, FALSE) = E_StartResult.Accepted, Message := 'Move travail accepte');
+        nCylStep := 1;
+    1:
+        fbCyl.Cycle();
+        fCylMs := fCylMs + F_CycleMs();
+        IF fCylMs >= 500.0 THEN
+            AssertTrue(Condition := fbCyl.ActStatus = E_ActStatus.Busy, Message := 'A 0 % le vérin attend');
+            stCfgCyl.fOverride := 100;
+            fCylMs := 0;
+            nCylStep := 2;
+        END_IF
+    2:
+        fbCyl.Cycle();
+        fCylMs := fCylMs + F_CycleMs();
+        IF fbCyl.ActStatus = E_ActStatus.Done OR fCylMs > 3000.0 THEN
+            AssertTrue(Condition := fbCyl.ActStatus = E_ActStatus.Done, Message := 'Reprise a 100 % : fin du mouvement');
+            TEST_FINISHED();
+            nCylStep := 3;
+        END_IF
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="CylinderAbortDuringMove" Id="{0201a7fb-fcbc-58ae-84ca-223fb988c40e}">
+      <Declaration><![CDATA[METHOD PRIVATE CylinderAbortDuringMove
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('CylinderAbortDuringMove');
+CASE nAbortStep OF
+    0:
+        _Cfg(stCfgCylAbort, GVL_Catalog.Type_Cylinder, 3);
+        stCfgCylAbort.aSignal[1].eKind := E_SignalKind.DO;
+        stCfgCylAbort.aSignal[1].nIndex := 1;
+        stCfgCylAbort.aParam[3] := 1000;
+        fbCylAbort.Configure(refCfg := stCfgCylAbort, nStation := 1, nPoolIndex := 2, ipParent := 0, ipLocks := 0, ipAlarms := 0);
+        fbCylAbort.Start(GVL_Catalog.Cylinder_MoveTravail, stParCyl, FALSE);
+        nAbortStep := 1;
+    1:
+        fbCylAbort.Cycle();
+        fbCylAbort.Abort();
+        fbCylAbort.Cycle();                 // le statut est publié au cycle
+        AssertTrue(Condition := fbCylAbort.ActStatus = E_ActStatus.Error, Message := 'Action interrompue');
+        AssertEquals_UINT(Expected := GVL_Catalog.Err_Aborted, Actual := fbCylAbort.Status.nErrorCode, Message := 'Code Interrompue par Abort');
+        AssertTrue(Condition := fbCylAbort.NodeState <> E_ObjState.Error, Message := 'Abort ne met pas l objet en erreur');
+        AssertTrue(Condition := fbCylAbort.Start(9999, stParCyl, FALSE) = E_StartResult.UnknownAction, Message := 'Action inconnue refusee');
+        TEST_FINISHED();
+        nAbortStep := 2;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="LightFlashEnds" Id="{cb605ab0-6452-54d0-985a-069083c23b84}">
+      <Declaration><![CDATA[METHOD PRIVATE LightFlashEnds
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('LightFlashEnds');
+CASE nLightStep OF
+    0:
+        _Cfg(stCfgLight, GVL_Catalog.Type_Light, 4);
+        stCfgLight.aSignal[1].eKind := E_SignalKind.DO;
+        stCfgLight.aSignal[1].nIndex := 2;
+        stCfgLight.aParam[2] := 80;
+        stCfgLight.aParam[3] := 50;
+        fbLight.Configure(refCfg := stCfgLight, nStation := 1, nPoolIndex := 1, ipParent := 0, ipLocks := 0, ipAlarms := 0);
+        AssertTrue(Condition := fbLight.Start(GVL_Catalog.Light_Allumer, stParLight, FALSE) = E_StartResult.Accepted, Message := 'Allumer accepte');
+        AssertTrue(Condition := fbLight.ActStatus = E_ActStatus.Done, Message := 'Allumer est immediat');
+        AssertTrue(Condition := fbLight.Start(GVL_Catalog.Light_Flasher, stParLight, FALSE) = E_StartResult.Accepted, Message := 'Flasher accepte');
+        nLightStep := 1;
+    1:
+        fbLight.Cycle();
+        fLightMs := fLightMs + F_CycleMs();
+        IF fbLight.ActStatus = E_ActStatus.Done OR fLightMs > 1000.0 THEN
+            AssertTrue(Condition := fbLight.ActStatus = E_ActStatus.Done AND fLightMs >= 45.0, Message := 'Flash de 50 ms termine');
+            AssertEquals_LREAL(Expected := 0.0, Actual := fbLight.Status.aValue[1], Delta := 0.0, Message := 'Eteint apres le flash');
+            TEST_FINISHED();
+            nLightStep := 2;
+        END_IF
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MagazineCells" Id="{88f9c496-bf98-5033-8f78-5fc75f2364dc}">
+      <Declaration><![CDATA[METHOD PRIVATE MagazineCells
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('MagazineCells');
+CASE nMagStep OF
+    0:
+        _Cfg(stCfgMag, GVL_Catalog.Type_Magazine, 5);
+        stCfgMag.aSignal[1].eKind := E_SignalKind.DI;
+        stCfgMag.aSignal[4].eKind := E_SignalKind.DO;
+        stCfgMag.aSignal[4].nIndex := 3;
+        stCfgMag.aSignal[5].eKind := E_SignalKind.DO;
+        stCfgMag.aSignal[5].nIndex := 4;
+        stCfgMag.aParam[1] := 2;            // 2 lignes
+        stCfgMag.aParam[2] := 3;            // 3 colonnes
+        stCfgMag.aParam[3] := 10;
+        stCfgMag.aParam[4] := 20;
+        fbMag.Configure(refCfg := stCfgMag, nStation := 1, nPoolIndex := 1, ipParent := 0, ipLocks := 0, ipAlarms := 0);
+        fbMag.Start(GVL_Catalog.Magazine_PresenterPlateauSuivant, stParMag, FALSE);
+        nMagStep := 1;
+    1:
+        fbMag.Cycle();
+        IF fbMag.ActStatus <> E_ActStatus.Busy THEN
+            AssertTrue(Condition := fbMag.ActStatus = E_ActStatus.Done, Message := 'Plateau presente en simulation');
+            // Case 5 : ligne 2, colonne 2
+            stParMag.aKind[1] := E_ParamKind.Real;
+            stParMag.aReal[1] := 5;
+            fbMag.Start(GVL_Catalog.Magazine_PositionDeLaCase, stParMag, FALSE);
+            AssertEquals_LREAL(Expected := 10.0, Actual := fbMag.Results.stPos.fX, Delta := 1.0E-6, Message := 'X de la case 5');
+            AssertEquals_LREAL(Expected := 20.0, Actual := fbMag.Results.stPos.fY, Delta := 1.0E-6, Message := 'Y de la case 5');
+            stParMag.aReal[1] := 1;
+            stParMag.aKind[2] := E_ParamKind.Real;
+            stParMag.aReal[2] := 1;
+            fbMag.Start(GVL_Catalog.Magazine_MarquerCase, stParMag, FALSE);
+            stParMag.aReal[1] := 0;
+            fbMag.Start(GVL_Catalog.Magazine_PositionDeLaCase, stParMag, FALSE);
+            AssertEquals_LREAL(Expected := 2.0, Actual := fbMag.Results.aReal[2], Delta := 0.0, Message := 'Prochaine case libre : 2');
+            fbMag.Start(GVL_Catalog.Magazine_LireOccupation, stParMag, FALSE);
+            AssertEquals_LREAL(Expected := 1.0, Actual := fbMag.Results.aReal[1], Delta := 0.0, Message := 'Une case occupee');
+            AssertEquals_LREAL(Expected := 5.0, Actual := fbMag.Results.aReal[2], Delta := 0.0, Message := 'Cinq cases libres');
+            TEST_FINISHED();
+            nMagStep := 2;
+        END_IF
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

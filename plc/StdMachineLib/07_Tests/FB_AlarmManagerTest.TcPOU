@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_AlarmManagerTest" Id="{f612b236-61ec-5bdf-9c77-56fb937ba12e}" SpecialFunc="None">
+    <Declaration><![CDATA[// Tests du gestionnaire d'alarmes (docs/04 § 10, docs/14 § 5)
+FUNCTION_BLOCK FB_AlarmManagerTest EXTENDS TcUnit.FB_TestSuite
+VAR
+    stBuf : ST_AlarmBuffer;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[RaiseTwiceOnce();
+ClearedUnackedClosesOnAck();
+LatchedEventClosesOnAck();
+InfoClosesAtOnce();
+AckedConditionClosesOnClear();
+]]></ST>
+    </Implementation>
+    <Method Name="RaiseTwiceOnce" Id="{20aa1231-d3e7-5d77-a6b3-b303b41a8417}">
+      <Declaration><![CDATA[METHOD PRIVATE RaiseTwiceOnce
+VAR
+    fb : FB_AlarmManager;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('RaiseTwiceOnce');
+MEMSET(ADR(stBuf), 0, SIZEOF(stBuf));
+fb.Bind(stBuf);
+fb.Raise(1001, 101, 5, E_Severity.StationFault);
+fb.Raise(1001, 101, 6, E_Severity.StationFault);
+AssertEquals_UINT(Expected := 1, Actual := stBuf.nActive, Message := 'Une seule alarme pour la meme cle');
+AssertEquals_UINT(Expected := 1, Actual := stBuf.aActive[1].nRepeat, Message := 'Repetition comptee');
+AssertEquals_UDINT(Expected := 6, Actual := stBuf.aActive[1].nSubCode, Message := 'Sous-code mis a jour');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="ClearedUnackedClosesOnAck" Id="{a3da8c6a-094e-5476-9280-1fca4d45b5e5}">
+      <Declaration><![CDATA[METHOD PRIVATE ClearedUnackedClosesOnAck
+VAR
+    fb : FB_AlarmManager;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('ClearedUnackedClosesOnAck');
+MEMSET(ADR(stBuf), 0, SIZEOF(stBuf));
+fb.Bind(stBuf);
+fb.Raise(2003, 100, 0, E_Severity.Warning);
+fb.Clear(2003, 100);
+AssertTrue(Condition := stBuf.nActive = 1 AND_THEN stBuf.aActive[1].eState = E_AlarmState.ClearedUnacked, Message := 'Disparue non acquittee : reste affichee');
+fb.AckWarning(2003, 100, 'test');
+AssertEquals_UINT(Expected := 0, Actual := stBuf.nActive, Message := 'Acquittee : close');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="LatchedEventClosesOnAck" Id="{4f7c65de-77c6-523c-be23-85cb81281b5e}">
+      <Declaration><![CDATA[METHOD PRIVATE LatchedEventClosesOnAck
+VAR
+    fb : FB_AlarmManager;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('LatchedEventClosesOnAck');
+MEMSET(ADR(stBuf), 0, SIZEOF(stBuf));
+fb.Bind(stBuf);
+fb.RaiseEvent(1000, 901, 1, E_Severity.StationFault);
+fb.AckFaults(1, FALSE, 'test');
+AssertEquals_UINT(Expected := 0, Actual := stBuf.nActive, Message := 'Alarme sur evenement close a l acquittement');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="InfoClosesAtOnce" Id="{a4db5c33-03a8-5e5e-870b-c77b16238334}">
+      <Declaration><![CDATA[METHOD PRIVATE InfoClosesAtOnce
+VAR
+    fb : FB_AlarmManager;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('InfoClosesAtOnce');
+MEMSET(ADR(stBuf), 0, SIZEOF(stBuf));
+fb.Bind(stBuf);
+fb.RaiseEvent(0, 916, 2, E_Severity.Info);
+AssertEquals_UINT(Expected := 0, Actual := stBuf.nActive, Message := 'Information close des son apparition');
+AssertEquals_UDINT(Expected := 2, Actual := stBuf.nWriteSeq, Message := 'Evenements apparition et cloture ecrits');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AckedConditionClosesOnClear" Id="{3f936d31-61f8-5956-a52a-d3a14a76d837}">
+      <Declaration><![CDATA[METHOD PRIVATE AckedConditionClosesOnClear
+VAR
+    fb : FB_AlarmManager;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TEST('AckedConditionClosesOnClear');
+MEMSET(ADR(stBuf), 0, SIZEOF(stBuf));
+fb.Bind(stBuf);
+fb.Raise(3001, 100, 0, E_Severity.Warning);
+fb.AckWarning(0, 0, 'test');
+AssertTrue(Condition := stBuf.nActive = 1 AND_THEN stBuf.aActive[1].eState = E_AlarmState.ActiveAcked, Message := 'Acquittee, cause presente : reste active');
+fb.Clear(3001, 100);
+AssertEquals_UINT(Expected := 0, Actual := stBuf.nActive, Message := 'Cause disparue apres acquittement : close');
+TEST_FINISHED();
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
