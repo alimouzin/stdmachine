@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_Node" Id="{09953dc9-61db-5736-8df7-50e1208b101f}">
+    <Declaration><![CDATA[// Tout ce qui porte un override et un état : machine, station, module, objet (docs/04 § 4)
+INTERFACE I_Node
+]]></Declaration>
+    <Property Name="EffectiveOverride" Id="{bcef9c2e-644c-5bd3-8441-c2ab25811f90}">
+      <Declaration><![CDATA[PROPERTY EffectiveOverride : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{84d9ca1b-1768-55b3-a0e2-e0f9424773d6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="NodeState" Id="{2e6d95bd-b3e1-5374-abb6-3606bce7fca0}">
+      <Declaration><![CDATA[PROPERTY NodeState : E_ObjState
+]]></Declaration>
+      <Get Name="Get" Id="{b5674053-6f8b-5782-b00c-563ce7bb615c}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

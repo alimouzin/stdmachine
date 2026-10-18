@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_Combine" Id="{d4ea01fc-6502-5ae5-9690-8015eb1e5cdc}">
+    <Declaration><![CDATA[// Combinaison des termes d'une condition (docs/05 § 3.7)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_Combine :
+(
+    All := 0,
+    Any := 1
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

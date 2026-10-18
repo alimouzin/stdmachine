@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_DeployResponse" Id="{b4920e63-ecc1-5043-8fd8-73128ffa393d}">
+    <Declaration><![CDATA[// Réponse du chargeur (docs/05 § 10)
+{attribute 'pack_mode' := '1'}
+TYPE ST_DeployResponse :
+STRUCT
+    nSeq : UDINT;
+    eResult : E_CmdResult;
+    nErrors : USINT;
+    aError : ARRAY[1..32] OF ST_DeployError;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

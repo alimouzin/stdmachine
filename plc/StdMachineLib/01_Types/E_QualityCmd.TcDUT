@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_QualityCmd" Id="{19e27a60-4adc-5c99-8637-b604e0d65bb4}">
+    <Declaration><![CDATA[// Commande de la surveillance des rebuts (docs/10 § 10)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_QualityCmd :
+(
+    None := 0,
+    Release := 1,
+    Reset := 2
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Safety" Id="{b6049c37-fced-59a6-841b-b1e95c9694fe}" SpecialFunc="None">
+    <Declaration><![CDATA[// Sécurités, type 51 (docs/03 § 8.2) : lit les retours des circuits (1 = OK), ne pilote rien, aucun contournement.
+// Un circuit ouvert met l'objet en erreur 100 (défaut machine ou de station selon son emplacement) ; un circuit qui
+// demande un acquittement reste « à acquitter » (erreur 102) jusqu'à l'action Acquitter ou l'Ack de l'objet.
+FUNCTION_BLOCK FB_Safety EXTENDS FB_ObjectBase IMPLEMENTS I_SafetyCircuits
+VAR
+    _aRaw : ARRAY[1..8] OF BOOL;
+    _aOk : ARRAY[1..8] OF BOOL;         // filtré
+    _aFilter : ARRAY[1..8] OF LREAL;
+    _aToAck : ARRAY[1..8] OF BOOL;
+    _aUsed : ARRAY[1..8] OF BOOL;
+    _nCircuit : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{236776ee-a51a-5b50-a01d-9f00d87d0462}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+VAR
+    i : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO 8 DO
+    _aUsed[i] := F_SignalValid(_refCfg.aSignal[i], E_SignalKind.DI);
+    _aOk[i] := TRUE;
+    _aRaw[i] := TRUE;
+    _aToAck[i] := FALSE;
+END_FOR
+_OnConfigure := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="AllOk" Id="{be504e4e-a582-57c7-ab98-d1261d64f81d}">
+      <Declaration><![CDATA[PROPERTY AllOk : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{7b446af2-1718-5762-ba53-46f8dd11c4c5}">
+        <Declaration><![CDATA[VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[AllOk := TRUE;
+FOR i := 1 TO 8 DO
+    IF _aUsed[i] AND (NOT _aOk[i] OR _aToAck[i]) THEN AllOk := FALSE; END_IF
+END_FOR
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="_CircuitOk" Id="{2de104a9-28ac-58c7-ad30-847db961bd27}">
+      <Declaration><![CDATA[METHOD PRIVATE _CircuitOk : BOOL
+VAR_INPUT
+    nCircuit : INT;              // 0 = tous
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_CircuitOk := TRUE;
+FOR i := 1 TO 8 DO
+    IF _aUsed[i] AND (nCircuit = 0 OR nCircuit = i) AND (NOT _aOk[i] OR _aToAck[i]) THEN _CircuitOk := FALSE; END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_AckCircuits" Id="{6a01923a-d17b-5eab-9855-7c9e5c44d910}">
+      <Declaration><![CDATA[METHOD PRIVATE _AckCircuits : BOOL
+VAR_INPUT
+    nCircuit : INT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_AckCircuits := TRUE;
+FOR i := 1 TO 8 DO
+    IF (nCircuit = 0 OR nCircuit = i) AND _aToAck[i] THEN
+        IF _aOk[i] THEN _aToAck[i] := FALSE; ELSE _AckCircuits := FALSE; END_IF
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{e74f0954-361a-5619-a2d8-ce50b187dc94}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nCircuit := LIMIT(0, LREAL_TO_INT(_ParamReal(1, 0.0)), 8);
+CASE nAction OF
+    GVL_Catalog.Safety_LireEtat:
+        _SetResult(1, BOOL_TO_LREAL(_CircuitOk(_nCircuit)));
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.Safety_Acquitter, GVL_Catalog.Safety_AttendreOK:
+        _OnStart := _OnCycle(nAction);
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{171e7037-5200-5db2-ac20-93cce15a92e4}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nAction = GVL_Catalog.Safety_Acquitter THEN
+    IF _AckCircuits(_nCircuit) THEN _OnCycle := E_ActStatus.Done; ELSE _OnCycle := E_ActStatus.Busy; END_IF
+ELSIF _CircuitOk(_nCircuit) THEN
+    _OnCycle := E_ActStatus.Done;
+ELSE
+    _OnCycle := E_ActStatus.Busy;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnAck" Id="{44891f7e-fc5c-55c0-91b1-cca82aef507a}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnAck : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnAck := _AckCircuits(0) AND _CircuitOk(0);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Monitor" Id="{2b5ba442-8b52-57f1-9af6-777c83057ec9}">
+      <Declaration><![CDATA[METHOD PROTECTED _Monitor
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO 8 DO
+    IF _aUsed[i] THEN
+        IF _aRaw[i] = _aOk[i] THEN
+            _aFilter[i] := 0;
+        ELSE
+            _aFilter[i] := _aFilter[i] + F_CycleMs();
+            IF _aFilter[i] >= _refCfg.aParam[17] THEN
+                _aOk[i] := _aRaw[i];
+                _aFilter[i] := 0;
+                IF NOT _aOk[i] AND _refCfg.aParam[8 + i] = 1 THEN _aToAck[i] := TRUE; END_IF
+            END_IF
+        END_IF
+        IF NOT _aOk[i] AND _eState <> E_ObjState.Error THEN
+            _Fail(GVL_Catalog.Safety_Err100, INT_TO_UDINT(i));            // circuit ouvert
+        ELSIF _aOk[i] AND _aToAck[i] AND _eState <> E_ObjState.Error THEN
+            _Fail(GVL_Catalog.Safety_Err102, INT_TO_UDINT(i));            // acquittement requis
+        END_IF
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_ReadHw" Id="{9eaae756-12a4-5661-97bb-7944bb937997}">
+      <Declaration><![CDATA[METHOD PROTECTED _ReadHw
+VAR
+    i : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO 8 DO
+    IF _aUsed[i] THEN _aRaw[i] := F_ReadDI(_refCfg.aSignal[i]); END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Simulate" Id="{c887450c-9da8-5df1-8dd7-8377f3327b8b}">
+      <Declaration><![CDATA[METHOD PROTECTED _Simulate
+VAR
+    i : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO 8 DO
+    IF _Forced(i) THEN _aRaw[i] := _ForcedValue(i) >= 0.5; ELSE _aRaw[i] := TRUE; END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{28f75c2e-c7e3-5dfd-a37a-15e8252e3f65}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+VAR
+    i : INT;
+    nOk : DWORD;
+    nAck : DWORD;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO 8 DO
+    IF _aUsed[i] AND _aOk[i] THEN nOk := nOk OR SHL(DWORD#1, i - 1); END_IF
+    IF _aToAck[i] THEN nAck := nAck OR SHL(DWORD#1, i - 1); END_IF
+END_FOR
+_stStatus.aValue[1] := DWORD_TO_LREAL(nOk);
+_stStatus.aValue[2] := DWORD_TO_LREAL(nAck);
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

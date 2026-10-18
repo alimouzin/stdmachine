@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_QualityStatus" Id="{1aff3111-ef91-5f4f-aac8-0351941f6290}">
+    <Declaration><![CDATA[// État de la surveillance des rebuts (docs/10 § 9)
+{attribute 'pack_mode' := '1'}
+TYPE ST_QualityStatus :
+STRUCT
+    aStation : ARRAY[1..GVL_Const.MAX_STATIONS] OF ST_QualityTrack;
+    aStationImputed : ARRAY[1..GVL_Const.MAX_STATIONS] OF ST_QualityTrack;
+    aGroup : ARRAY[1..GVL_Const.MAX_GROUPS] OF ST_QualityTrack;
+    aMover : ARRAY[1..GVL_Const.MAX_MOVERS] OF ST_QualityTrack;
+    stMachine : ST_QualityTrack;
+    bLoadingLocked : BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

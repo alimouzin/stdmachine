@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_BindTarget" Id="{ed78d9b7-b5c1-5b28-9891-f6da7b1cf97f}">
+    <Declaration><![CDATA[// Cible d'une liaison de résultat ou d'un SetVar (docs/06 § 2)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_BindTarget :
+(
+    None := 0,
+    Var := 1,
+    PartData := 2,
+    PartId := 3,
+    Verdict := 4,
+    PartRemoved := 5,
+    MoverData := 6,
+    Output := 7
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

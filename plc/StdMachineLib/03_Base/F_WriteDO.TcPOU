@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_WriteDO" Id="{ade75472-6ff6-528c-868c-880813600286}" SpecialFunc="None">
+    <Declaration><![CDATA[// Écriture d'une sortie numérique par référence (docs/04 § 6.1) : référence invalide -> ignorée
+FUNCTION F_WriteDO : BOOL
+VAR_INPUT
+    stRef : ST_SignalRef;
+    bValue : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF stRef.eKind <> E_SignalKind.DO OR GVL_IoRef.pDO = 0 OR stRef.nIndex < 0 OR stRef.nIndex >= GVL_Const.MAX_DO THEN
+    F_WriteDO := FALSE;
+    RETURN;
+END_IF
+GVL_IoRef.pDO^[stRef.nIndex] := bValue XOR stRef.bInvert;
+F_WriteDO := TRUE;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

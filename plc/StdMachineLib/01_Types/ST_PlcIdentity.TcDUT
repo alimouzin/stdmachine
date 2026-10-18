@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PlcIdentity" Id="{206807a9-e3cb-52b7-9683-fdd7f81a8bba}">
+    <Declaration><![CDATA[// Identité du PLC (docs/06 § 2) ; nInterfaceVersion est toujours le premier champ
+{attribute 'pack_mode' := '1'}
+TYPE ST_PlcIdentity :
+STRUCT
+    nInterfaceVersion : UINT;
+    nInstrSetVersion : UINT;
+    nCatalogVersion : UINT;
+    sLibVersion : STRING(20);
+    aPoolSize : ARRAY[1..149] OF UINT;  // par n° de type, 0 = type absent
+    nRetainId : ULINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

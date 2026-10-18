@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_GroupRole" Id="{2296dd0e-d9e0-5001-ab14-f3baa5d49c57}">
+    <Declaration><![CDATA[// Rôle d'une fonction (docs/06 § 4)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_GroupRole :
+(
+    Entry := 0,
+    Work := 1,
+    Exit := 2,
+    Reject := 3
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

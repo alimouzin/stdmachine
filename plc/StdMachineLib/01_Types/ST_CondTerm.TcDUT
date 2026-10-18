@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CondTerm" Id="{ac581084-1f33-5ab9-8f5b-2f866eb75559}">
+    <Declaration><![CDATA[// Terme de condition (docs/05 § 3.7)
+{attribute 'pack_mode' := '1'}
+TYPE ST_CondTerm :
+STRUCT
+    stLeft : ST_Value;
+    eCmp : E_Cmp;
+    stRight : ST_Value;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

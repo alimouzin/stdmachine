@@ -1,0 +1,350 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_AlarmManager" Id="{a9501e25-b9b3-5b5d-913b-08c14868143f}" SpecialFunc="None">
+    <Declaration><![CDATA[// Alarmes actives et tampon d'événements (docs/04 § 10, docs/14 § 5).
+// Une alarme est identifiée par (n° global, code) ; la lever deux fois ne la duplique pas.
+// Les données vivent dans GVL_Hmi.stAlarms (Bind), pour que la HMI les lise sans copie.
+FUNCTION_BLOCK FB_AlarmManager IMPLEMENTS I_AlarmSink
+VAR
+    _refBuf : REFERENCE TO ST_AlarmBuffer;
+    _stCtx : ST_AlarmContext;          // contexte de la prochaine alarme (SetContext)
+    _aLatched : ARRAY[1..GVL_Const.ALARM_ACTIVE] OF BOOL;   // alarme sans cause durable : close à l'acquittement
+    nLost : UDINT;                     // alarmes perdues, liste pleine
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Alarme sur condition (erreur d'objet) : reste active jusqu'à Clear
+
+// Alarme sur événement (séquenceurs, process) : close dès qu'elle est acquittée
+
+// La cause a disparu
+
+// Acquittement d'un avertissement par l'opérateur (nGlobalId 0 = tous les avertissements)
+
+// Acquittement des défauts d'une station (Clearing) ou de la machine (nStation 0 : toutes les alarmes de défaut)
+
+// Politique Refaire, Pièce mauvaise, Aller à, Ignorer : l'alarme passe en information (docs/05 § 3.6)
+
+// Première alarme de défaut active d'une station (ou de la machine), pour la raison d'arrêt (docs/14 § 4)
+
+
+
+// ---------- interne
+]]></ST>
+    </Implementation>
+    <Method Name="Bind" Id="{397c5d1b-b5f8-5f6a-b6b9-f35a5f224083}">
+      <Declaration><![CDATA[METHOD Bind
+VAR_INPUT
+    refBuf : REFERENCE TO ST_AlarmBuffer;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_refBuf REF= refBuf;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetContext" Id="{ffb4580b-b774-546b-a29d-f1de6bb81a55}">
+      <Declaration><![CDATA[METHOD SetContext
+VAR_INPUT
+    stCtx : ST_AlarmContext;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stCtx := stCtx;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Raise" Id="{2ee67bf8-473f-5e6c-9e11-137f7c4862eb}">
+      <Declaration><![CDATA[METHOD Raise
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+    nSubCode : UDINT;
+    eSeverity : E_Severity;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Raise(nGlobalId, nCode, nSubCode, eSeverity, FALSE);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="RaiseEvent" Id="{a9842974-2d73-5c66-93a9-41a799428f6f}">
+      <Declaration><![CDATA[METHOD RaiseEvent
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+    nSubCode : UDINT;
+    eSeverity : E_Severity;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Raise(nGlobalId, nCode, nSubCode, eSeverity, TRUE);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Clear" Id="{799d58bb-9f3f-5f6f-bae8-9872cbd16739}">
+      <Declaration><![CDATA[METHOD Clear
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refBuf) THEN RETURN; END_IF
+i := _Find(nGlobalId, nCode);
+IF i = 0 THEN RETURN; END_IF
+IF _refBuf.aActive[i].eState = E_AlarmState.ActiveUnacked THEN
+    _refBuf.aActive[i].eState := E_AlarmState.ClearedUnacked;
+    _refBuf.aActive[i].tCleared := F_NowUtc();
+    _Event(E_AlarmEvent.Cleared, i, '');
+ELSIF _refBuf.aActive[i].eState = E_AlarmState.ActiveAcked THEN
+    _refBuf.aActive[i].tCleared := F_NowUtc();
+    _Close(i, '');
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AckWarning" Id="{6f6f58ab-9b64-519e-b345-36083834b39b}">
+      <Declaration><![CDATA[METHOD AckWarning
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+    sUser : STRING(24);
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refBuf) THEN RETURN; END_IF
+i := _refBuf.nActive;
+WHILE i >= 1 DO
+    IF _refBuf.aActive[i].eSeverity = E_Severity.Warning
+       AND (nGlobalId = 0 OR (_refBuf.aActive[i].nGlobalId = nGlobalId AND _refBuf.aActive[i].nCode = nCode)) THEN
+        _Ack(i, sUser);
+    END_IF
+    i := i - 1;
+END_WHILE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AckFaults" Id="{4f8a2d57-1d3a-509c-8f4d-1bb7bbb8274b}">
+      <Declaration><![CDATA[METHOD AckFaults
+VAR_INPUT
+    nStation : UINT;
+    bAll : BOOL;                     // machine : défauts de toutes les stations aussi
+    sUser : STRING(24);
+END_VAR
+VAR
+    i : INT;
+    nSt : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refBuf) THEN RETURN; END_IF
+i := _refBuf.nActive;
+WHILE i >= 1 DO
+    nSt := UDINT_TO_UINT(_refBuf.aActive[i].nGlobalId / 1000);
+    IF (_refBuf.aActive[i].eSeverity = E_Severity.StationFault OR _refBuf.aActive[i].eSeverity = E_Severity.MachineFault)
+       AND (bAll OR nSt = nStation) THEN
+        _Ack(i, sUser);
+    END_IF
+    i := i - 1;
+END_WHILE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Downgrade" Id="{38aef1dd-eaac-5480-b43d-eaf6bf3132c8}">
+      <Declaration><![CDATA[METHOD Downgrade
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refBuf) THEN RETURN; END_IF
+i := _Find(nGlobalId, nCode);
+IF i = 0 THEN RETURN; END_IF
+_refBuf.aActive[i].eSeverity := E_Severity.Info;
+_Close(i, '');
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FirstFault" Id="{edc45c42-d1aa-5ba8-ae1e-e98b613aee08}">
+      <Declaration><![CDATA[METHOD FirstFault : INT
+VAR_INPUT
+    nStation : UINT;
+    bAnyStation : BOOL;
+END_VAR
+VAR
+    i : INT;
+    tBest : LINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FirstFault := 0;
+IF NOT __ISVALIDREF(_refBuf) THEN RETURN; END_IF
+FOR i := 1 TO _refBuf.nActive DO
+    IF (_refBuf.aActive[i].eSeverity = E_Severity.StationFault OR _refBuf.aActive[i].eSeverity = E_Severity.MachineFault
+        OR _refBuf.aActive[i].eSeverity = E_Severity.Quality)
+       AND (bAnyStation OR UDINT_TO_UINT(_refBuf.aActive[i].nGlobalId / 1000) = nStation)
+       AND (FirstFault = 0 OR _refBuf.aActive[i].tRaised < tBest) THEN
+        FirstFault := i;
+        tBest := _refBuf.aActive[i].tRaised;
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MarkCause" Id="{399dc7d9-5537-59ee-8c99-fdfe42a4fb28}">
+      <Declaration><![CDATA[METHOD MarkCause
+VAR_INPUT
+    nIndex : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF __ISVALIDREF(_refBuf) AND nIndex >= 1 AND nIndex <= _refBuf.nActive THEN _refBuf.aActive[nIndex].bCause := TRUE; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Raise" Id="{29596cee-a435-5425-9cc9-f72a42b4df00}">
+      <Declaration><![CDATA[METHOD PRIVATE _Raise
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+    nSubCode : UDINT;
+    eSeverity : E_Severity;
+    bLatched : BOOL;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refBuf) THEN RETURN; END_IF
+i := _Find(nGlobalId, nCode);
+IF i > 0 THEN
+    _refBuf.aActive[i].nSubCode := nSubCode;
+    _refBuf.aActive[i].nRepeat := _refBuf.aActive[i].nRepeat + 1;
+    IF _refBuf.aActive[i].eState = E_AlarmState.ClearedUnacked THEN _refBuf.aActive[i].eState := E_AlarmState.ActiveUnacked; END_IF
+    _Event(E_AlarmEvent.Repeated, i, '');
+    RETURN;
+END_IF
+IF _refBuf.nActive >= GVL_Const.ALARM_ACTIVE THEN
+    nLost := nLost + 1;
+    RETURN;
+END_IF
+_refBuf.nActive := _refBuf.nActive + 1;
+i := _refBuf.nActive;
+_refBuf.aActive[i].nGlobalId := nGlobalId;
+_refBuf.aActive[i].nCode := nCode;
+_refBuf.aActive[i].nSubCode := nSubCode;
+_refBuf.aActive[i].eSeverity := eSeverity;
+_refBuf.aActive[i].eState := E_AlarmState.ActiveUnacked;
+_refBuf.aActive[i].tRaised := F_NowUtc();
+_refBuf.aActive[i].tCleared := 0;
+_refBuf.aActive[i].nRepeat := 0;
+_refBuf.aActive[i].bCause := FALSE;
+_refBuf.aActive[i].stCtx := _stCtx;
+_aLatched[i] := bLatched;
+_Event(E_AlarmEvent.Raised, i, '');
+MEMSET(ADR(_stCtx), 0, SIZEOF(_stCtx));
+IF eSeverity = E_Severity.Info THEN _Close(i, ''); END_IF    // une information est close dès son apparition
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Ack" Id="{95ffdc79-f774-5712-be74-8e644ff123fe}">
+      <Declaration><![CDATA[METHOD PRIVATE _Ack
+VAR_INPUT
+    i : INT;
+    sUser : STRING(24);
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE _refBuf.aActive[i].eState OF
+    E_AlarmState.ActiveUnacked:
+        IF _aLatched[i] THEN
+            _Close(i, sUser);
+        ELSE
+            _refBuf.aActive[i].eState := E_AlarmState.ActiveAcked;
+            _Event(E_AlarmEvent.Acked, i, sUser);
+        END_IF
+    E_AlarmState.ClearedUnacked:
+        _Close(i, sUser);
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Close" Id="{d07bb2dc-1e34-5bd3-95f8-813b4957bdc7}">
+      <Declaration><![CDATA[METHOD PRIVATE _Close
+VAR_INPUT
+    i : INT;
+    sUser : STRING(24);
+END_VAR
+VAR
+    k : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Event(E_AlarmEvent.Closed, i, sUser);
+FOR k := i TO _refBuf.nActive - 1 DO
+    _refBuf.aActive[k] := _refBuf.aActive[k + 1];
+    _aLatched[k] := _aLatched[k + 1];
+END_FOR
+MEMSET(ADR(_refBuf.aActive[_refBuf.nActive]), 0, SIZEOF(_refBuf.aActive[1]));
+_aLatched[_refBuf.nActive] := FALSE;
+_refBuf.nActive := _refBuf.nActive - 1;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Find" Id="{a3f4c483-3118-5e9b-b99b-d88cbd67ac9e}">
+      <Declaration><![CDATA[METHOD PRIVATE _Find : INT
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Find := 0;
+FOR i := 1 TO _refBuf.nActive DO
+    IF _refBuf.aActive[i].nGlobalId = nGlobalId AND _refBuf.aActive[i].nCode = nCode THEN
+        _Find := i;
+        RETURN;
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Event" Id="{22f9f400-208f-5641-b90f-0bd836959b8c}">
+      <Declaration><![CDATA[METHOD PRIVATE _Event
+VAR_INPUT
+    eEvent : E_AlarmEvent;
+    i : INT;
+    sUser : STRING(24);
+END_VAR
+VAR
+    k : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_refBuf.nWriteSeq := _refBuf.nWriteSeq + 1;
+k := UDINT_TO_INT(_refBuf.nWriteSeq MOD INT_TO_UDINT(GVL_Const.ALARM_EVENTS));
+_refBuf.aEvent[k].nSeq := _refBuf.nWriteSeq;
+_refBuf.aEvent[k].eEvent := eEvent;
+_refBuf.aEvent[k].tTime := F_NowUtc();
+_refBuf.aEvent[k].stAlarm := _refBuf.aActive[i];
+_refBuf.aEvent[k].sUser := sUser;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

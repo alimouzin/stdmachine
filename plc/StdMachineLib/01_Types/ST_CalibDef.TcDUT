@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CalibDef" Id="{b4ae1b8c-8dae-5398-b988-3345eac4204e}">
+    <Declaration><![CDATA[// Déclaration d'une calibration d'une station (docs/05 § 10.1)
+{attribute 'pack_mode' := '1'}
+TYPE ST_CalibDef :
+STRUCT
+    nTable : USINT;             // table de type Calibration
+    nId : UDINT;                // identifiant stable
+    nValidityDays : UINT;       // 0 = n'expire jamais
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

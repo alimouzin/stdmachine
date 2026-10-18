@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_QualityScope" Id="{fc35391f-361c-5b3c-a86f-c4ff758e6778}">
+    <Declaration><![CDATA[// Portée de la surveillance des rebuts (docs/10 § 9)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_QualityScope :
+(
+    Station := 0,
+    StationImputed := 1,
+    Group := 2,
+    Mover := 3,
+    Machine := 4,
+    Order := 5
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

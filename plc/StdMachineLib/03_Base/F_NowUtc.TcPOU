@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_NowUtc" Id="{e229d065-0d65-50ba-8ee1-2b30720212e2}" SpecialFunc="None">
+    <Declaration><![CDATA[// Heure UTC en unités de 100 ns depuis 1601 (FILETIME), comme les horodatages échangés avec la HMI
+FUNCTION F_NowUtc : LINT
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_NowUtc := ULINT_TO_LINT(F_GetSystemTime());
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_TraceBuffer" Id="{e0dc282c-c968-5da1-be1a-090d1f0bf19e}">
+    <Declaration><![CDATA[// Tampon de traces (docs/05 § 9)
+{attribute 'pack_mode' := '1'}
+TYPE ST_TraceBuffer :
+STRUCT
+    nWriteSeq : UDINT;
+    aTrace : ARRAY[0..GVL_Const.TRACE_BUFFER - 1] OF ST_TraceRecord;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

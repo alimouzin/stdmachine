@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_MoverState" Id="{cdf2bc5a-bf11-5b3d-bcd5-1806b82ad7f3}">
+    <Declaration><![CDATA[// État d'un mover dans le séquenceur général (docs/05 § 5.3)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_MoverState :
+(
+    Unknown := 0,
+    Ready := 1,
+    Routing := 2,
+    Queued := 3,
+    AtStation := 4,
+    Buffered := 5,
+    ToEmpty := 6,
+    Error := 7,
+    Halted := 8,
+    OutOfService := 9
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

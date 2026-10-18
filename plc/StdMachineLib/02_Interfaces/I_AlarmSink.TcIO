@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_AlarmSink" Id="{f97f1660-5141-5b18-bf2e-5411ee34d188}">
+    <Declaration><![CDATA[// Réception des alarmes (docs/04 § 4, docs/14)
+INTERFACE I_AlarmSink
+]]></Declaration>
+    <Method Name="Raise" Id="{7acab48b-09b7-5727-88b6-c5c775cd2aa4}">
+      <Declaration><![CDATA[METHOD Raise
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+    nSubCode : UDINT;
+    eSeverity : E_Severity;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="Clear" Id="{9d337b43-f468-5a49-9c75-738e489f980f}">
+      <Declaration><![CDATA[METHOD Clear
+VAR_INPUT
+    nGlobalId : UDINT;
+    nCode : UINT;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

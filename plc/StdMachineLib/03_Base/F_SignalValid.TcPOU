@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_SignalValid" Id="{bae26797-33d3-5ed1-bbbf-ca7deefcc76b}" SpecialFunc="None">
+    <Declaration><![CDATA[// Vrai si la référence désigne un signal du bon type dans l'image E/S
+FUNCTION F_SignalValid : BOOL
+VAR_INPUT
+    stRef : ST_SignalRef;
+    eKind : E_SignalKind;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_SignalValid := stRef.eKind = eKind AND stRef.nIndex >= 0;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

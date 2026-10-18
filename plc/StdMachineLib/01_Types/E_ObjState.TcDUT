@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_ObjState" Id="{e7f7119c-be7c-50bc-947c-f3ce00bf0a21}">
+    <Declaration><![CDATA[// États d'un objet (docs/04 § 5 et § 7.1)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_ObjState :
+(
+    NotInitialized := 0,
+    Ready := 1,
+    Busy := 2,
+    Error := 3,
+    Disabled := 4
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

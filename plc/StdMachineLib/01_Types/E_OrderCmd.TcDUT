@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_OrderCmd" Id="{cf44f768-efdc-5f1a-9278-747b37e6ffed}">
+    <Declaration><![CDATA[// Commande d'OF (docs/05 § 5.6)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_OrderCmd :
+(
+    None := 0,
+    Activate := 1,
+    Suspend := 2,
+    Cancel := 3
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

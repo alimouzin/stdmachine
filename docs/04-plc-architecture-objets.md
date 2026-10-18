@@ -497,7 +497,7 @@ END_VAR
 
 `FB_ObjectFactory` (appelé par le chargeur au déploiement, machine Stopped) :
 
-1. Remet à zéro les compteurs d'utilisation de tous les pools.
+1. Remet à zéro les compteurs d'utilisation de tous les pools. Un objet déjà présent dans le déploiement précédent (même `nStableId`) reprend le même élément de pool, pour garder ses compteurs de maintenance persistants ; un élément qui change d'objet remet ses compteurs à zéro (D92).
 2. Pour chaque station puis chaque objet de sa configuration, dans l'ordre des numéros locaux : prend le prochain élément libre du pool du type, appelle `Configure` avec la configuration, le parent (`I_Node` de la station ou du module parent), le fournisseur de verrouillages de la station et le gestionnaire d'alarmes.
 3. Range l'interface `I_Object` obtenue dans le registre de la station : `aObj[nLocalId]`.
 4. Si un pool est plein ou une configuration refusée, le déploiement entier est refusé avec le n° de station, d'objet et la raison.

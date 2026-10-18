@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_TableKind" Id="{05a441dc-c160-54cc-98cc-262761a0a342}">
+    <Declaration><![CDATA[// Nature d'une table (docs/06 § 2)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_TableKind :
+(
+    Operation := 0,
+    Background := 1,
+    Init := 2,
+    Stop := 3,
+    Clear := 4,
+    Sub := 5,
+    Calibration := 6,
+    General := 10,
+    GeneralSub := 11,
+    MachineCalibration := 12
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

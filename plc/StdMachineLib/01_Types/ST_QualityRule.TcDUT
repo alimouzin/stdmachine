@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_QualityRule" Id="{8a9d60e1-3a70-58ce-89d2-74713b6c63ff}">
+    <Declaration><![CDATA[// Réglage d'une portée qualité (docs/10 § 9)
+{attribute 'pack_mode' := '1'}
+TYPE ST_QualityRule :
+STRUCT
+    nConsecWarn : USINT;        // 0 = désactivé
+    nConsecAction : USINT;
+    nWindow : USINT;            // 1..255
+    nMinSample : USINT;
+    fRateWarn : REAL;           // %, 0 = désactivé
+    fRateAction : REAL;
+    eReactionConsec : E_QualityReaction;
+    eReactionRate : E_QualityReaction;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

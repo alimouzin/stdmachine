@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ObjectInfo" Id="{c7b2d9bc-2077-582d-95a6-e769e9cfc2a9}">
+    <Declaration><![CDATA[// Identité d'un objet (docs/04 § 5)
+{attribute 'pack_mode' := '1'}
+TYPE ST_ObjectInfo :
+STRUCT
+    nGlobalId : UDINT;          // n° de station × 1000 + n° local (station 0 = machine)
+    nStation : UINT;
+    nLocalId : UINT;            // 1..64 dans la station
+    nParentId : UINT;           // n° local du parent, 0 = la station
+    nType : UINT;               // n° de type du catalogue
+    nPoolIndex : UINT;
+    nStableId : UDINT;          // identifiant stable donné par la HMI (D92)
+    sName : STRING(40);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

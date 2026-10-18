@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Counter" Id="{40d49549-2752-5a5f-8695-2455559f88fa}" SpecialFunc="None">
+    <Declaration><![CDATA[// Compteur, type 53 (docs/03 § 8.4)
+FUNCTION_BLOCK FB_Counter EXTENDS FB_ObjectBase
+VAR
+    _bStarted : BOOL;               // faux au démarrage du PLC (P4 = 0 : la valeur repart de P1)
+END_VAR
+VAR PERSISTENT
+    _fValue : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Remise à zéro au changement d'OF (P3), appelée par le séquenceur général
+]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{5874a95d-240a-5805-aeba-6a20d700f8b9}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _bNewObject THEN _fValue := _refCfg.aParam[1]; END_IF
+_OnConfigure := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{b0121dbf-ab95-5bff-b168-4a0304f6064c}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE nAction OF
+    GVL_Catalog.Counter_Incrementer:
+        _fValue := _fValue + _ParamReal(1, 1.0);
+        _SetResult(1, _fValue);
+        IF _refCfg.aParam[2] > 0 AND _fValue > _refCfg.aParam[2] THEN
+            _Fail(GVL_Catalog.Counter_Err100, LREAL_TO_UDINT(_fValue));
+            _OnStart := E_ActStatus.Error;
+            RETURN;
+        END_IF
+    GVL_Catalog.Counter_Lire:
+        _SetResult(1, _fValue);
+    GVL_Catalog.Counter_RemettreAZero:
+        _fValue := _refCfg.aParam[1];
+    GVL_Catalog.Counter_Comparer:
+        _SetResult(1, BOOL_TO_LREAL(_fValue >= _ParamReal(1, 0.0)));
+ELSE
+    _OnStart := E_ActStatus.Error;
+    RETURN;
+END_CASE
+_OnStart := E_ActStatus.Done;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="OnOrderChange" Id="{34058cfc-d7a4-5f6e-b84e-205a8d85859f}">
+      <Declaration><![CDATA[METHOD OnOrderChange
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _refCfg.aParam[3] = 1 THEN _fValue := _refCfg.aParam[1]; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Monitor" Id="{360e8dfc-ec24-5b2a-8d6d-a5638a6d2d78}">
+      <Declaration><![CDATA[METHOD PROTECTED _Monitor
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT _bStarted THEN
+    _bStarted := TRUE;
+    IF _refCfg.aParam[4] = 0 THEN _fValue := _refCfg.aParam[1]; END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{b698e4cf-178d-5d20-bc53-ffcd9b388719}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := _fValue;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

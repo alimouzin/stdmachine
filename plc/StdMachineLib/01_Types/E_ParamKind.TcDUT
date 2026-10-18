@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_ParamKind" Id="{6eb461d2-cd64-575a-8b57-2500d025d2dd}">
+    <Declaration><![CDATA[// Nature d'un paramètre d'action résolu (docs/04 § 5)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_ParamKind :
+(
+    Unused := 0,
+    Real := 1,
+    Position := 2,
+    SpeedIndex := 3,
+    SpeedPercent := 4,
+    Text := 5
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ActParams" Id="{57d1c829-da27-580d-9abb-4993b5261e76}">
+    <Declaration><![CDATA[// Paramètres résolus d'une action (docs/04 § 5)
+{attribute 'pack_mode' := '1'}
+TYPE ST_ActParams :
+STRUCT
+    aKind : ARRAY[1..GVL_Const.MAX_PARAMS] OF E_ParamKind;
+    aReal : ARRAY[1..GVL_Const.MAX_PARAMS] OF LREAL;   // valeur, ou n° de vitesse, ou % de vitesse
+    stPos : ST_Position;                               // le paramètre de type Position (un au plus)
+    sText : STRING(80);                                // le paramètre de type Text (un au plus)
+    nTimeoutMs : UDINT;                                // 0 = celui de la configuration ou du catalogue
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_QualityReaction" Id="{9e826737-b852-5166-9144-3d7e3eb4679d}">
+    <Declaration><![CDATA[// Réaction de la surveillance des rebuts (docs/10 § 9)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_QualityReaction :
+(
+    WarnOnly := 0,
+    StationHold := 1,
+    MoverOut := 2,
+    StopLoading := 3,
+    MachineStop := 4
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

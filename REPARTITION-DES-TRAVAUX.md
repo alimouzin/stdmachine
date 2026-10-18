@@ -48,6 +48,8 @@ Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 
 
 - D91 : alarmes (`docs/14-alarmes.md`). À coder : code complet dans `Alarm` (carte = 1000 + n, compilateur et simulateur : `StationSim.cs:809`, `MachineSim.cs:491`), 902 → 905 pour un PC invalide dans `StationSim.cs:472`, nouveaux codes 905 à 917, alarmes de la HMI 9000 à 9099, champs `severity`, `cause`, `remedy` du catalogue, fichiers `catalog/subalarms/`, historique par identifiant stable, V033 et V123. À placer avec la base SQLite (point 2 de l'ordre).
 
+- D92 : **l'agent A écrit aussi la bibliothèque PLC** (`plc/`, sans TwinCAT, à l'aveugle). L'agent B n'y touche pas ; s'il a TwinCAT, il peut l'importer et signaler les erreurs de compilation dans la section ci-dessous. Les structures d'échange de `plc/src/01_Types` font foi pour le futur client ADS.
+
 ## Écarts constatés par le code
 
 (B ajoute ici, en ajout seulement : document, section, problème, solution retenue.)

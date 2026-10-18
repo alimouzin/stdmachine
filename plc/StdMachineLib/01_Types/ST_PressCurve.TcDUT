@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PressCurve" Id="{f11c1690-d4c4-5e35-b678-d5709c6c1508}">
+    <Declaration><![CDATA[// Courbe de presse (docs/05 § 9)
+{attribute 'pack_mode' := '1'}
+TYPE ST_PressCurve :
+STRUCT
+    nCurveId : UDINT;
+    nPoints : UINT;
+    aStroke : ARRAY[1..GVL_Const.CURVE_POINTS] OF REAL;
+    aForce : ARRAY[1..GVL_Const.CURVE_POINTS] OF REAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

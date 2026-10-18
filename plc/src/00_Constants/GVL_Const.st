@@ -1,0 +1,78 @@
+// Dimensions de la bibliothèque (docs/05 § 11, docs/04 § 6). Elles fixent aussi la disposition des
+// structures échangées avec la HMI : les changer change la version d'interface (docs/02 § 7.3).
+{attribute 'qualified_only'}
+VAR_GLOBAL CONSTANT
+    // Versions publiées dans ST_PlcIdentity (docs/02 § 7.3, docs/06 § 2)
+    INTERFACE_VERSION   : UINT := 1;          // disposition de GVL_Hmi
+    INSTR_SET_VERSION   : UINT := 2;          // jeu d'instructions (docs/06 § 2, tableau des versions)
+    LIB_VERSION         : STRING(20) := '0.1.0';
+
+    // Machine
+    MAX_STATIONS        : USINT := 16;
+    MAX_GROUPS          : USINT := 16;
+    MAX_GROUPS_PER_ST   : USINT := 8;
+    MAX_OPMAP           : USINT := 32;
+    MAX_OBJ_PER_STATION : UINT := 64;
+    MAX_MACHINE_OBJ     : UINT := 32;
+    MAX_MOVERS          : USINT := 32;
+    MAX_SLOTS           : USINT := 4;
+    MAX_PLANAR_POS      : INT := 128;
+    MAX_QUEUE           : USINT := 4;
+    MAX_BUFFERS         : USINT := 16;
+    MAX_ORDERS          : USINT := 8;
+    MAX_ORDER_PARAMS    : USINT := 16;
+    MAX_MOVER_VARS      : USINT := 16;
+    MAX_PART_DATA       : USINT := 32;
+    MAX_PART_OPS        : USINT := 8;
+
+    // Tables
+    MAX_TABLES          : USINT := 16;        // par station et pour le général
+    MAX_INSTR           : INT := 512;         // par station et pour le général
+    MAX_COND            : INT := 64;
+    MAX_COND_TERMS      : USINT := 4;
+    MAX_TEXTS           : INT := 32;
+    MAX_NAMED_POS       : INT := 64;
+    MAX_VARS            : INT := 64;
+    MAX_INTERLOCKS      : INT := 32;
+    MAX_PRESS_RECIPES   : INT := 64;
+    MAX_PRESS_SEGMENTS  : USINT := 8;
+    MAX_OUTPUTS         : USINT := 8;
+
+    // Interpréteur
+    MAX_CTX             : USINT := 8;
+    MAX_CALL_DEPTH      : USINT := 4;
+    MAX_FORK_BRANCHES   : USINT := 4;
+    MAX_INSTR_PER_CYCLE : INT := 32;
+    MAX_PARAMS          : USINT := 8;         // a1..a8, r1..r8, aParam/aBind d'une instruction
+    MAX_ARGS            : USINT := 6;
+
+    // Objets (docs/03 § 1.1)
+    MAX_TYPE            : UINT := 149;
+    MAX_ACTION          : UINT := 31;
+    MAX_OBJ_PARAMS      : USINT := 24;        // P1..P24
+    MAX_SIGNALS         : USINT := 8;         // S1..S8
+    MAX_SPEEDS          : USINT := 8;         // V1..V8
+    MAX_ACTION_TIMEOUTS : USINT := 16;
+    MAX_VALUES          : USINT := 4;         // E1..E4
+
+    // Image E/S (docs/04 § 6.1)
+    MAX_DI              : INT := 1024;
+    MAX_DO              : INT := 1024;
+    MAX_AI              : INT := 256;
+    MAX_AO              : INT := 256;
+    MAX_AXES            : INT := 64;          // pool d'axes NC (GVL_Hw.aAxis)
+
+    // Alarmes et traces (docs/04 § 10, docs/05 § 9, docs/14)
+    ALARM_ACTIVE        : INT := 256;
+    ALARM_EVENTS        : INT := 128;
+    TRACE_BUFFER        : INT := 256;
+    CURVE_BUFFER        : INT := 8;
+    CURVE_POINTS        : INT := 1000;
+    CALIB_PER_STATION   : USINT := 16;
+
+    // Canal manuel et HMI (docs/05 § 7, docs/06 § 6)
+    JOG_GUARD_MS        : LREAL := 300.0;
+    HMI_HEARTBEAT_MS    : LREAL := 5000.0;
+    LOOP_GUARD_MS       : LREAL := 1000.0;    // boucle sans attente (docs/05 § 3.2)
+    ARRIVAL_SETTLE_MS   : LREAL := 50.0;      // mover arrivé : à l'arrêt 50 ms (docs/05 § 6.2)
+END_VAR

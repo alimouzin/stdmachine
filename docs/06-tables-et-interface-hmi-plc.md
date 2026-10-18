@@ -376,6 +376,8 @@ Table 1 « Presser pignon » (Operation ; aOpMap : fonction Pressage pignon, op�
 
 ## 6. Symboles ADS — GVL_Hmi
 
+Les structures citées ici sont définies, champ par champ, dans `plc/src/01_Types/` (`ST_*.st`) : ces fichiers font foi pour leur disposition à l'octet près (`pack_mode 1`, D92), et le client ADS de la HMI les reprend à l'identique.
+
 ### 6.1 Principe des handshakes
 
 Toute commande HMI → PLC suit le même schéma :

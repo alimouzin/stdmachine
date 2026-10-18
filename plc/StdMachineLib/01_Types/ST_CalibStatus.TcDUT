@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_CalibStatus" Id="{0edffe20-a76e-5818-9a90-59b2365fd6b6}">
+    <Declaration><![CDATA[// État d'une calibration (docs/05 § 10.1)
+{attribute 'pack_mode' := '1'}
+TYPE ST_CalibStatus :
+STRUCT
+    nId : UDINT;
+    eState : E_CalibState;
+    tLast : LINT;
+    sUser : STRING(24);
+    nValidityDays : UINT;           // 0 = n'expire jamais
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

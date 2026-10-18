@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_AggregateState" Id="{c9d291e8-16de-54bb-8a85-52352b4960f4}" SpecialFunc="None">
+    <Declaration><![CDATA[// État agrégé d'un parent : En erreur > Non initialisé > En cours > Prêt (docs/04 § 8)
+FUNCTION F_AggregateState : E_ObjState
+VAR_INPUT
+    eCurrent : E_ObjState;       // agrégat en cours de calcul
+    eChild : E_ObjState;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF eCurrent = E_ObjState.Error OR eChild = E_ObjState.Error THEN
+    F_AggregateState := E_ObjState.Error;
+ELSIF eCurrent = E_ObjState.NotInitialized OR eChild = E_ObjState.NotInitialized THEN
+    F_AggregateState := E_ObjState.NotInitialized;
+ELSIF eCurrent = E_ObjState.Busy OR eChild = E_ObjState.Busy THEN
+    F_AggregateState := E_ObjState.Busy;
+ELSE
+    F_AggregateState := E_ObjState.Ready;
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

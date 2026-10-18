@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_AlarmAckRequest" Id="{0942ed69-49cf-5514-99d8-0b5d616a578d}">
+    <Declaration><![CDATA[// Acquitter un avertissement (docs/06 § 6.2) ; nGlobalId 0 = tous les avertissements
+{attribute 'pack_mode' := '1'}
+TYPE ST_AlarmAckRequest :
+STRUCT
+    nSeq : UDINT;
+    nGlobalId : UDINT;
+    nCode : UINT;
+    sUser : STRING(24);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

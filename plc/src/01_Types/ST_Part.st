@@ -1,0 +1,15 @@
+// Pièce portée par un emplacement de mover (docs/05 § 9)
+{attribute 'pack_mode' := '1'}
+TYPE ST_Part :
+STRUCT
+    bPresent : BOOL;
+    sPartId : STRING(40);
+    nOrder : UDINT;                 // n° interne de l'OF de la pièce
+    eStatus : E_PartStatus;
+    bBadHandled : BOOL;
+    nOps : USINT;
+    aOps : ARRAY[1..GVL_Const.MAX_PART_OPS] OF ST_PartOp;
+    aData : ARRAY[1..GVL_Const.MAX_PART_DATA] OF LREAL;   // donnée 1 = verdict (0 non défini, 1 bon, 2 mauvais)
+    tCreated : LINT;                // UTC, 100 ns depuis 1601
+END_STRUCT
+END_TYPE

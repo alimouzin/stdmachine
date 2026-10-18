@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_DeclaredState" Id="{0689b3f5-6e83-555f-875c-8383df700283}">
+    <Declaration><![CDATA[// État déclaré de la machine (docs/12 § 2)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_DeclaredState :
+(
+    None := 0,
+    PlannedStop := 1,
+    Changeover := 2,
+    WaitUpstream := 3,
+    WaitDownstream := 4,
+    PlannedMaintenance := 5,
+    CorrectiveMaintenance := 6,
+    Trials := 7,
+    Cleaning := 8
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_OpResponse" Id="{2a33d0e5-01b4-5ede-bdf4-ff850dcf3374}">
+    <Declaration><![CDATA[// Réponse d'une station (docs/05 § 4.1)
+TYPE ST_OpResponse :
+STRUCT
+    nReqId : UDINT;
+    eStatus : E_OpStatus;
+    nErrorCode : UINT;
+    nOutMask : UINT;                // bit k-1 = sortie k définie
+    aOut : ARRAY[1..GVL_Const.MAX_OUTPUTS] OF LREAL;
+    stOutPos : ST_Position;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

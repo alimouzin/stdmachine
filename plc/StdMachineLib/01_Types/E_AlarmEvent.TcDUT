@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_AlarmEvent" Id="{f05653e2-2654-5a5b-bdf1-d18e6f941546}">
+    <Declaration><![CDATA[// Événement d'alarme (docs/14 § 5)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_AlarmEvent :
+(
+    Raised := 0,
+    Cleared := 1,
+    Acked := 2,
+    Repeated := 3,
+    Closed := 4
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

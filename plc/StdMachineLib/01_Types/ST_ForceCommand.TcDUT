@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_ForceCommand" Id="{a6696fc6-5cb4-5e86-a58f-7f3eaf6ea237}">
+    <Declaration><![CDATA[// Poser ou lever un forçage (docs/12 § 7)
+{attribute 'pack_mode' := '1'}
+TYPE ST_ForceCommand :
+STRUCT
+    nSeq : UDINT;
+    eKind : E_ForceKind;
+    bSet : BOOL;                    // faux = lever
+    nTarget : USINT;                // station ou mover
+    eDeclared : E_DeclaredState;
+    bStartBlocked : BOOL;
+    bImmediate : BOOL;              // mover hors service immédiatement
+    nReason : USINT;                // code de motif
+    tUntil : LINT;                  // échéance, 0 = aucune (gérée par la HMI)
+    sUser : STRING(24);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

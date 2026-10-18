@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_Severity" Id="{2c2e692f-6a3b-523e-94bb-4f70d7b0b72a}">
+    <Declaration><![CDATA[// Gravité d'une alarme (docs/04 § 5, docs/14 § 4)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_Severity :
+(
+    Info := 0,
+    Warning := 1,
+    StationFault := 2,
+    MachineFault := 3,
+    Quality := 4
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

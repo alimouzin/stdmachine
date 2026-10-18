@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_Cmd" Id="{c8b94e2e-ca1a-5d16-a76c-de2acf1d6538}">
+    <Declaration><![CDATA[// Commandes d'état (docs/02 § 8). DrainStart et DrainCancel ne concernent que la machine (docs/05 § 5.7) :
+// FB_PackML les ignore, le séquenceur général les traite.
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_Cmd :
+(
+    None := 0,
+    Reset := 1,
+    Start := 2,
+    Stop := 3,
+    Hold := 4,
+    Abort := 5,
+    Clear := 6,
+    DrainStart := 7,
+    DrainCancel := 8
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_RetainedValues" Id="{7233b55f-15b8-58e3-8eaa-386d26e71509}">
+    <Declaration><![CDATA[// Valeurs rémanentes lues par la HMI (docs/02 § 7.4)
+{attribute 'pack_mode' := '1'}
+TYPE ST_RetainedValues :
+STRUCT
+    nRetainId : ULINT;
+    nCount : UINT;
+    aItem : ARRAY[1..2048] OF ST_RetainedItem;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

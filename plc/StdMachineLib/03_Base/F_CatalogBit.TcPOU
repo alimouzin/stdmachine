@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_CatalogBit" Id="{35832281-bd82-5498-9dcb-7eb99f5c06b7}" SpecialFunc="None">
+    <Declaration><![CDATA[// Vrai si le bit de l'action est posé dans un masque du catalogue (GVL_Catalog.a*Mask)
+FUNCTION F_CatalogBit : BOOL
+VAR_INPUT
+    nMask : UDINT;
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF nAction < 1 OR nAction > GVL_Const.MAX_ACTION THEN
+    F_CatalogBit := FALSE;
+ELSE
+    F_CatalogBit := (SHR(nMask, nAction - 1) AND 1) = 1;
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

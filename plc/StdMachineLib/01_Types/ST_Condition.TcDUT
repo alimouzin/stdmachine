@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_Condition" Id="{619d9b5f-1fc2-51d4-acb1-91fe9af91a41}">
+    <Declaration><![CDATA[// Condition (docs/05 § 3.7) ; une condition sans terme est vraie
+{attribute 'pack_mode' := '1'}
+TYPE ST_Condition :
+STRUCT
+    eCombine : E_Combine;
+    nTerms : USINT;
+    aTerm : ARRAY[1..GVL_Const.MAX_COND_TERMS] OF ST_CondTerm;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

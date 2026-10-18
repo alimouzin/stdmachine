@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_OpMap" Id="{261ffbc4-167a-5204-b5e1-e55ffbd54e6c}">
+    <Declaration><![CDATA[// (fonction, opération) → table (docs/06 § 4)
+{attribute 'pack_mode' := '1'}
+TYPE ST_OpMap :
+STRUCT
+    nGroup : USINT;
+    nOperationNo : USINT;       // 1..8
+    nTable : USINT;
+    bPrepare : BOOL;            // la table contient WaitMover (docs/05 § 4.1)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

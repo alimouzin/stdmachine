@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_WriteAO" Id="{26df88e9-db40-5570-b13b-91488b618e31}" SpecialFunc="None">
+    <Declaration><![CDATA[// Écriture brute d'une sortie analogique (docs/04 § 6.1) : référence invalide -> ignorée
+FUNCTION F_WriteAO : BOOL
+VAR_INPUT
+    stRef : ST_SignalRef;
+    nValue : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF stRef.eKind <> E_SignalKind.AO OR GVL_IoRef.pAO = 0 OR stRef.nIndex < 0 OR stRef.nIndex >= GVL_Const.MAX_AO THEN
+    F_WriteAO := FALSE;
+    RETURN;
+END_IF
+GVL_IoRef.pAO^[stRef.nIndex] := nValue;
+F_WriteAO := TRUE;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

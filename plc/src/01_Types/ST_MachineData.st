@@ -1,0 +1,33 @@
+// Configuration machine déployée (docs/06 § 4)
+{attribute 'pack_mode' := '1'}
+TYPE ST_MachineData :
+STRUCT
+    sMachineName : STRING(40);
+    sProjectId : STRING(40);
+    sProjectHash : STRING(64);
+    tDeployed : LINT;
+    sDeployedBy : STRING(40);
+    nMovers : USINT;
+    nSlots : USINT;
+    fOverride : LREAL;
+    nRejectGroup : USINT;       // 0 = aucune fonction de rebut
+    nNoStationMs : UDINT;       // délai avant « mover à vider »
+    nMoverVar : USINT;
+    aMoverVar : ARRAY[1..GVL_Const.MAX_MOVER_VARS] OF ST_MoverVarDef;
+    aGroup : ARRAY[1..GVL_Const.MAX_GROUPS] OF ST_GroupCfg;
+    aStation : ARRAY[1..GVL_Const.MAX_STATIONS] OF ST_StationCfg;
+    nPlanarPos : INT;
+    aPlanarPos : ARRAY[1..GVL_Const.MAX_PLANAR_POS] OF ST_PlanarPos;
+    nParkPos : INT;
+    nMachineObj : UINT;
+    aMachineObj : ARRAY[1..GVL_Const.MAX_MACHINE_OBJ] OF ST_ObjConfig;
+    aTable : ARRAY[1..GVL_Const.MAX_TABLES] OF ST_TableDir;
+    nInstrCount : INT;
+    aInstr : ARRAY[1..GVL_Const.MAX_INSTR] OF ST_Instr;
+    aCond : ARRAY[1..GVL_Const.MAX_COND] OF ST_Condition;
+    aText : ARRAY[1..GVL_Const.MAX_TEXTS] OF STRING(80);
+    stQuality : ST_QualityCfg;
+    nCalibCount : USINT;
+    aCalib : ARRAY[1..GVL_Const.CALIB_PER_STATION] OF ST_CalibDef;  // calibrations machine
+END_STRUCT
+END_TYPE

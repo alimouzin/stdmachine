@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_OverrideRequest" Id="{84ecba7f-863d-5d4c-8e71-04bb94ff748e}">
+    <Declaration><![CDATA[// Override d'un nœud (docs/06 § 6.2) ; nStation 0 = machine ; nObject 0 = la station ou la machine
+{attribute 'pack_mode' := '1'}
+TYPE ST_OverrideRequest :
+STRUCT
+    nSeq : UDINT;
+    nStation : USINT;
+    nObject : UINT;
+    fValue : LREAL;                 // 0..100 %
+    bManual : BOOL;                 // override manuel de l'axe
+    sUser : STRING(24);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

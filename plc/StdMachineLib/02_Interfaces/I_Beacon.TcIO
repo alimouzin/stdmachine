@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_Beacon" Id="{70016109-5c95-5508-85c7-55da30e90c25}">
+    <Declaration><![CDATA[// Balise pilotée par le séquenceur auquel elle est rattachée (docs/02 § 8, docs/03 § 8.1)
+INTERFACE I_Beacon
+]]></Declaration>
+    <Method Name="SetPattern" Id="{341c0480-23ab-58fb-97e1-f88919af11b7}">
+      <Declaration><![CDATA[METHOD SetPattern
+VAR_INPUT
+    nPattern : UINT;             // bits de F_BeaconBits
+    bBuzzer : BOOL;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Timer" Id="{54b63c62-fed8-5659-a3dc-403f990fd251}" SpecialFunc="None">
+    <Declaration><![CDATA[// Temporisation, type 52 (docs/03 § 8.3)
+FUNCTION_BLOCK FB_Timer EXTENDS FB_ObjectBase
+VAR
+    _fDurationMs : LREAL;
+    _fElapsed : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnStart" Id="{33f5b295-87e5-5b34-855a-818bfa88c80c}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nAction = GVL_Catalog.Timer_Attendre THEN
+    _fDurationMs := MAX(0.0, _ParamReal(1, _refCfg.aParam[1]));
+    _fElapsed := 0;
+    _OnStart := _OnCycle(nAction);
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{3753aefc-fab5-5f61-b110-ee3cff7f31a4}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fElapsed := _fElapsed + F_CycleMs();
+IF _fElapsed >= _fDurationMs THEN _OnCycle := E_ActStatus.Done; ELSE _OnCycle := E_ActStatus.Busy; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_DefaultTimeoutMs" Id="{75331626-0755-5a19-bee8-089c24898896}">
+      <Declaration><![CDATA[METHOD PROTECTED _DefaultTimeoutMs : UDINT
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_DefaultTimeoutMs := 0;             // aucun timeout (docs/03 § 8.3)
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{6b70e1a5-0ef8-59a3-a3e6-9e3dae7384e3}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _eState = E_ObjState.Busy AND _fDurationMs > 0 THEN
+    _stStatus.fProgress := LREAL_TO_REAL(MIN(1.0, _fElapsed / _fDurationMs));
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_AnalogInput" Id="{665e374c-bbce-5b78-b49d-8f7fa57fdb24}" SpecialFunc="None">
+    <Declaration><![CDATA[// Entrée analogique, type 3 (docs/03 § 3.3)
+FUNCTION_BLOCK FB_AnalogInput EXTENDS FB_ObjectBase
+VAR
+    _aSamples : ARRAY[1..100] OF LREAL;
+    _nSamples : INT;
+    _nNext : INT := 1;
+    _fValue : LREAL;                // valeur filtrée, en unité
+    _bLowActive : BOOL;
+    _bHighActive : BOOL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Seuils d'alarme : avertissements surveillés en continu, sans mettre l'objet en erreur
+]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{d091819f-7f51-5958-a76f-4ad0762c4590}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nSamples := 0;
+_nNext := 1;
+_OnConfigure := F_SignalValid(_refCfg.aSignal[1], E_SignalKind.AI) AND _refCfg.aParam[2] <> _refCfg.aParam[1];
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{3c3b9796-00ee-55f8-8951-3bd7c4b6ce0f}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE nAction OF
+    GVL_Catalog.AnalogInput_Lire:
+        _SetResult(1, _fValue);
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.AnalogInput_AttendreSeuil:
+        _OnStart := _OnCycle(nAction);
+    GVL_Catalog.AnalogInput_VerifierPlage:
+        _SetResult(1, _fValue);
+        IF _fValue < _ParamReal(1, -1.0E38) THEN
+            _SetJudgement(2, E_Judgement.Low);
+        ELSIF _fValue > _ParamReal(2, 1.0E38) THEN
+            _SetJudgement(2, E_Judgement.High);
+        ELSE
+            _SetJudgement(2, E_Judgement.Ok);
+        END_IF
+        _OnStart := E_ActStatus.Done;
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{b8b44e87-103b-5754-8986-9abd5d347b15}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+VAR
+    bReached : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _ParamReal(2, 0.0) = 0.0 THEN
+    bReached := _fValue >= _ParamReal(1, 0.0);      // au-dessus
+ELSE
+    bReached := _fValue <= _ParamReal(1, 0.0);      // en dessous
+END_IF
+IF bReached THEN
+    _SetResult(1, _fValue);
+    _OnCycle := E_ActStatus.Done;
+ELSE
+    _OnCycle := E_ActStatus.Busy;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_ReadHw" Id="{69d1860a-84e9-5d6f-aa35-02096aae4083}">
+      <Declaration><![CDATA[METHOD PROTECTED _ReadHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Filter(_Scale(INT_TO_LREAL(F_ReadAI(_refCfg.aSignal[1]))));
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Simulate" Id="{10e2bc9a-67e7-5139-b533-facf36daddd5}">
+      <Declaration><![CDATA[METHOD PROTECTED _Simulate
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _Forced(1) THEN _Filter(_ForcedValue(1)); END_IF        // valeur forcée en unité
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Scale" Id="{cb68aea4-0d5c-554c-954d-4dd9a3544891}">
+      <Declaration><![CDATA[METHOD PRIVATE _Scale : LREAL
+VAR_INPUT
+    fRaw : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Scale := _refCfg.aParam[3] + (fRaw - _refCfg.aParam[1]) * (_refCfg.aParam[4] - _refCfg.aParam[3]) / (_refCfg.aParam[2] - _refCfg.aParam[1]);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Filter" Id="{138c9743-8bf7-5483-9fb6-3a80fbaf3758}">
+      <Declaration><![CDATA[METHOD PRIVATE _Filter
+VAR_INPUT
+    fUnit : LREAL;
+END_VAR
+VAR
+    nWin : INT;
+    i : INT;
+    fSum : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[nWin := LIMIT(1, LREAL_TO_INT(_refCfg.aParam[6]), 100);
+_aSamples[_nNext] := fUnit;
+_nNext := _nNext MOD nWin + 1;
+_nSamples := MIN(_nSamples + 1, nWin);
+fSum := 0;
+FOR i := 1 TO _nSamples DO fSum := fSum + _aSamples[i]; END_FOR
+_fValue := fSum / INT_TO_LREAL(_nSamples);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Monitor" Id="{1c3aa978-4de3-5b0e-b8b8-8e7655b13fa9}">
+      <Declaration><![CDATA[METHOD PROTECTED _Monitor
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _ipAlarms = 0 THEN RETURN; END_IF
+IF _fValue < _refCfg.aParam[7] AND NOT _bLowActive THEN
+    _ipAlarms.Raise(_stInfo.nGlobalId, GVL_Catalog.AnalogInput_Err100, 0, E_Severity.Warning);
+    _bLowActive := TRUE;
+ELSIF _fValue >= _refCfg.aParam[7] AND _bLowActive THEN
+    _ipAlarms.Clear(_stInfo.nGlobalId, GVL_Catalog.AnalogInput_Err100);
+    _bLowActive := FALSE;
+END_IF
+IF _fValue > _refCfg.aParam[8] AND NOT _bHighActive THEN
+    _ipAlarms.Raise(_stInfo.nGlobalId, GVL_Catalog.AnalogInput_Err101, 0, E_Severity.Warning);
+    _bHighActive := TRUE;
+ELSIF _fValue <= _refCfg.aParam[8] AND _bHighActive THEN
+    _ipAlarms.Clear(_stInfo.nGlobalId, GVL_Catalog.AnalogInput_Err101);
+    _bHighActive := FALSE;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{24887add-6fdb-57cf-83bf-b76862a01d2f}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := _fValue;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Value" Id="{2212f503-096c-5c51-ad33-f166fbd9461c}">
+      <Declaration><![CDATA[PROPERTY Value : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{eaaaa556-413e-5243-9a9c-8073d5dd0597}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Value := _fValue;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

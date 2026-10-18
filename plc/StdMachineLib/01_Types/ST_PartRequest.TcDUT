@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PartRequest" Id="{f9130b55-c15f-5006-af14-e5b2fc4cb6c1}">
+    <Declaration><![CDATA[// Confirmer le retrait des pièces d'un mover à vider (docs/06 § 6.2)
+{attribute 'pack_mode' := '1'}
+TYPE ST_PartRequest :
+STRUCT
+    nSeq : UDINT;
+    nMover : USINT;
+    sUser : STRING(24);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

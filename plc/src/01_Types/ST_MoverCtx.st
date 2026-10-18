@@ -1,0 +1,37 @@
+// Contexte d'un mover dans le séquenceur général (docs/05 § 5.3)
+TYPE ST_MoverCtx :
+STRUCT
+    eState : E_MoverState;
+    eWait : E_WaitReason;
+    nTable : INT;
+    nPC : INT;
+    aRetTable : ARRAY[1..GVL_Const.MAX_CALL_DEPTH] OF INT;
+    aRetPC : ARRAY[1..GVL_Const.MAX_CALL_DEPTH] OF INT;
+    nDepth : USINT;
+    nTargetGroup : USINT;
+    nTargetOp : USINT;
+    nTargetSlot : USINT;
+    aOpParam : ARRAY[1..GVL_Const.MAX_PARAMS] OF LREAL;   // paramètres résolus à l'émission de Route
+    nStation : USINT;               // station réservée ou occupée, 0 = aucune
+    nDest : INT;                    // position planaire de destination
+    nPos : INT;                     // position planaire occupée, 0 = entre deux positions
+    nReqId : UDINT;
+    bRequestPosted : BOOL;
+    nRouteRetry : UDINT;
+    tWaitStart : LINT;
+    fWaitMs : LREAL;
+    fMoveMs : LREAL;                // durée du déplacement en cours
+    fStillMs : LREAL;               // à l'arrêt dans la fenêtre d'arrivée
+    bQualityLock : BOOL;
+    bOutOfService : BOOL;
+    bImmediate : BOOL;
+    bAbsent : BOOL;                 // hors service et absent du plan (D85)
+    fX : LREAL;                     // position actuelle sur le plan
+    fY : LREAL;
+    fC : LREAL;
+    aSlot : ARRAY[1..GVL_Const.MAX_SLOTS] OF ST_Part;
+    aVar : ARRAY[1..GVL_Const.MAX_MOVER_VARS] OF LREAL;          // variables de mover (docs/05 § 5.8)
+    aVarPos : ARRAY[1..GVL_Const.MAX_MOVER_VARS] OF ST_Position;
+    aVarId : ARRAY[1..GVL_Const.MAX_MOVER_VARS] OF UDINT;
+END_STRUCT
+END_TYPE

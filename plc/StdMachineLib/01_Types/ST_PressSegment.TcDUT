@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PressSegment" Id="{cc7e757d-122c-5207-b877-46d9bdcc789f}">
+    <Declaration><![CDATA[// Segment d'une recette de presse (docs/06 § 4)
+{attribute 'pack_mode' := '1'}
+TYPE ST_PressSegment :
+STRUCT
+    eTarget : USINT;            // 0 course, 1 force
+    fTarget : LREAL;
+    fSpeedPct : LREAL;
+    fForceMin : LREAL;
+    fForceMax : LREAL;
+    fStrokeMin : LREAL;
+    fStrokeMax : LREAL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_AxisRef" Id="{c19fda77-d2e6-535a-940e-9f9a2163bb5a}" SpecialFunc="None">
+    <Declaration><![CDATA[// Pointeur vers l'axe NC n° nDevice du pool matériel (docs/04 § 6.2) ; 0 si absent
+FUNCTION F_AxisRef : POINTER TO AXIS_REF
+VAR_INPUT
+    nDevice : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF GVL_IoRef.pAxis = 0 OR nDevice < 1 OR nDevice > GVL_IoRef.nAxes OR nDevice > GVL_Const.MAX_AXES THEN
+    F_AxisRef := 0;
+ELSE
+    F_AxisRef := GVL_IoRef.pAxis + INT_TO_UDINT(nDevice - 1) * SIZEOF(AXIS_REF);
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

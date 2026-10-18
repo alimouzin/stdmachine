@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_InterlockProvider" Id="{7114bd0c-a703-5ab6-b124-d008ab6b5348}">
+    <Declaration><![CDATA[// Verrouillages d'une station (docs/04 § 4) : 0 si autorisé, sinon n° du verrouillage violé
+INTERFACE I_InterlockProvider
+]]></Declaration>
+    <Method Name="Check" Id="{8714eae5-9a4c-5d0e-a74a-4d781a25dc30}">
+      <Declaration><![CDATA[METHOD Check : INT
+VAR_INPUT
+    nLocalId : UINT;
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

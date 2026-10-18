@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_ReadAI" Id="{92c952a7-9e34-5907-a605-4df56dabecd5}" SpecialFunc="None">
+    <Declaration><![CDATA[// Lecture brute d'une entrée analogique (docs/04 § 6.1) : référence invalide -> 0
+FUNCTION F_ReadAI : INT
+VAR_INPUT
+    stRef : ST_SignalRef;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF stRef.eKind <> E_SignalKind.AI OR GVL_IoRef.pAI = 0 OR stRef.nIndex < 0 OR stRef.nIndex >= GVL_Const.MAX_AI THEN
+    F_ReadAI := 0;
+    RETURN;
+END_IF
+F_ReadAI := GVL_IoRef.pAI^[stRef.nIndex];
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

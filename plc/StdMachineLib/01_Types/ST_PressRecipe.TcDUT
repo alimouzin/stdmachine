@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PressRecipe" Id="{7b5b10bc-8f51-5504-af90-3161d5ce386a}">
+    <Declaration><![CDATA[// Recette de presse (docs/06 § 4)
+{attribute 'pack_mode' := '1'}
+TYPE ST_PressRecipe :
+STRUCT
+    bUsed : BOOL;
+    nStation : USINT;
+    nObject : UINT;
+    nRecipeNo : USINT;
+    nSegments : USINT;
+    aSeg : ARRAY[1..GVL_Const.MAX_PRESS_SEGMENTS] OF ST_PressSegment;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DigitalOutput" Id="{70e1d49b-9dcb-57f8-9796-be045f1bf688}" SpecialFunc="None">
+    <Declaration><![CDATA[// Sortie numérique, type 2 (docs/03 § 3.2)
+FUNCTION_BLOCK FB_DigitalOutput EXTENDS FB_ObjectBase
+VAR
+    _bCmd : BOOL;
+    _fPulseMs : LREAL;
+    _fElapsed : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{78f26ede-9171-5b1b-8255-2ecb3758e185}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnConfigure := F_SignalValid(_refCfg.aSignal[1], E_SignalKind.DO);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_DefaultTimeoutMs" Id="{f98d6076-6952-5ef1-b7d0-54a0a26f9815}">
+      <Declaration><![CDATA[METHOD PROTECTED _DefaultTimeoutMs : UDINT
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nAction = GVL_Catalog.DigitalOutput_Impulsion THEN
+    _DefaultTimeoutMs := LREAL_TO_UDINT(_ParamReal(1, _refCfg.aParam[2])) + 1000;
+ELSE
+    _DefaultTimeoutMs := 0;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_ValidateParams" Id="{dc67c4ce-47c5-5f75-b235-14fe1ef5952c}">
+      <Declaration><![CDATA[METHOD PROTECTED _ValidateParams : BOOL
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_ValidateParams := nAction <> GVL_Catalog.DigitalOutput_Impulsion OR _ParamReal(1, _refCfg.aParam[2]) >= 1.0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{2ffa91fa-1fae-5520-a4fc-ff4939ba8ebb}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE nAction OF
+    GVL_Catalog.DigitalOutput_Activer:
+        _bCmd := TRUE;
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.DigitalOutput_Desactiver:
+        _bCmd := FALSE;
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.DigitalOutput_Impulsion:
+        _fPulseMs := LIMIT(1.0, _ParamReal(1, _refCfg.aParam[2]), 60000.0);
+        _fElapsed := 0;
+        _bCmd := TRUE;
+        _OnStart := E_ActStatus.Busy;
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{7ffd0e05-afbf-5c8a-8b04-0fa6f0c43e18}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fElapsed := _fElapsed + F_CycleMs();
+IF _fElapsed >= _fPulseMs THEN
+    _bCmd := FALSE;
+    _OnCycle := E_ActStatus.Done;
+ELSE
+    _OnCycle := E_ActStatus.Busy;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_SafeState" Id="{a2f5e23c-49a2-53d7-b837-0958787c7729}">
+      <Declaration><![CDATA[METHOD PROTECTED _SafeState
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[CASE LREAL_TO_INT(_refCfg.aParam[3]) OF
+    0: _bCmd := FALSE;
+    1: _bCmd := TRUE;
+END_CASE                            // 2 : maintien
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_WriteHw" Id="{4fe98c43-f91c-578c-990f-0786fe27a1cd}">
+      <Declaration><![CDATA[METHOD PROTECTED _WriteHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[F_WriteDO(_refCfg.aSignal[1], _bCmd XOR (_refCfg.aParam[1] = 1));
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{c7db503d-cdcf-5946-a05e-bfa5e495e9b8}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := BOOL_TO_LREAL(_bCmd);
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

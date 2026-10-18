@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_Sim" Id="{7faabaa4-fdef-5978-90b0-7d2b027d8c91}">
+    <Declaration><![CDATA[// Simulation de toute la machine (docs/04 § 6.3)
+{attribute 'qualified_only'}
+VAR_GLOBAL
+    bAllSimulated : BOOL;
+END_VAR
+]]></Declaration>
+  </GVL>
+</TcPlcObject>

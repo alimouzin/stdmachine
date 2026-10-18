@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_RetainedItem" Id="{ba18f523-1d23-50db-b1a5-fddcccbe3245}">
+    <Declaration><![CDATA[// Valeur rémanente sauvegardée par la HMI, rangée par identifiant (docs/02 § 7.4)
+{attribute 'pack_mode' := '1'}
+TYPE ST_RetainedItem :
+STRUCT
+    eKind : E_RetainedKind;
+    nStation : USINT;               // 0 = machine
+    nMover : USINT;
+    nId : UDINT;                    // variable, objet ou calibration
+    aValue : ARRAY[1..3] OF LREAL;  // valeur ; compteurs : actions, erreurs, heures ; calibration : état
+    stPos : ST_Position;
+    tStamp : LINT;                  // date de la valeur (calibration)
+    sUser : STRING(24);
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

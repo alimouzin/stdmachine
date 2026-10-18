@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_OpStatus" Id="{c22945a4-940f-5e7e-9f80-6bb3106d47c6}">
+    <Declaration><![CDATA[// Réponse d'une station à une demande d'opération (docs/05 § 4.1)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_OpStatus :
+(
+    Idle := 0,
+    Running := 1,
+    Done := 2,
+    Failed := 3,
+    Aborted := 4,
+    Preparing := 5
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

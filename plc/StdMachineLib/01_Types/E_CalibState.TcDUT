@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_CalibState" Id="{0b32f1f5-65f6-5aaf-b0b8-f4f5b1ab3506}">
+    <Declaration><![CDATA[// État d'une calibration (docs/05 § 10.1)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_CalibState :
+(
+    Never := 0,
+    Valid := 1,
+    Expired := 2,
+    Failed := 3,
+    Running := 4
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_ForceKind" Id="{eff6603e-3c11-5ae6-a934-9f27c3aa98d4}">
+    <Declaration><![CDATA[// Nature d'un forçage (docs/12 § 7)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_ForceKind :
+(
+    None := 0,
+    DeclaredState := 1,
+    StationOutOfProduction := 2,
+    MoverOutOfService := 3
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

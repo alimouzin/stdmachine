@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_ValueSource" Id="{2aa93e90-5178-5898-86cd-c6071310e970}">
+    <Declaration><![CDATA[// Source d'une valeur dans une instruction (docs/06 § 2)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_ValueSource :
+(
+    None := 0,
+    Const := 1,
+    Var := 2,
+    PartData := 3,
+    OpParam := 4,
+    NamedPos := 5,
+    Speed := 6,
+    Text := 7,
+    ObjValue := 8,
+    System := 9,
+    MoverData := 10,
+    OrderParam := 11
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

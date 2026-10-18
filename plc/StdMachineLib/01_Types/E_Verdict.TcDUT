@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_Verdict" Id="{f684a705-b36c-5751-8b7c-d2dada51ec09}">
+    <Declaration><![CDATA[// Verdict d'une pièce, donnée de pièce n° 1 (docs/05 § 9)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_Verdict :
+(
+    Undefined := 0,
+    Good := 1,
+    Bad := 2
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

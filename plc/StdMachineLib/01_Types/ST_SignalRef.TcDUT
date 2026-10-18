@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_SignalRef" Id="{0ae29fcc-67d8-57bc-b896-5e8fd32667e5}">
+    <Declaration><![CDATA[// Référence vers l'image E/S (docs/04 § 5)
+{attribute 'pack_mode' := '1'}
+TYPE ST_SignalRef :
+STRUCT
+    eKind : E_SignalKind;
+    nIndex : INT;               // index dans le tableau de GVL_IO correspondant
+    bInvert : BOOL;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PromptState" Id="{edf61f87-7be3-5a3b-806b-c5490307be99}">
+    <Declaration><![CDATA[// Demande à l'opérateur en cours (docs/05 § 10.1)
+{attribute 'pack_mode' := '1'}
+TYPE ST_PromptState :
+STRUCT
+    nPromptId : UDINT;              // 0 = aucune demande
+    nText : INT;                    // n° de texte de la table
+    bInput : BOOL;                  // saisie d'une valeur (sinon confirmation)
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

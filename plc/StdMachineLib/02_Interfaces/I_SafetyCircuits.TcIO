@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_SafetyCircuits" Id="{5163598b-a23b-597a-8474-79c1a183c996}">
+    <Declaration><![CDATA[// Objet Sécurités : la station (ou la machine) lit l'état de ses circuits (docs/03 § 8.2, docs/05 § 4.2)
+INTERFACE I_SafetyCircuits
+]]></Declaration>
+    <Property Name="AllOk" Id="{f8bd1ace-d4d0-57b5-ad8b-001d4f8ae3cc}">
+      <Declaration><![CDATA[PROPERTY AllOk : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{27a4d94e-7cd6-520f-a379-53e88db2f075}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

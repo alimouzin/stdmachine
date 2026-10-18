@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_SystemVar" Id="{7ce645a5-931b-5558-8547-1fd2c61252b6}">
+    <Declaration><![CDATA[// Variables système lues par la source System (docs/05 § 3.4)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_SystemVar :
+(
+    MoverPresent := 1,
+    Slot := 2,
+    OrderNo := 3,
+    CycleCount := 4,
+    LastCycleMs := 5
+) INT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

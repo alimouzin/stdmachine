@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_PartStatus" Id="{c64c0cee-47d4-51c8-bb96-d819b8a0281a}">
+    <Declaration><![CDATA[// État d'une pièce (docs/05 § 9)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_PartStatus :
+(
+    None := 0,
+    InProcess := 1,
+    Good := 2,
+    Bad := 3,
+    Exited := 4,
+    Rejected := 5,
+    Removed := 6
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

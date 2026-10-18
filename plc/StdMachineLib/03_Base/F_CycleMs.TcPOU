@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_CycleMs" Id="{d9114e1e-e081-56a8-b5e9-83cd581664aa}" SpecialFunc="None">
+    <Declaration><![CDATA[// Durée du cycle de la tâche courante en ms (docs/04 § 2)
+FUNCTION F_CycleMs : LREAL
+VAR
+    nTask : DINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[nTask := GETCURTASKINDEXEX();
+F_CycleMs := UDINT_TO_LREAL(TwinCAT_SystemInfoVarList._TaskInfo[nTask].CycleTime) / 10000.0;
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

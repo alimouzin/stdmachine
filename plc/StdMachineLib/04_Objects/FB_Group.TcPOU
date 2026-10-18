@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_Group" Id="{d7f258b8-39bd-52c7-b216-26abd5d54381}" SpecialFunc="None">
+    <Declaration><![CDATA[// Module libre et base des modules, type 100 (docs/03 § 9.1) : override commun et état agrégé de ses enfants
+FUNCTION_BLOCK FB_Group EXTENDS FB_ObjectBase IMPLEMENTS I_Group
+VAR
+    _eAggregate : E_ObjState := E_ObjState.Ready;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="SetAggregate" Id="{ed35f7d0-de97-5e15-8340-1361b22dab22}">
+      <Declaration><![CDATA[METHOD SetAggregate
+VAR_INPUT
+    eState : E_ObjState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_eAggregate := eState;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="NodeState" Id="{fe8a3b3b-c1a9-5bd6-b918-a0a9df06771e}">
+      <Declaration><![CDATA[PROPERTY NodeState : E_ObjState
+]]></Declaration>
+      <Get Name="Get" Id="{91e468e3-c3c5-540f-a698-23835bb9d2dd}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[IF _eState = E_ObjState.Disabled THEN
+    NodeState := E_ObjState.Disabled;
+ELSE
+    NodeState := _eAggregate;
+END_IF
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="_OnStart" Id="{15ce15b5-d8e1-50a6-a0c5-1bd4952747d9}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnStart := E_ActStatus.Error;      // un module n'a pas d'action : ses fonctions sont dépliées par le compilateur
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

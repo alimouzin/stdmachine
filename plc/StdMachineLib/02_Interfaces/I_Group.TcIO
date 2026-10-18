@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_Group" Id="{08e4e674-c993-5a6c-866f-0f47d17845a5}">
+    <Declaration><![CDATA[// Module : reçoit l'état agrégé de ses enfants, calculé par la station (docs/04 § 8)
+INTERFACE I_Group
+]]></Declaration>
+    <Method Name="SetAggregate" Id="{b3da1905-3fb9-58e4-b6df-e310336008da}">
+      <Declaration><![CDATA[METHOD SetAggregate
+VAR_INPUT
+    eState : E_ObjState;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

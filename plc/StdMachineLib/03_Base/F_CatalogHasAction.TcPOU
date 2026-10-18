@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_CatalogHasAction" Id="{19916705-c73f-5801-8c38-f3502cda6b7c}" SpecialFunc="None">
+    <Declaration><![CDATA[// L'action existe-t-elle pour ce type ? (docs/04 § 7.3)
+FUNCTION F_CatalogHasAction : BOOL
+VAR_INPUT
+    nType : UINT;
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF nType > GVL_Const.MAX_TYPE THEN
+    F_CatalogHasAction := FALSE;
+ELSE
+    F_CatalogHasAction := F_CatalogBit(GVL_Catalog.aActionMask[nType], nAction);
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

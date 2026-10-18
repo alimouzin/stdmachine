@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_TraceBuffer" Id="{c16340b6-71d3-5982-9e22-547b6718049b}" SpecialFunc="None">
+    <Declaration><![CDATA[// Tampon circulaire de traces lu par la HMI depuis le dernier nSeq reçu (docs/05 § 9)
+FUNCTION_BLOCK FB_TraceBuffer
+VAR
+    _refBuf : REFERENCE TO ST_TraceBuffer;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="Bind" Id="{29c60252-8be7-5bb2-afa0-030d01edac96}">
+      <Declaration><![CDATA[METHOD Bind
+VAR_INPUT
+    refBuf : REFERENCE TO ST_TraceBuffer;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_refBuf REF= refBuf;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Add" Id="{a2450718-5112-597e-9d3e-5729c1c866ed}">
+      <Declaration><![CDATA[METHOD Add : UDINT
+VAR_INPUT
+    stTrace : ST_TraceRecord;
+END_VAR
+VAR
+    k : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT __ISVALIDREF(_refBuf) THEN RETURN; END_IF
+_refBuf.nWriteSeq := _refBuf.nWriteSeq + 1;
+k := UDINT_TO_INT(_refBuf.nWriteSeq MOD INT_TO_UDINT(GVL_Const.TRACE_BUFFER));
+_refBuf.aTrace[k] := stTrace;
+_refBuf.aTrace[k].nSeq := _refBuf.nWriteSeq;
+Add := _refBuf.nWriteSeq;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>

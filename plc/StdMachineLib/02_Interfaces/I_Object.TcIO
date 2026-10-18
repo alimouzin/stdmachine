@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_Object" Id="{57c9b7f3-86c9-5132-863a-9ba487061ad8}">
+    <Declaration><![CDATA[// Contrat de tout objet (docs/04 § 4)
+INTERFACE I_Object EXTENDS I_Node
+]]></Declaration>
+    <Method Name="Configure" Id="{6f0ada7e-1829-5ea1-bf30-baf52c070032}">
+      <Declaration><![CDATA[METHOD Configure : BOOL
+VAR_INPUT
+    refCfg : REFERENCE TO ST_ObjConfig;
+    nStation : UINT;             // 0 = machine (D92 : le n° de station n'est pas dans ST_ObjConfig)
+    nPoolIndex : UINT;
+    ipParent : I_Node;
+    ipLocks : I_InterlockProvider;
+    ipAlarms : I_AlarmSink;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="Start" Id="{8df9d6bb-6f99-59be-a1a1-59e3c6794fe2}">
+      <Declaration><![CDATA[METHOD Start : E_StartResult
+VAR_INPUT
+    nAction : UINT;
+    refParams : REFERENCE TO ST_ActParams;
+    bManual : BOOL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="Abort" Id="{af1c2bb4-68f1-58f2-a614-244892470f92}">
+      <Declaration><![CDATA[METHOD Abort
+]]></Declaration>
+    </Method>
+    <Method Name="Ack" Id="{bc07eac7-5acb-5f42-bd31-d4448a3ba4d5}">
+      <Declaration><![CDATA[METHOD Ack : BOOL
+]]></Declaration>
+    </Method>
+    <Method Name="Cycle" Id="{c55efa37-d032-51be-b771-f59a77b8f2e4}">
+      <Declaration><![CDATA[METHOD Cycle
+]]></Declaration>
+    </Method>
+    <Method Name="ForceInput" Id="{e0aa149e-9270-5f8e-9ea2-12ba868868bd}">
+      <Declaration><![CDATA[METHOD ForceInput
+VAR_INPUT
+    nSignal : USINT;             // S1..S8 ; 0 = rendre la main à la simulation
+    fValue : LREAL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="Info" Id="{308e27a3-8cbf-5202-acea-d1b9e399454f}">
+      <Declaration><![CDATA[PROPERTY Info : REFERENCE TO ST_ObjectInfo
+]]></Declaration>
+      <Get Name="Get" Id="{e0228f23-2452-5385-973e-0747c8d8d58d}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ActStatus" Id="{aaaa23f0-dcb3-509b-8714-c673c010a3b4}">
+      <Declaration><![CDATA[PROPERTY ActStatus : E_ActStatus
+]]></Declaration>
+      <Get Name="Get" Id="{9cee8977-5dd4-5014-af1b-9548aa022755}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Results" Id="{460d56ee-12ad-5156-8dfc-b3f035a511df}">
+      <Declaration><![CDATA[PROPERTY Results : REFERENCE TO ST_ActResults
+]]></Declaration>
+      <Get Name="Get" Id="{47a54621-3805-5ced-857e-253e681c2e8a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Status" Id="{7cb4c9b9-a686-5ab8-83a2-8d4af401afdb}">
+      <Declaration><![CDATA[PROPERTY Status : REFERENCE TO ST_ObjStatus
+]]></Declaration>
+      <Get Name="Get" Id="{7ea09675-c86e-5847-a12d-09d356143bda}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

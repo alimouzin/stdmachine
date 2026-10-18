@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_QualityLevel" Id="{d4e167b3-ca3b-5abc-912c-c68e261e4ca0}">
+    <Declaration><![CDATA[// Niveau d'une portée qualité (docs/10 § 9)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_QualityLevel :
+(
+    Normal := 0,
+    Warning := 1,
+    Action := 2,
+    Probation := 3
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

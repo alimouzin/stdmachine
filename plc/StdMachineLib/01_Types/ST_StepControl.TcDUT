@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_StepControl" Id="{51baa9f5-4019-5ada-888a-14c365249d1e}">
+    <Declaration><![CDATA[// Pas à pas d'une station (docs/05 § 8)
+{attribute 'pack_mode' := '1'}
+TYPE ST_StepControl :
+STRUCT
+    bEnabled : BOOL;
+    eGranularity : E_StepGranularity;
+    nStepSeq : UDINT;               // la HMI l'incrémente pour autoriser un pas
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

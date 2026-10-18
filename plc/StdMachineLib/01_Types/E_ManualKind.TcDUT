@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_ManualKind" Id="{d77cc322-a54f-546b-8a3c-a099a2f87aad}">
+    <Declaration><![CDATA[// Nature d'une demande du canal manuel (docs/05 § 7)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_ManualKind :
+(
+    Action := 0,
+    JogStart := 1,
+    JogStop := 2,
+    Ack := 3,
+    TeachPosition := 4
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

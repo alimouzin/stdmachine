@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_AlarmContext" Id="{0eae3d23-e6a1-5295-a7ce-eb0c782a39ff}">
+    <Declaration><![CDATA[// Contexte relevé à l'apparition d'une alarme (docs/14 § 5)
+{attribute 'pack_mode' := '1'}
+TYPE ST_AlarmContext :
+STRUCT
+    nTable : USINT;
+    nStepId : UDINT;
+    nMover : USINT;
+    nSlot : USINT;
+    sPartId : STRING(40);
+    nAction : UINT;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

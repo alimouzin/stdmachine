@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_NodeBase" Id="{1f60d3a9-cf99-5c71-926a-6a88d1d46737}" SpecialFunc="None">
+    <Declaration><![CDATA[// Nœud qui porte un override et un état agrégé : machine, station (docs/04 § 8)
+FUNCTION_BLOCK FB_NodeBase IMPLEMENTS I_Node
+VAR
+    _ipParent : I_Node;
+    _fOverride : LREAL := 100.0;    // override propre du nœud
+    _fEffOverride : LREAL := 100.0;
+    _eState : E_ObjState := E_ObjState.Ready;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="SetParent" Id="{86307cd8-448d-5829-a489-e113edda986f}">
+      <Declaration><![CDATA[METHOD SetParent
+VAR_INPUT
+    ipParent : I_Node;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_ipParent := ipParent;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetOverride" Id="{947805c7-4852-560b-b524-ddc4ebdcfdb9}">
+      <Declaration><![CDATA[METHOD SetOverride
+VAR_INPUT
+    fPercent : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fOverride := LIMIT(0.0, fPercent, 100.0);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="UpdateOverride" Id="{edee63cc-4c62-52ed-94c4-5cebe2fafee8}">
+      <Declaration><![CDATA[METHOD UpdateOverride
+VAR
+    fParent : LREAL := 100.0;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _ipParent <> 0 THEN fParent := _ipParent.EffectiveOverride; END_IF
+_fEffOverride := fParent * _fOverride / 100.0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetState" Id="{985272b0-a8ff-5da4-a585-5e9b2ea13dbb}">
+      <Declaration><![CDATA[METHOD SetState
+VAR_INPUT
+    eState : E_ObjState;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_eState := eState;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="EffectiveOverride" Id="{b71764b2-0888-5d6d-8a15-834068f2ca9b}">
+      <Declaration><![CDATA[PROPERTY EffectiveOverride : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{1998164d-5053-59a6-8109-f179b1de21e7}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[EffectiveOverride := _fEffOverride;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="NodeState" Id="{1a9f92cb-ff40-5358-b03f-e8d062fa068d}">
+      <Declaration><![CDATA[PROPERTY NodeState : E_ObjState
+]]></Declaration>
+      <Get Name="Get" Id="{718a0abc-2d75-5e36-a16b-45be6beea1b1}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[NodeState := _eState;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="OwnOverride" Id="{1a0cf6b6-80be-5222-ab2a-71a1b65559d3}">
+      <Declaration><![CDATA[PROPERTY OwnOverride : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{21a4c3f4-e656-5967-8d77-dcb67328f381}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[OwnOverride := _fOverride;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

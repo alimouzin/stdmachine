@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_TraceRecord" Id="{243f8789-a6dd-53a1-b4f0-9057b60c4bed}">
+    <Declaration><![CDATA[// Trace d'une opération sur une pièce (docs/05 § 9)
+{attribute 'pack_mode' := '1'}
+TYPE ST_TraceRecord :
+STRUCT
+    nSeq : UDINT;
+    sPartId : STRING(40);
+    nOrder : UDINT;
+    nMover : USINT;
+    nSlot : USINT;
+    nStation : USINT;
+    nGroup : USINT;
+    nOperation : USINT;
+    tStart : LINT;
+    tEnd : LINT;
+    eVerdict : E_Verdict;
+    nErrorCode : UINT;
+    aData : ARRAY[1..GVL_Const.MAX_PART_DATA] OF LREAL;
+    nCurveId : UDINT;               // 0 = aucune
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

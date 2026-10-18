@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="E_StepGranularity" Id="{81c80f3a-37eb-5737-b77a-b13889d5d705}">
+    <Declaration><![CDATA[// Granularité du pas à pas (docs/05 § 8)
+{attribute 'qualified_only'}
+{attribute 'strict'}
+TYPE E_StepGranularity :
+(
+    Operation := 0,
+    Step := 1,
+    Action := 2
+) USINT;
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

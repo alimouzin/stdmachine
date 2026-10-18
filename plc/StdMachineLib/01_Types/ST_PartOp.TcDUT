@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <DUT Name="ST_PartOp" Id="{35bf6bf0-f444-5460-9d59-cf19af80dda9}">
+    <Declaration><![CDATA[// Opération subie par une pièce (docs/05 § 9)
+{attribute 'pack_mode' := '1'}
+TYPE ST_PartOp :
+STRUCT
+    nStation : USINT;
+    nGroup : USINT;
+    eVerdictAfter : E_Verdict;
+END_STRUCT
+END_TYPE
+]]></Declaration>
+  </DUT>
+</TcPlcObject>

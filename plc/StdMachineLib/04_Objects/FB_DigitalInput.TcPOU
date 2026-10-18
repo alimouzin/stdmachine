@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_DigitalInput" Id="{e6c835d3-85c4-5488-b182-b21aab00b521}" SpecialFunc="None">
+    <Declaration><![CDATA[// Entrée numérique, type 1 (docs/03 § 3.1)
+FUNCTION_BLOCK FB_DigitalInput EXTENDS FB_ObjectBase
+VAR
+    _bRaw : BOOL;                   // valeur lue (inversion P1 appliquée)
+    _bValue : BOOL;                 // valeur filtrée (P2)
+    _fDebounceMs : LREAL;
+    _fChangeMs : LREAL;             // durée depuis laquelle la valeur lue diffère de la valeur filtrée
+    _fWaitMs : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{6a88f40e-7dcd-52b7-b7c7-4791a6271093}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fDebounceMs := LIMIT(0.0, _refCfg.aParam[2], 1000.0);
+_OnConfigure := F_SignalValid(_refCfg.aSignal[1], E_SignalKind.DI);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{bf71bfd4-3669-5df7-9248-cd66a8f1da6d}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fWaitMs := 0;
+CASE nAction OF
+    GVL_Catalog.DigitalInput_Lire:
+        _SetResult(1, BOOL_TO_LREAL(_bValue));
+        _OnStart := E_ActStatus.Done;
+    GVL_Catalog.DigitalInput_AttendreActif, GVL_Catalog.DigitalInput_AttendreInactif:
+        _OnStart := _OnCycle(nAction);
+ELSE
+    _OnStart := E_ActStatus.Error;
+END_CASE
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{f7331529-84e5-5547-8e60-d53066a8364a}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fWaitMs := _fWaitMs + F_CycleMs();
+// En simulation, sans forçage, l'attente se termine après 300 ms (docs/03 § 3.1)
+IF _IsSimulated() AND NOT _Forced(1) AND _fWaitMs >= 300.0 THEN
+    _bValue := nAction = GVL_Catalog.DigitalInput_AttendreActif;
+END_IF
+IF (nAction = GVL_Catalog.DigitalInput_AttendreActif) = _bValue THEN
+    _OnCycle := E_ActStatus.Done;
+ELSE
+    _OnCycle := E_ActStatus.Busy;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_ReadHw" Id="{fe83c620-b296-58ad-b3b4-20c3e94def50}">
+      <Declaration><![CDATA[METHOD PROTECTED _ReadHw
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_bRaw := F_ReadDI(_refCfg.aSignal[1]) XOR (_refCfg.aParam[1] = 1);
+_Debounce();
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Simulate" Id="{70d7d272-aac4-5ca5-b204-8be11873f7dc}">
+      <Declaration><![CDATA[METHOD PROTECTED _Simulate
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _Forced(1) THEN
+    _bRaw := _ForcedValue(1) >= 0.5;
+    _Debounce();
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Debounce" Id="{fdff8770-b10e-5de8-a6c8-9c65ae974aab}">
+      <Declaration><![CDATA[METHOD PRIVATE _Debounce
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF _bRaw = _bValue THEN
+    _fChangeMs := 0;
+ELSE
+    _fChangeMs := _fChangeMs + F_CycleMs();
+    IF _fChangeMs >= _fDebounceMs THEN
+        _bValue := _bRaw;
+        _fChangeMs := 0;
+    END_IF
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{8685f93d-3f68-5edc-a831-c7c860e687e6}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := BOOL_TO_LREAL(_bValue);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Value" Id="{4f6acd43-8148-5b3b-9f00-b4707690cdc8}">
+      <Declaration><![CDATA[PROPERTY Value : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{93ad5cac-e485-5896-926c-881cbe0d5d4b}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Value := _bValue;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

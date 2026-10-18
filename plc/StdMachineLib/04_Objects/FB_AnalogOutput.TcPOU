@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_AnalogOutput" Id="{5a24827e-27ff-536b-b000-233ca3fd5fa1}" SpecialFunc="None">
+    <Declaration><![CDATA[// Sortie analogique, type 4 (docs/03 § 3.4)
+FUNCTION_BLOCK FB_AnalogOutput EXTENDS FB_ObjectBase
+VAR
+    _fValue : LREAL;                // valeur commandée, en unité
+    _fStart : LREAL;
+    _fTarget : LREAL;
+    _fRampMs : LREAL;
+    _fElapsed : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[]]></ST>
+    </Implementation>
+    <Method Name="_OnConfigure" Id="{3eb1a6aa-178e-5159-a221-72428fe02661}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnConfigure : BOOL
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_OnConfigure := F_SignalValid(_refCfg.aSignal[1], E_SignalKind.AO) AND _refCfg.aParam[4] <> _refCfg.aParam[3];
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_DefaultTimeoutMs" Id="{7908bd01-e16f-525e-9ca9-a1b61344e9bf}">
+      <Declaration><![CDATA[METHOD PROTECTED _DefaultTimeoutMs : UDINT
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nAction = GVL_Catalog.AnalogOutput_EcrireAvecRampe THEN
+    _DefaultTimeoutMs := LREAL_TO_UDINT(MAX(_ParamReal(2, 0.0), 0.0)) + 1000;
+ELSE
+    _DefaultTimeoutMs := 0;
+END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnStart" Id="{1cfa81d2-54fb-5582-8728-e1adff94217f}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnStart : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fStart := _fValue;
+_fElapsed := 0;
+CASE nAction OF
+    GVL_Catalog.AnalogOutput_Ecrire:
+        _fTarget := _Limit(_ParamReal(1, _fValue));
+        _fRampMs := 0;
+    GVL_Catalog.AnalogOutput_EcrireAvecRampe:
+        _fTarget := _Limit(_ParamReal(1, _fValue));
+        _fRampMs := MAX(_ParamReal(2, 0.0), 0.0);
+    GVL_Catalog.AnalogOutput_ValeurSure:
+        _fTarget := _Limit(_refCfg.aParam[8]);
+        _fRampMs := 0;
+ELSE
+    _OnStart := E_ActStatus.Error;
+    RETURN;
+END_CASE
+_OnStart := _OnCycle(nAction);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_OnCycle" Id="{2300df55-093d-583e-9ff0-00e86985c553}">
+      <Declaration><![CDATA[METHOD PROTECTED _OnCycle : E_ActStatus
+VAR_INPUT
+    nAction : UINT;
+END_VAR
+VAR
+    fNext : LREAL;
+    fMaxStep : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fElapsed := _fElapsed + F_CycleMs();
+IF _fRampMs > 0 THEN
+    fNext := _fStart + (_fTarget - _fStart) * MIN(1.0, _fElapsed / _fRampMs);
+ELSE
+    fNext := _fTarget;
+END_IF
+// Variation maximale P9 (unité/s), 0 = illimitée
+IF _refCfg.aParam[9] > 0 THEN
+    fMaxStep := _refCfg.aParam[9] * F_CycleMs() / 1000.0;
+    fNext := LIMIT(_fValue - fMaxStep, fNext, _fValue + fMaxStep);
+END_IF
+_fValue := fNext;
+IF ABS(_fValue - _fTarget) < 1.0E-9 THEN _OnCycle := E_ActStatus.Done; ELSE _OnCycle := E_ActStatus.Busy; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Limit" Id="{181442e5-a968-5cff-ad5e-b4a42dadde8d}">
+      <Declaration><![CDATA[METHOD PRIVATE _Limit : LREAL
+VAR_INPUT
+    fValue : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_Limit := LIMIT(_refCfg.aParam[6], fValue, _refCfg.aParam[7]);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_SafeState" Id="{3fe7c272-ce8e-5eaa-9dba-82022d96c19d}">
+      <Declaration><![CDATA[METHOD PROTECTED _SafeState
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_fValue := _Limit(_refCfg.aParam[8]);
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_WriteHw" Id="{bae311ea-62b4-58ac-a312-7da118b38588}">
+      <Declaration><![CDATA[METHOD PROTECTED _WriteHw
+VAR
+    fRaw : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[fRaw := _refCfg.aParam[1] + (_fValue - _refCfg.aParam[3]) * (_refCfg.aParam[2] - _refCfg.aParam[1]) / (_refCfg.aParam[4] - _refCfg.aParam[3]);
+F_WriteAO(_refCfg.aSignal[1], LREAL_TO_INT(LIMIT(-32768.0, fRaw, 32767.0)));
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="_Publish" Id="{84ecf700-22c7-537d-aa05-e338970a0f13}">
+      <Declaration><![CDATA[METHOD PROTECTED _Publish
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_stStatus.aValue[1] := _fValue;
+]]></ST>
+      </Implementation>
+    </Method>
+  </POU>
+</TcPlcObject>
