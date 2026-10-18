@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <GVL Name="GVL_Hmi" Id="{b4bed0d1-5be1-502b-9c7c-240945446bb2}">
+    <Declaration><![CDATA[// Symboles ADS échangés avec la HMI (docs/06 § 6). Toute commande suit le handshake de docs/06 § 6.1 :
+// la HMI écrit la structure avec un nSeq nouveau, le PLC répond une fois avec le même nSeq.
+{attribute 'qualified_only'}
+VAR_GLOBAL
+    // ---- lu en premier par la HMI : versions (docs/02 § 7.3)
+    stIdentity : ST_PlcIdentity;
+
+    // ---- écrits par la HMI
+    nHmiHeartbeat : UDINT;
+    stCmd : ST_CmdRequest;
+    stCmdResp : ST_CmdResponse;
+    stOverride : ST_OverrideRequest;
+    stOverrideResp : ST_CmdResponse;
+    aManual : ARRAY[0..GVL_Const.MAX_STATIONS] OF ST_ManualRequest;        // 0 = canal machine
+    aManualResp : ARRAY[0..GVL_Const.MAX_STATIONS] OF ST_ManualResponse;
+    nJogAlive : UDINT;
+    aStep : ARRAY[1..GVL_Const.MAX_STATIONS] OF ST_StepControl;
+    stLaunch : ST_LaunchRequest;
+    stLaunchResp : ST_CmdResponse;
+    stOrder : ST_OrderRequest;
+    stOrderResp : ST_CmdResponse;
+    stMoverVar : ST_MoverVarRequest;
+    stMoverVarResp : ST_CmdResponse;
+    stPrompt : ST_PromptAnswer;
+    stPromptResp : ST_CmdResponse;
+    stPartCmd : ST_PartRequest;
+    stPartResp : ST_CmdResponse;
+    stAlarmAck : ST_AlarmAckRequest;
+    stAlarmAckResp : ST_CmdResponse;
+    stStaging : ST_Staging;
+    stDeploy : ST_DeployRequest;
+    stDeployResp : ST_DeployResponse;
+    stForceCmd : ST_ForceCommand;
+    stForceResp : ST_CmdResponse;
+    stQualityCmd : ST_QualityCommand;
+    stQualityResp : ST_CmdResponse;
+    stSimForce : ST_SimForceRequest;
+    stSimForceResp : ST_CmdResponse;
+    stRestore : ST_RestoreRequest;
+    stRestoreResp : ST_CmdResponse;
+
+    // ---- lus par la HMI
+    stMachineStatus : ST_MachineStatus;
+    aStationStatus : ARRAY[1..GVL_Const.MAX_STATIONS] OF ST_StationStatus;
+    aObjStatus : ARRAY[0..GVL_Const.MAX_STATIONS, 1..GVL_Const.MAX_OBJ_PER_STATION] OF ST_ObjStatus;
+    aMoverStatus : ARRAY[1..GVL_Const.MAX_MOVERS] OF ST_MoverStatus;
+    stAlarms : ST_AlarmBuffer;
+    stTraces : ST_TraceBuffer;
+    stForce : ST_MachineForce;
+    stQuality : ST_QualityStatus;
+    aCurve : ARRAY[1..GVL_Const.CURVE_BUFFER] OF ST_PressCurve;
+    stRetained : ST_RetainedValues;
+END_VAR
+]]></Declaration>
+  </GVL>
+</TcPlcObject>
