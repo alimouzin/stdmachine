@@ -712,7 +712,7 @@ Le robot a l'override commun ; il s'applique à tous ses axes.
 | Dégager | — | Z → sécurité |
 | Référencer | — | Power on des axes en parallèle, puis Init par ordre de référencement (Z d'abord) |
 
-L'ingénieur process peut copier une fonction (par exemple Prendre pièce) pour créer une fonction personnalisée, puis modifier ses étapes dans l'éditeur ; elle apparaît dans la palette du robot avec un badge « personnalisée ».
+L'ingénieur process peut copier une fonction (par exemple Prendre pièce) pour créer une fonction personnalisée, puis modifier ses étapes dans l'éditeur ; elle est rangée dans la bibliothèque de fonctions de la machine (`02` § 5.6), pour le type de module Robot, et apparaît dans la palette de chaque robot de ce type avec un badge « bibliothèque ».
 
 ## 10. Ajouter un type d'objet
 

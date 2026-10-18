@@ -37,7 +37,7 @@ flowchart LR
 | --- | --- | --- | --- | --- |
 | 1 | Objet | Catalogue (types) et configuration de station (instances) | Axe Z, vérin éjecteur | Code PLC du type |
 | 2 | Action de base | Catalogue | Move absolu, Aspirer | Code PLC du type |
-| 3 | Fonction de module | Catalogue des modules ; copiable en fonction personnalisée | Prendre pièce = aller au-dessus, descendre, aspirer, remonter | Dépliée dans les tables par le compilateur |
+| 3 | Fonction de module | Catalogue des modules ; copiable en fonction personnalisée, rangée dans la bibliothèque de fonctions de la machine | Prendre pièce = aller au-dessus, descendre, aspirer, remonter | Dépliée dans les tables par le compilateur |
 | 4 | Opération | Éditeur de process, niveau station | Presser pignon | Séquenceur de station |
 | 5 | Process général | Éditeur de process, niveau machine | Charger → Presser → Contrôler → Décharger | Séquenceur général, une instance par mover |
 
@@ -200,6 +200,15 @@ Un **bloc composé** (fonction personnalisée, sous-process, opération) peut re
 - **Opération** : les sorties sont rendues par la station au séquenceur général quand l'opération se termine bien (`Done`) ; elles sont copiées dans les cibles choisies par l'étape d'opération du process général. Si l'opération échoue ou est avortée, rien n'est copié.
 - **Exemple** : le bloc « Rechercher pièce Asyril » (fonction personnalisée de la station Pressage 01) cherche la pièce (Refaire 3 fois, avec vibration de l'alimenteur) puis l'obtient. Il déclare deux sorties, « Position pièce » (position) et « Nombre » (entier), définies par les liaisons des résultats de « Obtenir pièce » et « Chercher pièce ». L'appel les range dans les variables de process `PosPignon` et `NbPièces`.
 - Limites : le PLC garde 8 résultats par action, avec une seule position et un seul texte (`04`) ; l'objet à sorties variables (Keyence XG) reste à étudier plus tard.
+
+### 5.6 Bibliothèque de fonctions
+
+- **Où** : les fonctions personnalisées sont stockées **au niveau machine**, dans la bibliothèque de fonctions du projet, rangées par type de module (par exemple « Robot cartésien XYZC »). Ce sont des étapes de programme, déployées avec le projet ; elles ne sont pas des recettes (une recette est une donnée réglable sans redéploiement ; ce qui varie selon le produit est un paramètre de la fonction, alimenté par les paramètres d'OF).
+- **Forme** : une fonction de bibliothèque est une définition (nom, description, module de départ « basée sur », paramètres, sorties, étapes) dont les étapes désignent les objets par leur **rôle dans le module** (Axe X, Axe Z, Outil…), jamais par une instance précise, et n'emploient ni variable de station ni position nommée de station : tout ce qui est propre à la station passe par un paramètre (position, hauteur d'approche, vitesse). Elle est donc valable pour tous les modules du même type, dans toutes les stations.
+- **Création** : copier une fonction de module du catalogue ou une fonction de bibliothèque (« Dupliquer »), puis la modifier dans l'éditeur. Les fonctions personnalisées déjà rangées dans une station peuvent être **publiées** dans la bibliothèque (leurs objets sont convertis en rôles ; la conversion est refusée avec la liste des points à corriger si elle n'est pas possible).
+- **Utilisation** : la palette d'une station propose, pour chaque module d'un type donné, les fonctions de bibliothèque de ce type (crayon ✎ et badge « bibliothèque »). L'étape garde la référence de la fonction et l'instance du module ; le compilateur déplie comme une fonction de module.
+- **Modification partagée** : modifier une fonction de bibliothèque la modifie pour toutes les stations qui l'utilisent. L'éditeur affiche les stations concernées avant l'enregistrement, la validation de chacune est relancée, et la page Déploiement liste les fonctions changées avec les stations touchées. Supprimer une fonction utilisée est refusé (liste des étapes concernées). Pour une variante propre à une station, on duplique la fonction.
+- **Droit** : `process.edit` (niveau 2).
 
 ## 6. Process général
 

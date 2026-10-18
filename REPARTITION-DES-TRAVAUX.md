@@ -38,6 +38,8 @@ Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 
 - D82 : « Finir les pièces » aussi depuis Idle.
 - D83 : plusieurs OF commencés, un actif, changement à chaud (`docs/02` § 16, `docs/05` § 5.6) ; source `OrderParam` := 11 ; table d'OF `aOrder[1..8]`. Chantier de code à placer après la préparation et avant les calibrations.
 
+- D84 : bibliothèque de fonctions au niveau machine (`docs/02` § 5.6, règles V030 et V031). Chantier de code : modèle `FunctionLibrary`, objets par rôle, compilation, publication, Studio machine, tests. À placer avant les sorties de blocs.
+
 ## Écarts constatés par le code
 
 (B ajoute ici, en ajout seulement : document, section, problème, solution retenue.)

@@ -370,6 +370,7 @@ Paramètres de l'instruction : fonction `aArg[1]`, opération `aArg[2]`, emplace
 
 ### 5.6 OF
 
+- **Propriété des OF** : la HMI (base locale ou usine) reste propriétaire de tous les OF, de leur liste et de leur historique. Le PLC n'en garde qu'une **copie de travail** pour les OF qui en ont besoin pour produire seul (si la HMI est déconnectée, la production continue, `06` § 6.2) : l'OF actif et ceux qui ont encore des pièces sur les movers. Il y compte les pièces, limite le chargement à la quantité et donne leurs paramètres aux opérations. Un OF qui n'a plus de pièce sur la machine quitte la table, ses compteurs restent dans la HMI.
 - Le séquenceur général tient une **table d'OF** `aOrder[1..8]` (`ST_OrderState` : n° interne, état Active / Suspended / Done, quantité, bonnes, mauvaises, en cours, 16 paramètres `aParam`) et `nActiveOrder` (0 = aucun). Chaque pièce porte le n° interne de son OF (`ST_Part.nOrder`).
 - **Création de pièce** (§ 5.5, étape 2) : rattachée à `nActiveOrder` ; sans OF actif, l'instruction `Route` vers une fonction de rôle Entrée n'est pas lancée (motif « aucun OF »).
 - **Paramètres** : une source `OrderParam` (`nIndex` = rang du paramètre d'OF) se résout dans le séquenceur général, à l'émission de `Route`, depuis l'OF de la première pièce présente du mover, sinon de l'OF actif (opération d'entrée) ; la valeur est recopiée dans `aParam` de la demande d'opération.
