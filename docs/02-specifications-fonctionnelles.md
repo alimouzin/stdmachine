@@ -423,7 +423,6 @@ Décision : Abort est accepté aussi depuis Stopped et Clearing (un arrêt d'urg
 - **Quantité** : un OF est complet quand bonnes + en cours ≥ quantité ; l'entrée ne charge plus pour lui. Un OF complet sans pièce en cours passe Terminé, qu'il soit actif ou suspendu. Quand l'OF actif est terminé et qu'aucune pièce d'aucun OF n'est en cours, la machine exécute Arrêter automatiquement (« OF terminé »). Pas d'enchaînement automatique sur l'OF suivant : l'opérateur choisit.
 - **Annuler** un OF est refusé tant qu'il a des pièces en cours sur la machine.
 - Les pièces créées sont rattachées à l'OF actif ; les compteurs de chaque OF sont mis à jour à la clôture de ses pièces. La surveillance des rebuts tient un budget par OF (`10` § 4.3) ; les historiques par portée machine, station, fonction et mover restent communs et ne se remettent à zéro que selon `10` § 4.2.
-- Quand le nombre de pièces bonnes plus les pièces en cours atteint la quantité, l'entrée ne charge plus de nouvelles pièces. Quand la dernière pièce est sortie, la machine exécute Arrêter automatiquement, la balise passe en bleu clignotant et la HMI affiche « OF terminé ».
 - Source des OF : interface `IOrderSource` ; implémentation locale (saisie dans la HMI, base locale), et implémentation usine (`PlantOrderSource`, OF reçus en MQTT, désactivée par défaut, `11-interface-usine.md` § 4.5).
 
 ## 17. Utilisateurs et droits

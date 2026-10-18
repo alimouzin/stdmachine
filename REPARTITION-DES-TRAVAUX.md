@@ -40,6 +40,8 @@ Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 
 
 - D84 : bibliothèque de fonctions au niveau machine (`docs/02` § 5.6, règles V030 et V031). Chantier de code : modèle `FunctionLibrary`, objets par rôle, compilation, publication, Studio machine, tests. À placer avant les sorties de blocs.
 
+- D85 : relecture complète, voir `REVUE-DU-PROJET.md` § 2 pour les manques du code (priorité 1 : enregistrement du projet, base de données, droits, paramètres d'OF vers le PLC) ; à traiter **avant** les nouveaux chantiers, en commençant par la décision .NET 10 / net48.
+
 ## Écarts constatés par le code
 
 (B ajoute ici, en ajout seulement : document, section, problème, solution retenue.)

@@ -31,7 +31,9 @@ STRUCT
 END_STRUCT END_TYPE
 
 // MoverData : rang de la variable de mover (aMoverVar), valeur dans ST_MoverCtx.aVar / aVarPos (05 § 5.8).
-TYPE E_BindTarget : (None := 0, Var := 1, PartData := 2, PartId := 3, Verdict := 4, PartRemoved := 5, MoverData := 6) USINT; END_TYPE
+// Output : rang de la sortie du bloc composé en cours (opération : réponse ; sous-process : emplacement interne ; 02 § 5.5).
+// OrderParam : rang du paramètre d'OF, seulement dans les tables du process général (05 § 5.6).
+TYPE E_BindTarget : (None := 0, Var := 1, PartData := 2, PartId := 3, Verdict := 4, PartRemoved := 5, MoverData := 6, Output := 7) USINT; END_TYPE
 TYPE ST_Bind : STRUCT eTarget : E_BindTarget; nIndex : INT; END_STRUCT END_TYPE
 
 TYPE E_Op : (Nop := 0, Action := 1, WaitCond := 2, WaitTime := 3, Jump := 4, JumpIfFalse := 5,
@@ -419,7 +421,8 @@ public interface IPlcClient : IAsyncDisposable
 
     Task ConnectAsync(CancellationToken ct);
 
-    Task<CommandResult> SendCommandAsync(StateCommand command, CancellationToken ct);
+    Task<CommandResult> SendCommandAsync(StateCommand command, CancellationToken ct);   // StateCommand : Reset … Clear, DrainStart, DrainCancel (05 § 5.7)
+    Task<CommandResult> SendStationCommandAsync(int station, StateCommand command, CancellationToken ct); // réintégration, station hors production
     Task<CommandResult> SetModeAsync(MachineMode mode, CancellationToken ct);
     Task<CommandResult> SetOverrideAsync(OverrideTarget target, double percent, bool manual, CancellationToken ct);
 
@@ -434,10 +437,20 @@ public interface IPlcClient : IAsyncDisposable
     Task<DeployResult> DeployAsync(CompiledProject project, IProgress<DeployProgress>? progress, CancellationToken ct);
     Task<DeployedInfo> GetDeployedInfoAsync(CancellationToken ct);
 
-    Task<CommandResult> StartOrderAsync(OrderStart order, CancellationToken ct);
-    Task<CommandResult> OrderCommandAsync(OrderCommand command, CancellationToken ct);
+    Task<CommandResult> ActivateOrderAsync(OrderActivation order, CancellationToken ct); // lancer ou reprendre : numéro, quantité, compteurs faits, 16 paramètres (05 § 5.6)
+    Task<CommandResult> OrderCommandAsync(string orderNumber, OrderCommand command, CancellationToken ct); // Suspend, Cancel
     Task<CommandResult> ConfirmPartsRemovedAsync(int mover, CancellationToken ct);
+    Task<CommandResult> MoveMoverAsync(int mover, int planarPosition, CancellationToken ct);     // Maintenance, machine Stopped (05 § 6.5)
+    Task<CommandResult> SetMoverVariableAsync(int mover, Guid variableId, MoverVarValue? value, CancellationToken ct); // null = valeur initiale (05 § 5.8)
+    Task<CommandResult> AnswerPromptAsync(int station, PromptAnswer answer, CancellationToken ct); // station 0 = calibration machine (05 § 10.1)
     Task<CommandResult> AcknowledgeAlarmAsync(AlarmKey? key, CancellationToken ct); // null = tous les avertissements
+
+    // Forçages (12 § 7) et surveillance des rebuts (10 § 10)
+    Task<CommandResult> SetDeclaredStateAsync(DeclaredState state, string? reason, DateTime? until, CancellationToken ct);
+    Task<CommandResult> SetStationOutOfProductionAsync(int station, bool outOfProduction, string? reason, CancellationToken ct);
+    Task<CommandResult> SetMoverOutOfServiceAsync(int mover, bool outOfService, bool immediate, string? reason, CancellationToken ct);
+    Task<CommandResult> ReleaseQualityAsync(QualityScope scope, int index, string reason, CancellationToken ct);
+    Task<CommandResult> ResetQualityAsync(QualityScope scope, int index, string reason, CancellationToken ct);
 
     IAsyncEnumerable<AlarmEvent> ReadAlarmEventsAsync(CancellationToken ct);       // flux continu, sans perte ni doublon
     IAsyncEnumerable<TraceRecord> ReadTracesAsync(CancellationToken ct);
@@ -453,6 +466,9 @@ public interface ISimulatorControl                              // seulement Sim
     void SetInput(int station, int objectId, int signal, double value);
     void SetFailureRate(int objectType, double rate);           // par exemple 0,03 pour la presse
     void Reset(int? seed = null);
+    void ForceStationState(int station, PackMlState state);     // forçages d'essai (12 § 5)
+    void ImposeResults(int station, int objectId, IReadOnlyList<double> values, int count);
+    void SetPlanarFault(int code, int mover = 0);               // collision, mover non détecté
 }
 ```
 

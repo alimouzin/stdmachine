@@ -166,6 +166,11 @@ END_FOR
 | `SetVar` | Cible `aBind[1]` (variable de station, ou de process qui est allouée comme une variable de station, donnée de pièce, ou variable de mover) := / += / −= valeur de `aParam[1]` selon `I.aArg[1]` (0, 1, 2). Avancer. |
 | `Alarm` | Lever l'alarme de process (code `900 + I.aArg[3]`, texte n° `I.aArg[1]`, gravité `I.aArg[2]`). Avertissement → avancer. Défaut de station → la station passe Aborted. Défaut machine → la machine passe Aborted. |
 | `End` | `I.aArg[1] = 1` (cycle de fond) → `nPC := début de la table`. Sinon → `Done`. |
+| `WaitMover` | Voir § 4.2 bis : avancer si le mover est en position de travail, sinon attendre. |
+| `ResetMoverVars` | Voir § 5.8 : variable `I.aArg[1]` du mover attribué remise à sa valeur initiale (0 = toutes sauf règle `Never`). Avancer. |
+| `Prompt` | Voir § 10.1 : publier la demande à l'opérateur, attendre la réponse, ranger la valeur saisie dans `aBind[1]`. Annulation ou perte de la HMI → échec. |
+| `SavePos` | Voir § 10.1 : copier la position actuelle de l'objet `I.nObject` dans la copie de travail de la position nommée `I.aArg[1]`. Avancer. |
+| `CalibStation` | Voir § 10.1 (calibration machine) : lancer la calibration `I.aArg[2]` de la station `I.aArg[1]`, attendre `Done` (avancer) ou `Failed` (politique d'échec). |
 
 ### 3.4 Résolution des paramètres
 
@@ -182,13 +187,14 @@ Pour chaque paramètre `k` de l'instruction, selon `aParam[k].eSource` :
 | `Speed` | `aKind[k] := SpeedIndex`, `aReal[k] := nIndex` (n° de vitesse, résolu par l'objet) ; `nIndex = 0` → `SpeedPercent` avec `fValue` |
 | `Text` | texte n° `nIndex` de la table de textes → `sText` |
 | `ObjValue` | valeur `E[fValue]` publiée par l'objet n° `nIndex` (`Status.aValue`) |
-| `System` | variable système n° `nIndex` (mover présent, emplacement, n° d'OF, compteur de cycles, temps de cycle) |
+| `System` | variable système n° `nIndex` (mover présent, emplacement, n° de l'OF de la pièce de l'emplacement courant — à défaut l'OF actif —, compteur de cycles, temps de cycle) |
+| `OrderParam` | paramètre n° `nIndex` de l'OF (§ 5.6) : seulement dans le process général ; résolu à l'émission de `Route` depuis l'OF de la première pièce présente du mover, sinon de l'OF actif |
 
 Une position nommée non apprise ne peut pas arriver ici : le déploiement l'aurait refusée.
 
 ### 3.5 Rangement des résultats
 
-Pour chaque `k` de 1 à 8 avec `aBind[k].eTarget` ≠ `None` : la cible reçoit le résultat `r_k` de l'objet (`Results.aReal[k]`, ou `stPos` si le résultat k est une position, ou `sText` si c'est un texte). Cibles : variable de station, donnée de pièce, identifiant de pièce (texte), verdict (le jugement `aJudgement[k]` est converti : Ok → bon, tout autre jugement ≠ None → mauvais).
+Pour chaque `k` de 1 à 8 avec `aBind[k].eTarget` ≠ `None` : la cible reçoit le résultat `r_k` de l'objet (`Results.aReal[k]`, ou `stPos` si le résultat k est une position, ou `sText` si c'est un texte). Cibles : variable de station (ou de process), donnée de pièce, variable de mover (§ 5.8), identifiant de pièce (texte), verdict (le jugement `aJudgement[k]` est converti : Ok → bon, tout autre jugement ≠ None → mauvais), sortie du bloc composé en cours (`Output`, rang `nIndex`, même effet que `SetOut`).
 
 ### 3.6 Politique d'échec
 
@@ -297,7 +303,7 @@ Une station réintégrée (Clear, Reset, Start donnés à la station seule penda
 
 ### 5.2 Agrégation et transitions automatiques de la machine
 
-- **Resetting → Idle** quand : système planaire actif, tous les movers détectés, et chaque fonction utilisée par le process général a au moins une station en Idle. Une station qui échoue son Reset passe Aborted ; si l'une de ses fonctions n'a pas d'autre station, la machine passe Aborted.
+- **Resetting → Idle** quand : système planaire actif, tous les movers détectés (un mover **hors service** peut être absent du plan, par exemple retiré pour réparation : il ne compte pas ; un mover absent qui n'est pas hors service laisse la machine en Resetting avec l'erreur 101 « Mover non détecté » du système planaire, qui nomme le mover), et chaque fonction utilisée par le process général a au moins une station en Idle. Une station qui échoue son Reset passe Aborted ; si l'une de ses fonctions n'a pas d'autre station, la machine passe Aborted.
 - **Raison d'arrêt** : à chaque passage en Aborted, Held ou Stopping, le séquenceur général mémorise la première alarme cause (code, station) ou la cause système (commande opérateur, fin d'OF, qualité) ; elle est publiée dans `GVL_Plant` et dans les événements d'arrêt.
 - **Stopping → Stopped** quand toutes les stations sont Stopped ou Aborted et tous les movers immobiles.
 - **Clearing → Stopped** quand toutes les stations sont sorties de Clearing et les défauts machine acquittés.
@@ -428,7 +434,7 @@ Toutes en frame 0, déployées avec la configuration machine :
 
 ### 6.3 Démarrage et reprise
 
-- Au Reset machine, chaque mover détecté reçoit sa position actuelle ; s'il est sur une position connue (travail, file, tampon, parcage), il en devient propriétaire.
+- Au Reset machine, chaque mover détecté reçoit sa position actuelle (un mover hors service absent garde ses pièces et ses variables en mémoire, il est marqué « absent » ; à son retour sur le plan, il est détecté au Reset suivant et va en parcage) ; s'il est sur une position connue (travail, file, tampon, parcage), il en devient propriétaire.
 - Les contextes des movers et les pièces sont en mémoire **persistante** : après un arrêt (Stop, Abort, coupure), au Start suivant chaque mover reprend à son PC. Un mover qui était en `AtStation` dans une station qui a été Aborted garde le verdict mauvais et repart au rebut.
 
 ### 6.4 Station Aborted avec un mover engagé
@@ -564,6 +570,8 @@ END_STRUCT END_TYPE
 | `MAX_VARS` | 64 par station |
 | `MAX_PART_DATA` | 32 |
 | `MAX_MOVER_VARS` | 16 par mover |
+| `MAX_ORDERS` | 8 (table d'OF du séquenceur général, § 5.6) |
+| `MAX_OUTPUTS` | 8 par bloc composé (`02` § 5.5) |
 | `MAX_INTERLOCKS` | 32 par station |
 | `MAX_CTX` | 8 par station |
 | `MAX_CALL_DEPTH` | 4 |

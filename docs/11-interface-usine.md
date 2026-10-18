@@ -39,7 +39,7 @@ flowchart LR
 | Famille | Contenu | Canal | Quand |
 | --- | --- | --- | --- |
 | Identité | N° et nom de machine, site, ligne, versions HMI et PLC, empreinte et date du projet déployé | OPC UA, MQTT | Au démarrage, à chaque déploiement |
-| État machine | État PackML, mode, durée dans l'état, raison d'arrêt (première alarme cause), override machine, OF en cours, chargement verrouillé | OPC UA, MQTT | Continu (OPC UA) ; à chaque changement (MQTT) |
+| État machine | État PackML, mode, durée dans l'état, raison d'arrêt (première alarme cause), override machine, OF actif (et OF suspendus avec des pièces en cours, `02` § 16), chargement verrouillé | OPC UA, MQTT | Continu (OPC UA) ; à chaque changement (MQTT) |
 | État des stations et fonctions | État de chaque station, fonctions disponibles, arrêts qualité, opération en cours | OPC UA, MQTT | Idem |
 | Compteurs de production | Pièces entrées, bonnes, mauvaises (constatées, sur défaut, retirées), en cours ; opérations par station ; cadence instantanée et théorique | OPC UA, MQTT | Continu ; toutes les 60 s (MQTT) |
 | Temps par état et par mode | Temps cumulés dans chaque état PackML et chaque mode, depuis la remise à zéro et depuis le début de l'OF | OPC UA, MQTT | Continu ; toutes les 60 s (MQTT) |
