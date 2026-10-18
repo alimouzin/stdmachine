@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_ObjectPools" Id="{e3a6014a-d26d-5d26-9218-d619834af91f}">
+    <Declaration><![CDATA[// Pools d'objets (docs/04 § 9) : instances déclarées une fois pour toutes, attribuées au déploiement par
+// FB_ObjectFactory. La bibliothèque fournit FB_DefaultPools ; un projet peut donner les siens.
+INTERFACE I_ObjectPools
+// Nombre d'éléments du pool d'un type, 0 = type absent
+// Élément nIndex (1..PoolSize) du pool d'un type
+]]></Declaration>
+    <Method Name="PoolSize" Id="{888f9d33-7137-502f-8d7b-b3bbf14089a3}">
+      <Declaration><![CDATA[METHOD PoolSize : UINT
+VAR_INPUT
+    nType : UINT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="Element" Id="{3b21351e-821d-5cc2-99b8-5f44f9ff9eb7}">
+      <Declaration><![CDATA[METHOD Element : I_Object
+VAR_INPUT
+    nType : UINT;
+    nIndex : UINT;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

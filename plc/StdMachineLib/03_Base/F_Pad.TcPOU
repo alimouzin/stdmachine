@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_Pad" Id="{42d2f8bc-a3dc-57c0-bd49-b4aa4fef2248}" SpecialFunc="None">
+    <Declaration><![CDATA[// Nombre écrit sur nWidth chiffres, complété par des zéros
+FUNCTION F_Pad : STRING(10)
+VAR_INPUT
+    nValue : UDINT;
+    nWidth : INT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[F_Pad := UDINT_TO_STRING(nValue);
+WHILE LEN(F_Pad) < nWidth DO
+    F_Pad := CONCAT('0', F_Pad);
+END_WHILE
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

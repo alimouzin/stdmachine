@@ -5,7 +5,7 @@
 // pas à pas, calibrations, canal manuel (docs/05 § 2 à 4, § 7, § 8, § 10.1).
 // Contexte 1 : opération, initialisation, arrêt, vidage, calibration ; contexte 2 : cycle de fond ;
 // contextes 3 à 8 : branches des blocs En parallèle.
-FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider
+FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider, I_ManualHost
 VAR
     nNumber : USINT;
     _refData : REFERENCE TO ST_StationData;
@@ -73,16 +73,23 @@ END_VAR
 // Nouveau déploiement (docs/05 § 10, étape 4) : contextes et variables remis à l'état initial, sauf les
 // variables persistantes retrouvées par leur identifiant et leur type.
 
+// Hôte du canal manuel (I_ManualHost)
+
+
 // ================================================================== commandes
 
 
 
 
 
+// Changement d'OF : les objets concernés (compteurs) réagissent
+
 // Défaut venu de l'extérieur (Abort machine, essai)
 
 // ================================================================== demandes d'opération (docs/05 § 4.1)
 
+
+// L'opération (fonction, n°) a-t-elle une préparation (instruction WaitMover) ? (docs/05 § 4.1)
 
 // Le mover est arrivé en position de travail (préparation, docs/05 § 4.1)
 
@@ -196,7 +203,7 @@ _refAlarms REF= refAlarms;
 _refStatus REF= refStatus;
 _refStep REF= refStep;
 SetParent(ipMachine);
-fbManual.Init(nStation := nStation, refStation := THIS^);
+fbManual.Init(nStation := nStation, ipHost := THIS^);
 ]]></ST>
       </Implementation>
     </Method>
@@ -272,6 +279,29 @@ END_FOR
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="ObjectAt" Id="{e6041a14-0401-5e3f-9546-f5248a9d77a3}">
+      <Declaration><![CDATA[METHOD ObjectAt : I_Object
+VAR_INPUT
+    nLocalId : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nLocalId >= 1 AND nLocalId <= GVL_Const.MAX_OBJ_PER_STATION THEN ObjectAt := aObj[nLocalId]; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="NamedPos" Id="{31be7371-bdb8-5b07-b175-da3b288e63b8}">
+      <Declaration><![CDATA[METHOD NamedPos : POINTER TO ST_NamedPos
+VAR_INPUT
+    nIndex : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[NamedPos := 0;
+IF nIndex >= 1 AND nIndex <= GVL_Const.MAX_NAMED_POS AND __ISVALIDREF(_refData) THEN NamedPos := ADR(_refData.aPos[nIndex]); END_IF
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="Command" Id="{13d6c53f-e3f8-5a32-9d96-7e9a769a3cc3}">
       <Declaration><![CDATA[METHOD Command : E_RejectReason
 VAR_INPUT
@@ -326,6 +356,22 @@ END_VAR
 ]]></ST>
       </Implementation>
     </Method>
+    <Method Name="OnOrderChange" Id="{aac25509-17d6-5d87-93f8-89e407329871}">
+      <Declaration><![CDATA[METHOD OnOrderChange
+VAR
+    i : UINT;
+    ipAware : I_OrderAware;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO _nObj DO
+    IF aObj[i] <> 0 THEN
+        IF __QUERYINTERFACE(aObj[i], ipAware) THEN ipAware.OnOrderChange(); END_IF
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="RaiseFault" Id="{bb0a9447-049d-518d-b12d-e338ca572f23}">
       <Declaration><![CDATA[METHOD RaiseFault
 ]]></Declaration>
@@ -356,6 +402,24 @@ END_FOR
 IF nTable = 0 THEN RETURN; END_IF
 _StartOperation(stReq, pMover, nTable);
 Offer := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PrepareWanted" Id="{d958c317-d59a-52de-ae17-a8db9caa4ce7}">
+      <Declaration><![CDATA[METHOD PrepareWanted : BOOL
+VAR_INPUT
+    nGroup : USINT;
+    nOperation : USINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[PrepareWanted := FALSE;
+FOR i := 1 TO _refData.nOpMapCount DO
+    IF _refData.aOpMap[i].nGroup = nGroup AND _refData.aOpMap[i].nOperationNo = nOperation THEN PrepareWanted := _refData.aOpMap[i].bPrepare; END_IF
+END_FOR
 ]]></ST>
       </Implementation>
     </Method>

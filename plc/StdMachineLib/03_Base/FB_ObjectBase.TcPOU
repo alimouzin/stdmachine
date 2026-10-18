@@ -4,7 +4,7 @@
     <Declaration><![CDATA[// Base de tous les objets élémentaires (docs/04 § 7) : identité, contrat d'action, timeout recalculé par
 // l'override, verrouillages, simulation, alarmes, compteurs de maintenance, publication de l'état.
 // Les types dérivés redéfinissent les méthodes protégées « _… » ; les valeurs par défaut viennent du catalogue.
-FUNCTION_BLOCK FB_ObjectBase IMPLEMENTS I_Object
+FUNCTION_BLOCK FB_ObjectBase IMPLEMENTS I_Object, I_Maintained
 VAR
     _stInfo : ST_ObjectInfo;
     _refCfg : REFERENCE TO ST_ObjConfig;
@@ -38,7 +38,15 @@ VAR PERSISTENT
 END_VAR
 ]]></Declaration>
     <Implementation>
-      <ST><![CDATA[// ---------- Fin d'action et erreurs
+      <ST><![CDATA[// ---------- Compteurs de maintenance (I_Maintained)
+
+
+
+
+
+// Restauration des valeurs sauvegardées par la HMI (docs/05 § 10, étape 6)
+
+// ---------- Fin d'action et erreurs
 
 
 
@@ -389,6 +397,73 @@ END_VAR
         </Implementation>
       </Get>
     </Property>
+    <Property Name="StableId" Id="{9206849c-4e17-5068-a9f7-5745c678063e}">
+      <Declaration><![CDATA[PROPERTY StableId : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{fd21c533-e1f2-585d-9f3e-b85fc31c2d12}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[StableId := _nStableId;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ActionCount" Id="{8eef8d37-0377-5fe0-b83b-7d2b94fe52c5}">
+      <Declaration><![CDATA[PROPERTY ActionCount : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{82868cde-0924-5972-95db-efbfd141bfd6}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ActionCount := _nActionCount;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorCount" Id="{d26f6cef-9970-575a-b6be-534f7f7944b2}">
+      <Declaration><![CDATA[PROPERTY ErrorCount : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{62f319d0-9150-5255-b625-99190648c066}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorCount := _nErrorCount;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="MotionHours" Id="{0f014816-3002-5c85-b0af-36317e1a621f}">
+      <Declaration><![CDATA[PROPERTY MotionHours : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{3e1a0591-229b-5d93-a871-1a624723a379}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[MotionHours := _fMotionHours;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Method Name="RestoreCounters" Id="{98fbc969-df36-5b82-b8d3-847c22bf8902}">
+      <Declaration><![CDATA[METHOD RestoreCounters
+VAR_INPUT
+    nActions : UDINT;
+    nErrors : UDINT;
+    fHours : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nActionCount := nActions;
+_nErrorCount := nErrors;
+_fMotionHours := fHours;
+]]></ST>
+      </Implementation>
+    </Method>
     <Method Name="_EndAction" Id="{98df1099-e7e1-5def-a562-c1fa242ae2db}">
       <Declaration><![CDATA[METHOD PROTECTED _EndAction
 ]]></Declaration>

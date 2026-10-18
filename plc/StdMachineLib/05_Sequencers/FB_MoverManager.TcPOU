@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_MoverManager" Id="{24cb95b4-4fa8-5433-9fac-8712de13ab39}" SpecialFunc="None">
+    <Declaration><![CDATA[// Gestionnaire de movers (docs/05 § 6) : occupation et réservation des positions planaires, envoi des
+// déplacements au pilote planaire, détection des arrivées (fenêtre de position et à l'arrêt 50 ms), timeout.
+FUNCTION_BLOCK FB_MoverManager
+VAR
+    _refMachine : REFERENCE TO ST_MachineData;
+    ipDriver : I_PlanarDriver;
+    aOwner : ARRAY[1..GVL_Const.MAX_PLANAR_POS] OF USINT;         // mover propriétaire, 0 = libre
+    _aDest : ARRAY[1..GVL_Const.MAX_MOVERS] OF INT;
+    _aMoveMs : ARRAY[1..GVL_Const.MAX_MOVERS] OF LREAL;
+    _aStillMs : ARRAY[1..GVL_Const.MAX_MOVERS] OF LREAL;
+    _aTimeoutMs : ARRAY[1..GVL_Const.MAX_MOVERS] OF LREAL;
+    _aArrived : ARRAY[1..GVL_Const.MAX_MOVERS] OF INT;           // position atteinte ce cycle, 0 sinon
+    _aTimedOut : ARRAY[1..GVL_Const.MAX_MOVERS] OF BOOL;
+    _fVelocity : LREAL := 1000.0;
+    _fAcceleration : LREAL := 5000.0;
+    _fWindow : LREAL := 0.1;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Paramètres du système planaire (type 13 : P1 vitesse, P2 accélération, P3 fenêtre)
+
+
+
+
+// Libère toutes les positions d'un mover sauf nKeep
+
+// Réserve la destination puis envoie le déplacement (docs/05 § 6.2)
+
+
+// Position atteinte ce cycle (0 sinon)
+
+
+
+
+// Arrêt contrôlé de tous les movers (Abort) : les destinations sont abandonnées, les réservations gardées
+
+// Position planaire connue où se trouve le mover (Reset machine, docs/05 § 6.3), 0 sinon
+
+// Position tampon libre la plus proche du mover, 0 si aucune
+]]></ST>
+    </Implementation>
+    <Method Name="Init" Id="{1db790d4-01c7-5719-81e6-cd5331c12c2d}">
+      <Declaration><![CDATA[METHOD Init
+VAR_INPUT
+    refMachine : REFERENCE TO ST_MachineData;
+    ipPlanar : I_PlanarDriver;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_refMachine REF= refMachine;
+ipDriver := ipPlanar;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Configure" Id="{ce46c316-5dad-57d8-a9db-bb3bcc59bd1d}">
+      <Declaration><![CDATA[METHOD Configure
+VAR
+    i : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO _refMachine.nMachineObj DO
+    IF _refMachine.aMachineObj[i].nType = GVL_Catalog.Type_PlanarSystem THEN
+        IF _refMachine.aMachineObj[i].aParam[1] > 0 THEN _fVelocity := _refMachine.aMachineObj[i].aParam[1]; END_IF
+        IF _refMachine.aMachineObj[i].aParam[2] > 0 THEN _fAcceleration := _refMachine.aMachineObj[i].aParam[2]; END_IF
+        IF _refMachine.aMachineObj[i].aParam[3] > 0 THEN _fWindow := _refMachine.aMachineObj[i].aParam[3]; END_IF
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Owner" Id="{4a73b1f9-2fd3-55df-a768-f9f6a54a4f5d}">
+      <Declaration><![CDATA[METHOD Owner : USINT
+VAR_INPUT
+    nPos : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nPos >= 1 AND nPos <= GVL_Const.MAX_PLANAR_POS THEN Owner := aOwner[nPos]; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Reserve" Id="{e4cf1172-5d38-5af4-9aa2-7eed901e0210}">
+      <Declaration><![CDATA[METHOD Reserve
+VAR_INPUT
+    nPos : INT;
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nPos >= 1 AND nPos <= GVL_Const.MAX_PLANAR_POS THEN aOwner[nPos] := nMover; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Free" Id="{d382d3ee-c7d4-5f39-9b02-be383cc7975f}">
+      <Declaration><![CDATA[METHOD Free
+VAR_INPUT
+    nPos : INT;
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nPos >= 1 AND nPos <= GVL_Const.MAX_PLANAR_POS AND_THEN aOwner[nPos] = nMover THEN aOwner[nPos] := 0; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="FreeAll" Id="{da8cc0c1-e47c-561e-b007-92a7095bcbf7}">
+      <Declaration><![CDATA[METHOD FreeAll
+VAR_INPUT
+    nMover : USINT;
+    nKeep : INT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO GVL_Const.MAX_PLANAR_POS DO
+    IF aOwner[i] = nMover AND i <> nKeep THEN aOwner[i] := 0; END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MoveTo" Id="{a3724697-bf17-581a-a6d6-a933dec11a07}">
+      <Declaration><![CDATA[METHOD MoveTo : BOOL
+VAR_INPUT
+    nMover : USINT;
+    nPos : INT;
+END_VAR
+VAR
+    stCur : ST_Position;
+    fDist : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MoveTo := FALSE;
+IF ipDriver = 0 OR nPos < 1 OR nPos > _refMachine.nPlanarPos OR nMover < 1 OR nMover > GVL_Const.MAX_MOVERS THEN RETURN; END_IF
+IF aOwner[nPos] <> 0 AND aOwner[nPos] <> nMover THEN RETURN; END_IF
+IF NOT ipDriver.MoveTo(nMover, _refMachine.aPlanarPos[nPos].stPos, _fVelocity, _fAcceleration) THEN RETURN; END_IF
+FreeAll(nMover, 0);
+aOwner[nPos] := nMover;
+_aDest[nMover] := nPos;
+_aMoveMs[nMover] := 0;
+_aStillMs[nMover] := 0;
+_aArrived[nMover] := 0;
+_aTimedOut[nMover] := FALSE;
+stCur := ipDriver.MoverPosition(nMover);
+fDist := SQRT(EXPT(_refMachine.aPlanarPos[nPos].stPos.fX - stCur.fX, 2) + EXPT(_refMachine.aPlanarPos[nPos].stPos.fY - stCur.fY, 2));
+_aTimeoutMs[nMover] := 2.0 * (fDist / _fVelocity + _fVelocity / _fAcceleration) * 1000.0 + 5000.0;
+MoveTo := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Cycle" Id="{c3f8b0e6-ed7f-5175-8c67-7b670245e0ea}">
+      <Declaration><![CDATA[METHOD Cycle
+VAR_INPUT
+    fOverride : LREAL;
+END_VAR
+VAR
+    i : USINT;
+    stPos : ST_Position;
+    nPos : INT;
+    fDt : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF ipDriver = 0 THEN RETURN; END_IF
+ipDriver.Cycle(fOverride);
+fDt := F_CycleMs();
+FOR i := 1 TO _refMachine.nMovers DO
+    _aArrived[i] := 0;
+    nPos := _aDest[i];
+    IF nPos > 0 THEN
+        stPos := ipDriver.MoverPosition(i);
+        IF fOverride > 0 THEN _aMoveMs[i] := _aMoveMs[i] + fDt * fOverride / 100.0; END_IF
+        IF NOT ipDriver.MoverMoving(i)
+           AND ABS(stPos.fX - _refMachine.aPlanarPos[nPos].stPos.fX) <= MAX(_fWindow, 0.01)
+           AND ABS(stPos.fY - _refMachine.aPlanarPos[nPos].stPos.fY) <= MAX(_fWindow, 0.01) THEN
+            _aStillMs[i] := _aStillMs[i] + fDt;
+            IF _aStillMs[i] >= GVL_Const.ARRIVAL_SETTLE_MS THEN
+                _aArrived[i] := nPos;
+                _aDest[i] := 0;
+            END_IF
+        ELSE
+            _aStillMs[i] := 0;
+            IF _aMoveMs[i] > _aTimeoutMs[i] THEN
+                _aTimedOut[i] := TRUE;
+                _aDest[i] := 0;
+            END_IF
+        END_IF
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Arrived" Id="{1cba8766-d186-5f45-bcd5-89e4769818bd}">
+      <Declaration><![CDATA[METHOD Arrived : INT
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN Arrived := _aArrived[nMover]; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="TimedOut" Id="{56b61236-3e25-559c-85f7-7b4cfac3fb6f}">
+      <Declaration><![CDATA[METHOD TimedOut : BOOL
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[TimedOut := nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS AND_THEN _aTimedOut[nMover];
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Moving" Id="{78197eb9-44d9-54a8-bc65-e119d286d7d0}">
+      <Declaration><![CDATA[METHOD Moving : BOOL
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[Moving := nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS AND_THEN _aDest[nMover] <> 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AnyMoving" Id="{5c89e7aa-508d-5e76-b4bf-092a3577fa2c}">
+      <Declaration><![CDATA[METHOD AnyMoving : BOOL
+VAR
+    i : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[AnyMoving := FALSE;
+FOR i := 1 TO GVL_Const.MAX_MOVERS DO
+    IF _aDest[i] <> 0 THEN AnyMoving := TRUE; END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StopAll" Id="{21c5f5aa-551c-58dd-8223-3289d1414d00}">
+      <Declaration><![CDATA[METHOD StopAll
+VAR
+    i : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF ipDriver <> 0 THEN ipDriver.StopAll(); END_IF
+FOR i := 1 TO GVL_Const.MAX_MOVERS DO _aDest[i] := 0; END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="PositionAt" Id="{307e628f-acae-59b5-9d66-38d1eeb786fb}">
+      <Declaration><![CDATA[METHOD PositionAt : INT
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+VAR
+    i : INT;
+    stPos : ST_Position;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[PositionAt := 0;
+IF ipDriver = 0 THEN RETURN; END_IF
+stPos := ipDriver.MoverPosition(nMover);
+FOR i := 1 TO _refMachine.nPlanarPos DO
+    IF ABS(stPos.fX - _refMachine.aPlanarPos[i].stPos.fX) <= MAX(_fWindow, 0.5) AND ABS(stPos.fY - _refMachine.aPlanarPos[i].stPos.fY) <= MAX(_fWindow, 0.5) THEN
+        PositionAt := i;
+        RETURN;
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="NearestFree" Id="{e5cedbf5-8cdb-5923-8d45-1a45c78a4d61}">
+      <Declaration><![CDATA[METHOD NearestFree : INT
+VAR_INPUT
+    nMover : USINT;
+    eKind : E_PlanarPosKind;
+END_VAR
+VAR
+    i : INT;
+    stPos : ST_Position;
+    fD : LREAL;
+    fBest : LREAL := 1.0E30;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[NearestFree := 0;
+IF ipDriver = 0 THEN RETURN; END_IF
+stPos := ipDriver.MoverPosition(nMover);
+FOR i := 1 TO _refMachine.nPlanarPos DO
+    IF _refMachine.aPlanarPos[i].eKind = eKind AND (aOwner[i] = 0 OR aOwner[i] = nMover) THEN
+        fD := ABS(_refMachine.aPlanarPos[i].stPos.fX - stPos.fX) + ABS(_refMachine.aPlanarPos[i].stPos.fY - stPos.fY);
+        IF fD < fBest THEN
+            fBest := fD;
+            NearestFree := i;
+        END_IF
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Driver" Id="{b1f9db48-c931-50d1-a2ac-1965c774f13a}">
+      <Declaration><![CDATA[PROPERTY Driver : I_PlanarDriver
+]]></Declaration>
+      <Get Name="Get" Id="{a1673446-b137-5979-9ffd-8a168c165536}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Driver := ipDriver;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_Maintained" Id="{248e718f-e62e-564a-8032-8cf03bdfb463}">
+    <Declaration><![CDATA[// Compteurs de maintenance persistants d'un élément de pool (docs/11 § 5, D92) et leur restauration (docs/02 § 7.4)
+INTERFACE I_Maintained
+// Objet du projet auquel appartiennent les compteurs (persistant : survit au redémarrage du PLC)
+]]></Declaration>
+    <Property Name="StableId" Id="{35146746-a7c7-551b-ad2d-3564b28cae99}">
+      <Declaration><![CDATA[PROPERTY StableId : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{68fe4d34-5c05-59e3-a9d1-63eedaaa1943}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ActionCount" Id="{04ab5a85-b0dd-541d-b5d4-ad7727089020}">
+      <Declaration><![CDATA[PROPERTY ActionCount : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{b5ba7830-15dd-5790-8a84-517dbf228a5f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ErrorCount" Id="{6d0e1e1c-95fd-56b9-8586-f4cff2c828c2}">
+      <Declaration><![CDATA[PROPERTY ErrorCount : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{bf9115bd-d6bc-5d9e-928b-4d0cbb760a20}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="MotionHours" Id="{67f133e4-ba07-52fb-84ce-c04e6075becf}">
+      <Declaration><![CDATA[PROPERTY MotionHours : LREAL
+]]></Declaration>
+      <Get Name="Get" Id="{69cd8233-8b60-5b40-beb4-1a0b9050ccad}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Method Name="RestoreCounters" Id="{f94199f3-827a-524b-b63b-112bc47f5b5a}">
+      <Declaration><![CDATA[METHOD RestoreCounters
+VAR_INPUT
+    nActions : UDINT;
+    nErrors : UDINT;
+    fHours : LREAL;
+END_VAR
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

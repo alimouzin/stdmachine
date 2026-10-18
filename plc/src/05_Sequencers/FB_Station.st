@@ -2,7 +2,7 @@
 // pas à pas, calibrations, canal manuel (docs/05 § 2 à 4, § 7, § 8, § 10.1).
 // Contexte 1 : opération, initialisation, arrêt, vidage, calibration ; contexte 2 : cycle de fond ;
 // contextes 3 à 8 : branches des blocs En parallèle.
-FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider
+FUNCTION_BLOCK FB_Station EXTENDS FB_NodeBase IMPLEMENTS I_InterlockProvider, I_ManualHost
 VAR
     nNumber : USINT;
     _refData : REFERENCE TO ST_StationData;
@@ -80,7 +80,7 @@ _refAlarms REF= refAlarms;
 _refStatus REF= refStatus;
 _refStep REF= refStep;
 SetParent(ipMachine);
-fbManual.Init(nStation := nStation, refStation := THIS^);
+fbManual.Init(nStation := nStation, ipHost := THIS^);
 END_METHOD
 
 METHOD ClearObjects
@@ -145,6 +145,22 @@ FOR i := 1 TO GVL_Const.CALIB_PER_STATION DO
 END_FOR
 END_METHOD
 
+// Hôte du canal manuel (I_ManualHost)
+METHOD ObjectAt : I_Object
+VAR_INPUT
+    nLocalId : UINT;
+END_VAR
+IF nLocalId >= 1 AND nLocalId <= GVL_Const.MAX_OBJ_PER_STATION THEN ObjectAt := aObj[nLocalId]; END_IF
+END_METHOD
+
+METHOD NamedPos : POINTER TO ST_NamedPos
+VAR_INPUT
+    nIndex : INT;
+END_VAR
+NamedPos := 0;
+IF nIndex >= 1 AND nIndex <= GVL_Const.MAX_NAMED_POS AND __ISVALIDREF(_refData) THEN NamedPos := ADR(_refData.aPos[nIndex]); END_IF
+END_METHOD
+
 // ================================================================== commandes
 
 METHOD Command : E_RejectReason
@@ -185,6 +201,19 @@ END_VAR
 _bQualityLock := bLock;
 END_METHOD
 
+// Changement d'OF : les objets concernés (compteurs) réagissent
+METHOD OnOrderChange
+VAR
+    i : UINT;
+    ipAware : I_OrderAware;
+END_VAR
+FOR i := 1 TO _nObj DO
+    IF aObj[i] <> 0 THEN
+        IF __QUERYINTERFACE(aObj[i], ipAware) THEN ipAware.OnOrderChange(); END_IF
+    END_IF
+END_FOR
+END_METHOD
+
 // Défaut venu de l'extérieur (Abort machine, essai)
 METHOD RaiseFault
 _bFault := TRUE;
@@ -211,6 +240,21 @@ END_FOR
 IF nTable = 0 THEN RETURN; END_IF
 _StartOperation(stReq, pMover, nTable);
 Offer := TRUE;
+END_METHOD
+
+// L'opération (fonction, n°) a-t-elle une préparation (instruction WaitMover) ? (docs/05 § 4.1)
+METHOD PrepareWanted : BOOL
+VAR_INPUT
+    nGroup : USINT;
+    nOperation : USINT;
+END_VAR
+VAR
+    i : INT;
+END_VAR
+PrepareWanted := FALSE;
+FOR i := 1 TO _refData.nOpMapCount DO
+    IF _refData.aOpMap[i].nGroup = nGroup AND _refData.aOpMap[i].nOperationNo = nOperation THEN PrepareWanted := _refData.aOpMap[i].bPrepare; END_IF
+END_FOR
 END_METHOD
 
 // Le mover est arrivé en position de travail (préparation, docs/05 § 4.1)

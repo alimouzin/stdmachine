@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_ManualHost" Id="{1f1d161e-1c4e-57c7-a5b8-864b417e2a9a}">
+    <Declaration><![CDATA[// Ce que le canal manuel lit de son hôte : une station, ou la machine pour le canal 0 (docs/05 § 7)
+INTERFACE I_ManualHost
+// Objet de n° local nLocalId, 0 si absent
+// Position nommée à apprendre, 0 si l'hôte n'en a pas (la machine n'a pas de positions nommées)
+]]></Declaration>
+    <Method Name="ObjectAt" Id="{87c8ca93-5f0b-5af6-803b-a2d681d54153}">
+      <Declaration><![CDATA[METHOD ObjectAt : I_Object
+VAR_INPUT
+    nLocalId : UINT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="NamedPos" Id="{458d1b6e-8fbe-5328-90d8-b7e8f75de8df}">
+      <Declaration><![CDATA[METHOD NamedPos : POINTER TO ST_NamedPos
+VAR_INPUT
+    nIndex : INT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="State" Id="{339ad370-5d30-5a57-9c9c-052e61fff785}">
+      <Declaration><![CDATA[PROPERTY State : E_State
+]]></Declaration>
+      <Get Name="Get" Id="{7f983a04-e50b-557c-9e3b-918bb77dae2a}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="Mode" Id="{a9568df0-a36e-5646-9c01-2f0f3a7c3d55}">
+      <Declaration><![CDATA[PROPERTY Mode : E_Mode
+]]></Declaration>
+      <Get Name="Get" Id="{4cab320d-ef18-5a67-b986-b901af5fb56e}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>

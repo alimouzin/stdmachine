@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_OrderAware" Id="{5e10a71e-c4e1-5cb0-a931-39a1214c6a5f}">
+    <Declaration><![CDATA[// Objet qui réagit au changement d'OF (compteur, P3 : remise à zéro au changement d'OF, docs/03 § 8.4)
+INTERFACE I_OrderAware
+]]></Declaration>
+    <Method Name="OnOrderChange" Id="{ecd8779a-a207-5565-a570-fe6ef8cc88dc}">
+      <Declaration><![CDATA[METHOD OnOrderChange
+]]></Declaration>
+    </Method>
+  </Itf>
+</TcPlcObject>

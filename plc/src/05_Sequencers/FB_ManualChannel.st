@@ -1,9 +1,9 @@
-// Canal manuel d'une station (docs/05 § 7) : action, jog avec garde, acquittement, apprentissage.
-// Conditions : mode Maintenance et station Stopped ; les droits sont contrôlés par la HMI.
+// Canal manuel d'une station ou de la machine (canal 0) (docs/05 § 7) : action, jog avec garde, acquittement,
+// apprentissage. Conditions : mode Maintenance et hôte Stopped ; les droits sont contrôlés par la HMI.
 FUNCTION_BLOCK FB_ManualChannel
 VAR
-    _nStation : USINT;
-    _refStation : REFERENCE TO FB_Station;
+    _nStation : USINT;              // 0 = machine
+    _ipHost : I_ManualHost;
     _nLastSeq : UDINT;
     _nObject : UINT;                // objet de l'action en cours, 0 = aucune
     _bJog : BOOL;
@@ -15,10 +15,10 @@ END_VAR
 METHOD Init
 VAR_INPUT
     nStation : USINT;
-    refStation : REFERENCE TO FB_Station;
+    ipHost : I_ManualHost;
 END_VAR
 _nStation := nStation;
-_refStation REF= refStation;
+_ipHost := ipHost;
 END_METHOD
 
 METHOD Cycle
@@ -27,13 +27,13 @@ VAR
     resp : REFERENCE TO ST_ManualResponse;
     ipObj : I_Object;
 END_VAR
-IF NOT __ISVALIDREF(_refStation) OR _nStation < 1 OR _nStation > GVL_Const.MAX_STATIONS THEN RETURN; END_IF
+IF _ipHost = 0 OR _nStation > GVL_Const.MAX_STATIONS THEN RETURN; END_IF
 req REF= GVL_Hmi.aManual[_nStation];
 resp REF= GVL_Hmi.aManualResp[_nStation];
 
 // Suivi de l'action en cours
 IF _nObject <> 0 THEN
-    ipObj := _refStation.aObj[_nObject];
+    ipObj := _ipHost.ObjectAt(_nObject);
     IF ipObj <> 0 THEN
         resp.eActStatus := ipObj.ActStatus;
         resp.nErrorCode := ipObj.Status.nErrorCode;
@@ -47,7 +47,7 @@ IF _nObject <> 0 THEN
             ELSE
                 _fQuietMs := _fQuietMs + F_CycleMs();
             END_IF
-            IF _fQuietMs >= GVL_Const.JOG_GUARD_MS OR _refStation.State <> _eStateAtStart THEN
+            IF _fQuietMs >= GVL_Const.JOG_GUARD_MS OR _ipHost.State <> _eStateAtStart THEN
                 ipObj.Abort();
                 _bJog := FALSE;
                 _nObject := 0;
@@ -65,14 +65,14 @@ _nLastSeq := req.nSeq;
 resp.nSeq := req.nSeq;
 resp.eReason := E_RejectReason.None;
 resp.eResult := E_CmdResult.Rejected;
-IF _refStation.Mode <> E_Mode.Maintenance THEN resp.eReason := E_RejectReason.WrongMode; RETURN; END_IF
-IF _refStation.State <> E_State.Stopped THEN resp.eReason := E_RejectReason.WrongState; RETURN; END_IF
+IF _ipHost.Mode <> E_Mode.Maintenance THEN resp.eReason := E_RejectReason.WrongMode; RETURN; END_IF
+IF _ipHost.State <> E_State.Stopped THEN resp.eReason := E_RejectReason.WrongState; RETURN; END_IF
 IF req.eKind <> E_ManualKind.TeachPosition AND (req.nObject < 1 OR req.nObject > GVL_Const.MAX_OBJ_PER_STATION) THEN
     resp.eReason := E_RejectReason.NotConfigured;
     RETURN;
 END_IF
 IF req.eKind <> E_ManualKind.TeachPosition THEN
-    ipObj := _refStation.aObj[req.nObject];
+    ipObj := _ipHost.ObjectAt(req.nObject);
     IF ipObj = 0 THEN resp.eReason := E_RejectReason.NotConfigured; RETURN; END_IF
 END_IF
 
@@ -85,7 +85,7 @@ CASE req.eKind OF
             _bJog := req.eKind = E_ManualKind.JogStart;
             _nLastAlive := GVL_Hmi.nJogAlive;
             _fQuietMs := 0;
-            _eStateAtStart := _refStation.State;
+            _eStateAtStart := _ipHost.State;
             resp.eResult := E_CmdResult.Accepted;
         END_IF
         resp.eActStatus := ipObj.ActStatus;
@@ -116,15 +116,19 @@ VAR
     k : USINT;
     n : UINT;
     fValue : LREAL;
+    pPos : POINTER TO ST_NamedPos;
+    ipObj : I_Object;
 END_VAR
 _Teach := FALSE;
-IF req.nTeachPos < 1 OR req.nTeachPos > GVL_Const.MAX_NAMED_POS THEN RETURN; END_IF
-stTaught := _refStation.Data.aPos[req.nTeachPos].stPos;
+pPos := _ipHost.NamedPos(req.nTeachPos);
+IF pPos = 0 THEN RETURN; END_IF
+stTaught := pPos^.stPos;
 FOR k := 1 TO 4 DO
     n := req.aTeachFrom[k];
-    IF (SHR(req.nTeachMask, k - 1) AND 1) = 1 AND n >= 1 AND n <= GVL_Const.MAX_OBJ_PER_STATION THEN
-        IF _refStation.aObj[n] <> 0 THEN
-            fValue := _refStation.aObj[n].Status.aValue[1];
+    IF (SHR(req.nTeachMask, k - 1) AND 1) = 1 THEN
+        ipObj := _ipHost.ObjectAt(n);
+        IF ipObj <> 0 THEN
+            fValue := ipObj.Status.aValue[1];
             CASE k OF
                 1: stTaught.fX := fValue;
                 2: stTaught.fY := fValue;
@@ -134,8 +138,8 @@ FOR k := 1 TO 4 DO
         END_IF
     END_IF
 END_FOR
-_refStation.Data.aPos[req.nTeachPos].stPos := stTaught;
-_refStation.Data.aPos[req.nTeachPos].bTaught := TRUE;
+pPos^.stPos := stTaught;
+pPos^.bTaught := TRUE;
 _Teach := TRUE;
 END_METHOD
 END_FUNCTION_BLOCK

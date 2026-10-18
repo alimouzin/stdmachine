@@ -2,7 +2,7 @@
 <TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
   <POU Name="FB_Counter" Id="{40d49549-2752-5a5f-8695-2455559f88fa}" SpecialFunc="None">
     <Declaration><![CDATA[// Compteur, type 53 (docs/03 § 8.4)
-FUNCTION_BLOCK FB_Counter EXTENDS FB_ObjectBase
+FUNCTION_BLOCK FB_Counter EXTENDS FB_ObjectBase IMPLEMENTS I_OrderAware
 VAR
     _bStarted : BOOL;               // faux au démarrage du PLC (P4 = 0 : la valeur repart de P1)
 END_VAR

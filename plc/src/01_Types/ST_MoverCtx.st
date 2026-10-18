@@ -26,6 +26,12 @@ STRUCT
     bOutOfService : BOOL;
     bImmediate : BOOL;
     bAbsent : BOOL;                 // hors service et absent du plan (D85)
+    bStationAborted : BOOL;         // la station de l'opération est passée Aborted (docs/05 § 6.4)
+    bToEmptyPark : BOOL;            // en route vers le parcage pour être vidé
+    aBadAtArrival : ARRAY[1..GVL_Const.MAX_SLOTS] OF BOOL;     // verdict déjà mauvais à l'arrivée (docs/10 § 9)
+    aDefectBad : ARRAY[1..GVL_Const.MAX_SLOTS] OF BOOL;        // mauvaise sur défaut de station (docs/10 § 2)
+    aHidden : ARRAY[1..8] OF LREAL; // compteurs de boucle du process général (D93)
+    tOpStart : LINT;                // début de l'opération en cours
     fX : LREAL;                     // position actuelle sur le plan
     fY : LREAL;
     fC : LREAL;

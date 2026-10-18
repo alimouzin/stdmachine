@@ -1,5 +1,5 @@
 // Compteur, type 53 (docs/03 § 8.4)
-FUNCTION_BLOCK FB_Counter EXTENDS FB_ObjectBase
+FUNCTION_BLOCK FB_Counter EXTENDS FB_ObjectBase IMPLEMENTS I_OrderAware
 VAR
     _bStarted : BOOL;               // faux au démarrage du PLC (P4 = 0 : la valeur repart de P1)
 END_VAR

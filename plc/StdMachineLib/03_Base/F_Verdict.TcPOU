@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="F_Verdict" Id="{7ff436cf-c1c7-5c01-b56c-903a6e7bfb2e}" SpecialFunc="None">
+    <Declaration><![CDATA[// Verdict d'une pièce depuis sa donnée 1 (0 non défini, 1 bon, 2 mauvais)
+FUNCTION F_Verdict : E_Verdict
+VAR_INPUT
+    fData : LREAL;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[IF fData > 1.5 THEN
+    F_Verdict := E_Verdict.Bad;
+ELSIF fData > 0.5 THEN
+    F_Verdict := E_Verdict.Good;
+ELSE
+    F_Verdict := E_Verdict.Undefined;
+END_IF
+]]></ST>
+    </Implementation>
+  </POU>
+</TcPlcObject>

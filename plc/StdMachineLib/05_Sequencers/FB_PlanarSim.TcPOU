@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <POU Name="FB_PlanarSim" Id="{69f29d3f-68f9-50d8-a414-c4712329c765}" SpecialFunc="None">
+    <Declaration><![CDATA[// Système planaire simulé (docs/06 § 8) : déplacement en ligne droite, profil en S, arrêt si la destination est occupée
+// (l'occupation est gérée par FB_MoverManager, qui ne donne jamais une destination déjà prise).
+FUNCTION_BLOCK FB_PlanarSim IMPLEMENTS I_PlanarDriver
+VAR
+    nMovers : USINT;
+    _bActive : BOOL;
+    _fActivateMs : LREAL;
+    _aPos : ARRAY[1..GVL_Const.MAX_MOVERS] OF ST_Position;
+    _aFrom : ARRAY[1..GVL_Const.MAX_MOVERS] OF ST_Position;
+    _aTo : ARRAY[1..GVL_Const.MAX_MOVERS] OF ST_Position;
+    _aT : ARRAY[1..GVL_Const.MAX_MOVERS] OF LREAL;          // 0..1 avancement
+    _aDurMs : ARRAY[1..GVL_Const.MAX_MOVERS] OF LREAL;
+    _aMoving : ARRAY[1..GVL_Const.MAX_MOVERS] OF BOOL;
+    _aAbsent : ARRAY[1..GVL_Const.MAX_MOVERS] OF BOOL;      // essai : mover retiré du plan
+    _nError : UINT;
+END_VAR
+]]></Declaration>
+    <Implementation>
+      <ST><![CDATA[// Essai : retirer un mover du plan, ou provoquer une collision (docs/12 § 5)
+]]></ST>
+    </Implementation>
+    <Method Name="Activate" Id="{c5896b0a-72b8-52a1-837f-c7be428c8088}">
+      <Declaration><![CDATA[METHOD Activate : BOOL
+VAR_INPUT
+    bEnable : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF NOT bEnable THEN
+    _bActive := FALSE;
+    _fActivateMs := 0;
+ELSIF NOT _bActive THEN
+    _fActivateMs := _fActivateMs + F_CycleMs();
+    IF _fActivateMs >= 1500.0 THEN _bActive := TRUE; END_IF
+END_IF
+Activate := _bActive;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MoveTo" Id="{a7fafa51-b4aa-5b53-80dd-942acf0b303b}">
+      <Declaration><![CDATA[METHOD MoveTo : BOOL
+VAR_INPUT
+    nMover : USINT;
+    stPos : ST_Position;
+    fVelocity : LREAL;
+    fAcceleration : LREAL;
+END_VAR
+VAR
+    fDist : LREAL;
+    fV : LREAL;
+    fA : LREAL;
+    fAccDist : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MoveTo := FALSE;
+IF NOT _bActive OR nMover < 1 OR nMover > nMovers OR_ELSE _aAbsent[nMover] THEN RETURN; END_IF
+_aFrom[nMover] := _aPos[nMover];
+_aTo[nMover] := stPos;
+fDist := SQRT((stPos.fX - _aPos[nMover].fX) * (stPos.fX - _aPos[nMover].fX) + (stPos.fY - _aPos[nMover].fY) * (stPos.fY - _aPos[nMover].fY));
+fV := MAX(fVelocity, 1.0);
+fA := MAX(fAcceleration, 1.0);
+fAccDist := fV * fV / fA;
+IF fDist >= fAccDist THEN
+    _aDurMs[nMover] := ((fDist - fAccDist) / fV + 2.0 * fV / fA) * 1000.0;
+ELSE
+    _aDurMs[nMover] := 2.0 * SQRT(fDist / fA) * 1000.0;
+END_IF
+_aDurMs[nMover] := MAX(_aDurMs[nMover], 50.0);
+_aT[nMover] := 0;
+_aMoving[nMover] := TRUE;
+MoveTo := TRUE;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="StopAll" Id="{d032bd85-3779-53da-a2d6-dabcab97921d}">
+      <Declaration><![CDATA[METHOD StopAll
+VAR
+    i : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO GVL_Const.MAX_MOVERS DO _aMoving[i] := FALSE; END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="AckError" Id="{19134d49-c1f1-5b7b-8ae6-0bcad02c1747}">
+      <Declaration><![CDATA[METHOD AckError
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nError := 0;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="Cycle" Id="{97a8fb87-1494-521b-ae94-97aa677ce645}">
+      <Declaration><![CDATA[METHOD Cycle
+VAR_INPUT
+    fOverride : LREAL;
+END_VAR
+VAR
+    i : USINT;
+    e : LREAL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[FOR i := 1 TO nMovers DO
+    IF _aMoving[i] AND _bActive THEN
+        _aT[i] := MIN(1.0, _aT[i] + F_CycleMs() * LIMIT(0.0, fOverride, 100.0) / 100.0 / _aDurMs[i]);
+        e := _aT[i] * _aT[i] * (3.0 - 2.0 * _aT[i]);
+        _aPos[i].fX := _aFrom[i].fX + (_aTo[i].fX - _aFrom[i].fX) * e;
+        _aPos[i].fY := _aFrom[i].fY + (_aTo[i].fY - _aFrom[i].fY) * e;
+        _aPos[i].fC := _aTo[i].fC;
+        IF _aT[i] >= 1.0 THEN
+            _aPos[i] := _aTo[i];
+            _aMoving[i] := FALSE;
+        END_IF
+    END_IF
+END_FOR
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MoverPosition" Id="{27e3ca30-aba5-5029-b65b-3fe09f8d9128}">
+      <Declaration><![CDATA[METHOD MoverPosition : ST_Position
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN MoverPosition := _aPos[nMover]; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MoverMoving" Id="{4caf416e-e634-540a-9c7d-dd2be619d0f9}">
+      <Declaration><![CDATA[METHOD MoverMoving : BOOL
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MoverMoving := nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS AND_THEN _aMoving[nMover];
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="MoverDetected" Id="{cd5adbcd-8f6e-5aa9-95b5-836deaff1029}">
+      <Declaration><![CDATA[METHOD MoverDetected : BOOL
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[MoverDetected := _bActive AND nMover >= 1 AND nMover <= nMovers AND_THEN NOT _aAbsent[nMover];
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetInitialPosition" Id="{e886c0bd-0fd9-533b-86b8-39347c63d925}">
+      <Declaration><![CDATA[METHOD SetInitialPosition
+VAR_INPUT
+    nMover : USINT;
+    stPos : ST_Position;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN _aPos[nMover] := stPos; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetAbsent" Id="{0f24c5a0-f7ac-5059-ad2e-11e82fb1edc7}">
+      <Declaration><![CDATA[METHOD SetAbsent
+VAR_INPUT
+    nMover : USINT;
+    bAbsent : BOOL;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN _aAbsent[nMover] := bAbsent; END_IF
+]]></ST>
+      </Implementation>
+    </Method>
+    <Method Name="SetError" Id="{12222c46-d8b2-5eb6-a8c4-aa3991e3fae6}">
+      <Declaration><![CDATA[METHOD SetError
+VAR_INPUT
+    nCode : UINT;
+END_VAR
+]]></Declaration>
+      <Implementation>
+        <ST><![CDATA[_nError := nCode;
+]]></ST>
+      </Implementation>
+    </Method>
+    <Property Name="Active" Id="{68ae1e52-cdf6-5e7b-ae1f-397a5ad21748}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{7de58e09-dd20-591f-bb92-14b35a5b6be4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[Active := _bActive;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorCode" Id="{7e49e0d5-fdbe-5bf6-87c0-d54ce4f28c2e}">
+      <Declaration><![CDATA[PROPERTY ErrorCode : UINT
+]]></Declaration>
+      <Get Name="Get" Id="{fe3507a2-f0ae-5e96-93b1-227345afcc84}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorCode := _nError;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+    <Property Name="ErrorSubCode" Id="{329b69c5-cef3-5b1f-9c1f-9bf46f5201c5}">
+      <Declaration><![CDATA[PROPERTY ErrorSubCode : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{51bf6e1c-d8dc-5975-b412-53507debff51}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+        <Implementation>
+          <ST><![CDATA[ErrorSubCode := 0;
+]]></ST>
+        </Implementation>
+      </Get>
+    </Property>
+  </POU>
+</TcPlcObject>

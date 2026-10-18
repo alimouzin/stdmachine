@@ -1,7 +1,7 @@
 // Base de tous les objets élémentaires (docs/04 § 7) : identité, contrat d'action, timeout recalculé par
 // l'override, verrouillages, simulation, alarmes, compteurs de maintenance, publication de l'état.
 // Les types dérivés redéfinissent les méthodes protégées « _… » ; les valeurs par défaut viennent du catalogue.
-FUNCTION_BLOCK FB_ObjectBase IMPLEMENTS I_Object
+FUNCTION_BLOCK FB_ObjectBase IMPLEMENTS I_Object, I_Maintained
 VAR
     _stInfo : ST_ObjectInfo;
     _refCfg : REFERENCE TO ST_ObjConfig;
@@ -300,6 +300,44 @@ GET
 Status REF= _stStatus;
 END_GET
 END_PROPERTY
+
+// ---------- Compteurs de maintenance (I_Maintained)
+
+PROPERTY StableId : UDINT
+GET
+StableId := _nStableId;
+END_GET
+END_PROPERTY
+
+PROPERTY ActionCount : UDINT
+GET
+ActionCount := _nActionCount;
+END_GET
+END_PROPERTY
+
+PROPERTY ErrorCount : UDINT
+GET
+ErrorCount := _nErrorCount;
+END_GET
+END_PROPERTY
+
+PROPERTY MotionHours : LREAL
+GET
+MotionHours := _fMotionHours;
+END_GET
+END_PROPERTY
+
+// Restauration des valeurs sauvegardées par la HMI (docs/05 § 10, étape 6)
+METHOD RestoreCounters
+VAR_INPUT
+    nActions : UDINT;
+    nErrors : UDINT;
+    fHours : LREAL;
+END_VAR
+_nActionCount := nActions;
+_nErrorCount := nErrors;
+_fMotionHours := fHours;
+END_METHOD
 
 // ---------- Fin d'action et erreurs
 

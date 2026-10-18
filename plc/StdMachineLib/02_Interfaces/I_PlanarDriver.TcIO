@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TcPlcObject Version="1.1.0.1" ProductVersion="3.1.4024.12">
+  <Itf Name="I_PlanarDriver" Id="{e8f3f56c-07c1-5291-a0a2-fe146669344b}">
+    <Declaration><![CDATA[// Pilote du système planaire (docs/05 § 6). Le séquenceur ne donne que des destinations ; trajets et évitement
+// de collision sont faits par le système planaire. FB_PlanarSim l'implémente en simulation ; le pilote Tc3 Planar
+// (projet de la machine ou bibliothèque à venir) implémente la même interface.
+INTERFACE I_PlanarDriver
+]]></Declaration>
+    <Method Name="Activate" Id="{72cfe9e8-c075-5cf8-9006-3301ccef908f}">
+      <Declaration><![CDATA[METHOD Activate : BOOL              // TRUE quand le système est actif
+VAR_INPUT
+    bEnable : BOOL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="MoveTo" Id="{7c93dbc3-2513-50c9-bcfe-e11b12e9e05f}">
+      <Declaration><![CDATA[METHOD MoveTo : BOOL                // TRUE si la commande est acceptée
+VAR_INPUT
+    nMover : USINT;
+    stPos : ST_Position;
+    fVelocity : LREAL;               // mm/s, override déjà appliqué par le pilote
+    fAcceleration : LREAL;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="StopAll" Id="{de5b2d4c-a564-5d9a-b000-091f2981a608}">
+      <Declaration><![CDATA[METHOD StopAll
+]]></Declaration>
+    </Method>
+    <Method Name="AckError" Id="{91f973cb-223b-5e54-b3f4-a610e2754a14}">
+      <Declaration><![CDATA[METHOD AckError
+]]></Declaration>
+    </Method>
+    <Method Name="Cycle" Id="{7b9a37ad-85c9-52b5-8267-62ee424383dc}">
+      <Declaration><![CDATA[METHOD Cycle
+VAR_INPUT
+    fOverride : LREAL;               // override machine effectif, %
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="MoverPosition" Id="{07c6bfb1-66f2-578c-87a1-5dff44ba935e}">
+      <Declaration><![CDATA[METHOD MoverPosition : ST_Position
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="MoverMoving" Id="{2b504c70-e2d8-56a4-9b0b-e6dd951ed423}">
+      <Declaration><![CDATA[METHOD MoverMoving : BOOL
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="MoverDetected" Id="{e58b222a-fcde-54cc-a9b2-a16b791359fd}">
+      <Declaration><![CDATA[METHOD MoverDetected : BOOL
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Method Name="SetInitialPosition" Id="{1bac688d-1867-5144-848c-c6322576c1c2}">
+      <Declaration><![CDATA[METHOD SetInitialPosition           // simulation : poser un mover sur le plan
+VAR_INPUT
+    nMover : USINT;
+    stPos : ST_Position;
+END_VAR
+]]></Declaration>
+    </Method>
+    <Property Name="Active" Id="{c67b5b2d-99b7-52c4-b0b0-240e555bbee4}">
+      <Declaration><![CDATA[PROPERTY Active : BOOL
+]]></Declaration>
+      <Get Name="Get" Id="{c94b79a9-f3d2-50e3-bb82-6b6b6e9cff0f}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ErrorCode" Id="{7c85e702-7293-534f-b278-9b2f43d33299}">
+      <Declaration><![CDATA[PROPERTY ErrorCode : UINT          // 0 ou erreur du type Système planaire (100 collision, 101 mover non détecté, 102 groupe)
+]]></Declaration>
+      <Get Name="Get" Id="{2ca6d252-8f88-5cd8-b10c-a98d41e5f2b4}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+    <Property Name="ErrorSubCode" Id="{0d533be9-d15d-5c80-8499-333993b548d3}">
+      <Declaration><![CDATA[PROPERTY ErrorSubCode : UDINT
+]]></Declaration>
+      <Get Name="Get" Id="{bf5f51b5-d3e5-5b7c-a3bd-b24f6e833f28}">
+        <Declaration><![CDATA[VAR
+END_VAR
+]]></Declaration>
+      </Get>
+    </Property>
+  </Itf>
+</TcPlcObject>
