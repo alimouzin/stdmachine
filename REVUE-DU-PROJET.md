@@ -68,6 +68,8 @@ Classés par importance, avec ma recommandation. Rien n'est écrit dans les docu
 
 ## 4. Questions à trancher
 
+> **Réponses du 2026-10-18** : frames gérés seulement par les robots Stäubli, qui font toutes les transformations (D86, le point 3.1 est fermé) ; questions 1 à 3 acceptées (D87, D88) ; ordre de spécification accepté : compatibilité (D89) puis sauvegarde des valeurs du PLC (D90), faits. Restent ouvertes : la question 4 (couloirs) et les points 3.4 à 3.14.
+
 1. **Fenêtres qualité et changement d'OF** (`docs/10` § 4.2) : les fenêtres de rebut sont remises à zéro quand la référence produit change. Avec le changement d'OF à chaud, alterner deux références les remet à zéro à chaque bascule, alors que des pièces de l'ancienne référence sont encore en cours. Le plus simple : remise à zéro à l'activation d'un OF d'une autre référence, les dernières pièces de l'ancienne comptant dans la nouvelle fenêtre. Autre choix, plus lourd : une fenêtre par référence.
 2. Mover hors service absent au Réarmer (D85) : la décision vous convient-elle ?
 3. Migration vers .NET 10 maintenant, et accord pour `Microsoft.Data.Sqlite` ?

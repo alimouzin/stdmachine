@@ -447,7 +447,7 @@ Référence : écran « Process » de la maquette, agrandi pour le toucher.
 Feuille plein écran en 4 étapes, avec indicateur d'étapes en haut :
 1. **Validation** : erreurs (bloquantes) et avertissements, chacun avec « Corriger » (lien profond).
 2. **Différences** : arbre des changements par rapport à la version déployée (stations, objets, paramètres, positions, process ; ajouté en vert, modifié en bleu, supprimé en rouge barré) ; compteur par catégorie.
-3. **Conditions** : machine Stopped, PLC connecté, droit Déployer, aucun mover en défaut — chaque ligne cochée en direct.
+3. **Conditions** : machine Stopped, PLC connecté, bibliothèque PLC compatible (versions demandée et disponible), droit Déployer, aucun mover en défaut — chaque ligne cochée en direct. Si la HMI a détecté un PLC neuf (`02` § 7.4), un encadré propose « Restaurer les valeurs sauvegardées le <date> » avec la liste des valeurs, cochée par défaut.
 4. **Envoi** : bouton « Déployer » à appui maintenu ; progression par bloc (machine, stations, recettes) avec vérification de la somme de contrôle ; résultat (succès avec empreinte et heure, ou liste des refus du PLC avec liens).
 
 ### 6.11 Utilisateurs et droits
@@ -463,7 +463,7 @@ Feuille plein écran en 4 étapes, avec indicateur d'étapes en haut :
 
 ### 6.13 Système
 
-Connexion PLC (mode, AMS Net Id, état, empreinte du projet dans le PLC), Simulateur (échelle de temps, injection de défauts, taux d'échec, forçage), Projet (ouvrir, importer, exporter, historique des déploiements avec restauration), Exporter les constantes PLC, Essai tactile, Affichage (mode kiosque, réduire les animations, temps de déconnexion), À propos (versions, licences).
+Connexion PLC (mode, AMS Net Id, état, empreinte du projet dans le PLC, versions de la HMI et du PLC côte à côte avec leur état : compatible, PLC plus ancien, incompatible), Valeurs du PLC (date de la dernière copie, « Copier maintenant », « Restaurer », bandeau si un PLC neuf est détecté), Simulateur (échelle de temps, injection de défauts, taux d'échec, forçage), Projet (ouvrir, importer, exporter, historique des déploiements avec restauration), Exporter les constantes PLC, Essai tactile, Affichage (mode kiosque, réduire les animations, temps de déconnexion), À propos (versions, licences).
 
 ### 6.14 Connexion
 

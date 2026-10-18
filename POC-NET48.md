@@ -1,3 +1,5 @@
+> **N'est plus applicable depuis le 2026-10-18 (D88)** : le projet migre vers .NET 10, avec `Microsoft.Extensions.Hosting`, Serilog et `Microsoft.Data.Sqlite` (`docs/07` § 1). Ce fichier est gardé comme historique.
+
 # Addendum PoC : cible .NET Framework 4.8
 
 Ce fichier s'applique **uniquement au PoC de la phase 1** sur un poste sans droits administrateur, sans accès à dot.net, sans SDK .NET 10, avec Visual Studio 2022 Community. Il s'ajoute à `CLAUDE.md` et `PROMPT.md` et remplace seulement les points listés ci-dessous. Le reste s'applique tel quel.

@@ -50,7 +50,7 @@ Proportion de résultats mauvais parmi les **N derniers résultats** de la port�
 
 - Le taux n'est évalué que si la fenêtre contient au moins un **échantillon minimal** (sinon il est affiché « en cours de remplissage »).
 - Les fenêtres et compteurs sont **persistants** (une coupure ne les efface pas).
-- Ils sont remis à zéro : quand la **référence produit** change (nouvel OF d'une autre référence ; un nouvel OF de la même référence garde l'historique) ; à la libération après une réaction (§ 6) ; manuellement par un utilisateur habilité, avec motif.
+- Ils sont remis à zéro : quand la **référence produit** change, c'est-à-dire à l'activation d'un OF d'une autre référence que l'OF actif précédent (un OF de la même référence garde l'historique ; avec le changement d'OF à chaud, `02` § 16, les dernières pièces de l'ancienne référence encore en cours comptent dans les nouvelles fenêtres, D87) ; à la libération après une réaction (§ 6) ; manuellement par un utilisateur habilité, avec motif.
 
 ### 4.3 Budget de rebuts de l'OF
 

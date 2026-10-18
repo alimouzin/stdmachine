@@ -42,6 +42,10 @@ Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 
 
 - D85 : relecture complète, voir `REVUE-DU-PROJET.md` § 2 pour les manques du code (priorité 1 : enregistrement du projet, base de données, droits, paramètres d'OF vers le PLC) ; à traiter **avant** les nouveaux chantiers, en commençant par la décision .NET 10 / net48.
 
+- D86 à D90 (2026-10-18) : frames transformés seulement par les robots Stäubli (règle V122) ; fenêtres qualité au changement de référence ; **migration vers .NET 10 et SQLite acceptées : c'est la première tâche de l'agent B**, avant l'enregistrement du projet et la base ; compatibilité HMI–PLC (`docs/02` § 7.3, V032, V202) ; sauvegarde des valeurs du PLC (`docs/02` § 7.4).
+
+**Ordre conseillé pour l'agent B, mis à jour** : 1. migration .NET 10 ; 2. enregistrement du projet et base SQLite (`REVUE-DU-PROJET.md` § 2, priorité 1) ; 3. droits ; 4. paramètres d'OF et OF à chaud ; 5. fin des pièces ; 6. préparation ; 7. variables de mover ; 8. bibliothèque de fonctions ; 9. sorties de blocs ; 10. calibrations ; 11. compatibilité et sauvegarde des valeurs du PLC.
+
 ## Écarts constatés par le code
 
 (B ajoute ici, en ajout seulement : document, section, problème, solution retenue.)

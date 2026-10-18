@@ -102,7 +102,7 @@ Ce glossaire fixe le sens des mots utilisés dans tous les documents, dans le co
 | Terme | Code | Définition |
 | --- | --- | --- |
 | Position | `Position` | Toujours une structure X, Y, Z, C (rotation Rz, en degrés) et un frame. |
-| Frame | `Frame` | Repère dans lequel une position est exprimée : 0 = machine (plan planaire), puis un frame par station, par vision ou par robot. |
+| Frame | `Frame` | Repère dans lequel une position est exprimée : 0 = machine (plan planaire) ou repère propre des axes de la station. Les autres n° de frame ne servent qu'aux **robots Stäubli** : ils désignent un repère défini dans le robot, qui fait lui-même toutes les transformations. La HMI et le PLC ne transforment jamais une position. |
 | Position nommée | `NamedPosition` | Position enregistrée et nommée dans une station (repos, prise, dépose). Paramètre de la station, jamais de l'axe. |
 | Position actuelle | `ActualPosition` | Valeur lue sur un axe, un robot ou un mover. |
 | Apprendre | `Teach` | Copier la position actuelle dans une position nommée. |

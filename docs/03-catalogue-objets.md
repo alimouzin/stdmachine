@@ -13,6 +13,7 @@ Ce document est la spécification du **catalogue** : tous les types d'objets et 
 - **Vitesses** : `V1` à `V8` en % de la Vmax (axes seulement). V1 Lente, V2 Rapide, V3 à V8 personnalisées.
 - **Actions** : numéros 1 à 31 par type. Paramètres d'action `a1` à `a8`, résultats `r1` à `r8`.
 - **État affiché** : jusqu'à 4 valeurs `E1` à `E4` publiées en continu par l'objet (position actuelle, valeur lue…).
+- **Version d'apparition** : chaque type et chaque action portent dans `catalog.json` la version du catalogue (`since`, 1 par défaut) où ils sont apparus. `catalogVersion` augmente à chaque ajout ; une numérotation existante ne change jamais. Le compilateur en déduit la version de catalogue dont un projet a besoin (`02` § 7.3).
 
 ### 1.2 Types de valeurs
 
@@ -305,9 +306,11 @@ Matériel : `D` n° du mover dans le groupe planaire.
 
 Les movers sont commandés par le séquenceur général, pas par les process de station. Le mode manuel les déplace vers une position planaire choisie sur le plan.
 
-### 4.5 Robot externe — type 15 (interface à définir)
+### 4.5 Robot externe — type 15 (robots Stäubli, protocole à définir)
 
 Matériel : `D` connexion au contrôleur du robot.
+
+Le robot externe est un robot **Stäubli**. Il reçoit les positions avec leur n° de frame ; les frames (repères) sont définis et calculés dans le contrôleur du robot, qui fait **toutes les transformations** (D86). La HMI et le PLC transmettent le n° de frame sans le modifier.
 
 | Param. | Nom | Type | Défaut |
 | --- | --- | --- | --- |
@@ -423,7 +426,7 @@ Matériel : `D` esclave EtherCAT Eye+ (image process).
 | Param. | Nom | Type | Défaut |
 | --- | --- | --- | --- |
 | P1 | Recette de vision par défaut | Int | 1 |
-| P2 | Frame de la vision (n°) | Int | 2 |
+| P2 | Frame de la vision (n°, recopié dans la position rendue ; seul un robot Stäubli l'exploite, D86) | Int | 2 |
 | P3 | Timeout de réponse | Duration | 2 000 |
 
 État affiché : `E1` pièces trouvées (dernière recherche), `E2` recette active.
@@ -434,6 +437,8 @@ Matériel : `D` esclave EtherCAT Eye+ (image process).
 | 2 | Sélectionner recette | a1 Recette de vision (Recipe) | — | 5 000 ms |
 | 3 | Chercher pièce | — | r1 Pièces trouvées (Int) | 3 000 ms |
 | 4 | Obtenir pièce | — | r1 Position de la pièce (Position, frame P2) | 1 000 ms |
+
+Pour alimenter un robot cartésien du PLC, l'Eye+ doit être calibré dans l'appareil pour rendre des coordonnées dans le repère des axes du robot, et P2 vaut alors 0 (aucune transformation dans la HMI ni le PLC).
 
 Erreurs : 100 Esclave EtherCAT hors ligne, 101 Aucune pièce trouvée, 102 Résultat invalide, 103 Erreur Asyril (sous-code : fichier de sous-alarmes Asyril). Politique d'échec conseillée pour Chercher pièce : refaire 3 fois (avec Vibrer du chargeur entre deux essais, dans le process). Simulation : 0 à 6 pièces, position aléatoire dans le plateau, aucune pièce avec une probabilité de 5 %.
 

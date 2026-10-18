@@ -98,6 +98,7 @@ Chaque type définit ses paramètres dans le catalogue (`03-catalogue-objets.md`
 - Une position est « apprise » ou « non apprise ». Une position non apprise utilisée par un process est une erreur de validation.
 - Apprendre copie la position actuelle des axes concernés (mode manuel, droit Apprendre). Saisir une valeur numérique demande un droit plus élevé.
 - Un axe n'utilise que sa composante. Une étape « Aller à Dépose nid » sur un robot XYZC déplace chaque axe vers sa composante.
+- **Frames** : la HMI et le PLC ne transforment jamais une position d'un repère à un autre. Le n° de frame n'est utile qu'à un robot Stäubli (type Robot externe), qui reçoit la position avec son n° de frame et fait lui-même la transformation dans son contrôleur. Les axes du PLC (robot cartésien, axes seuls) ignorent le frame : leurs positions doivent être exprimées dans leur propre repère, et une vision qui les alimente (Asyril) doit être réglée dans l'appareil pour rendre des coordonnées dans ce repère. Une position de frame ≠ 0 utilisée par un objet qui n'est pas un robot Stäubli est signalée (V122).
 
 ### 4.4 Vitesses
 
@@ -243,10 +244,34 @@ La validation tourne en continu dans le studio (barre de validation en bas des p
 1. Machine à l'état Stopped (sinon le bouton Déployer est désactivé avec la raison).
 2. Validation sans erreur.
 3. Écran de déploiement : résumé des différences avec ce qui tourne dans le PLC (stations, objets, process modifiés), confirmation.
-4. Envoi de la configuration puis des tables ; le PLC vérifie (structure, bornes, types, références, somme de contrôle) puis active le tout en une fois.
+4. Envoi de la configuration puis des tables ; le PLC vérifie (compatibilité de versions, § 7.3 ; structure, bornes, types, références, somme de contrôle) puis active le tout en une fois.
 5. Résultat : succès (le projet déployé est enregistré comme « version déployée » avec date et auteur) ou refus détaillé (rien n'est changé dans le PLC).
 
 Après un déploiement, les positions apprises dans le PLC et dans la HMI sont identiques. Apprendre une position en mode manuel l'écrit dans le PLC et dans le projet en même temps.
+
+### 7.3 Compatibilité entre la HMI et le PLC
+
+La HMI et la bibliothèque PLC évoluent séparément (nouvelles instructions, nouveaux types d'objets). Trois numéros, publiés par le PLC et connus de la HMI, évitent d'envoyer à un PLC un projet qu'il ne sait pas exécuter :
+
+| Numéro | Ce qu'il couvre | Règle |
+| --- | --- | --- |
+| Version d'interface | Disposition des symboles `GVL_Hmi` lus et écrits par ADS | Différente de celle de la HMI : la HMI se connecte en **lecture seule** (état « PLC incompatible », aucune commande, aucun déploiement) et dit quelle version installer |
+| Version du jeu d'instructions | Instructions, sources de valeur et cibles de liaison connues (`06` § 2) | Le compilateur calcule la version **minimale** dont le projet a besoin (d'après ce qu'il utilise) ; un PLC plus ancien refuse le déploiement, et la HMI le signale avant l'envoi (V032) |
+| Version du catalogue | Types, actions, paramètres et erreurs connus (`03`) | Chaque type et chaque action du catalogue portent la version où ils sont apparus ; le projet demande la plus haute version utilisée ; même règle |
+
+- Le PLC publie aussi la **taille de ses pools** par type d'objet : la validation signale avant l'envoi un projet qui a plus d'objets d'un type que le PLC n'en a (V032), au lieu de découvrir le refus au chargement.
+- Sans PLC connecté, la compatibilité n'est pas vérifiable : information V202.
+- Le simulateur publie toujours les versions de la HMI qui l'embarque.
+- Page Système : versions de la HMI et du PLC, côte à côte, avec leur état (compatible, PLC plus ancien, incompatible). Page Déploiement : une ligne « Bibliothèque PLC compatible » dans les conditions.
+
+### 7.4 Sauvegarde des valeurs du PLC
+
+Certaines valeurs ne vivent que dans la mémoire rémanente du PLC : variables persistantes (résultats des calibrations, avec leur date et leur auteur), variables de mover (toutes, dont celles à règle « Jamais »), compteurs de maintenance des objets, compteurs de production et de temps, état et date des calibrations. Les positions apprises, elles, sont aussi dans le projet. Si le PLC est remplacé, réinstallé ou si sa mémoire rémanente est effacée, ces valeurs seraient perdues.
+
+- **Copie dans la HMI** : la HMI relit ces valeurs et en garde une copie avec le projet (fichier `plc-values.json` du dossier du projet) : après chaque calibration réussie, après chaque modification à la main d'une variable de mover, à chaque passage de la machine en Stopped, et toutes les heures. Les valeurs sont rangées par identifiant (variable, mover, objet), pas par rang, pour survivre aux redéploiements.
+- **Détection d'un PLC neuf** : la mémoire rémanente du PLC porte un identifiant tiré au hasard à sa première initialisation. S'il diffère de celui de la copie de la HMI (PLC remplacé ou mémoire effacée), la HMI le signale (bandeau sur les pages Système et Déploiement) et ne remplace pas sa copie par les valeurs vides du nouveau PLC.
+- **Restauration** : au déploiement suivant (ou depuis la page Système, machine Stopped), la HMI propose « Restaurer les valeurs sauvegardées le <date> » avec la liste de ce qui sera écrit (calibrations, variables de mover, compteurs). Confirmation par appui maintenu, droit `project.deploy`, journalisée. Une valeur dont l'élément n'existe plus dans le projet est ignorée et listée.
+- **Export** : la page Système exporte le projet avec la copie des valeurs du PLC, pour une sauvegarde complète de la machine.
 
 ## 8. Modèle d'états (PackML réduit)
 
@@ -493,4 +518,4 @@ Décisions prises dans ce document (elles complètent les échanges précédents
 - Forçages sans jamais forcer le séquenceur ni une sécurité : états déclarés (dont certains bloquent le démarrage), station hors production pendant que le reste produit, mover hors service, forçages d'essai réservés au simulateur (`12-forcages-et-etats-declares.md`).
 - Surveillance des rebuts dans le PLC, fenêtres en nombre de résultats, réactions graduées sans jamais passer en Aborted (`10-surveillance-des-rebuts.md`).
 
-Points ouverts (sans effet sur le premier aperçu) : protocole des appareils encore inconnus (Keyence en réseau ou en signaux, visseuse, marquage, robot externe, pince électrique), type de presse, transformation entre frames (vision → machine), contenu des statistiques.
+Points ouverts (sans effet sur le premier aperçu) : protocole des appareils encore inconnus (Keyence en réseau ou en signaux, visseuse, marquage, robot externe, pince électrique), type de presse, contenu des statistiques. (Transformation entre frames : tranchée par D86, les transformations sont faites par les robots Stäubli, jamais par la HMI ni le PLC.)

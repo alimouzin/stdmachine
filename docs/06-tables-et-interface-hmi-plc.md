@@ -84,6 +84,25 @@ STRUCT
 END_STRUCT END_TYPE
 ```
 
+**Versions du jeu d'instructions** (`02` § 7.3) : le compilateur demande la plus petite version qui contient tout ce que le projet utilise.
+
+| Version | Contenu ajouté |
+| --- | --- |
+| 1 | Instructions 0 à 16 et 20 (`Route`), sources 0 à 9, cibles 0 à 5 |
+| 2 | `WaitMover` 17, `Prompt` 18, `SavePos` 19, `CalibStation` 21, `ResetMoverVars` 22, `SetOut` 23 ; sources `MoverData` 10 et `OrderParam` 11 ; cibles `MoverData` 6 et `Output` 7 ; tables `Calibration` 6 et `MachineCalibration` 12 |
+
+```iecst
+TYPE ST_PlcIdentity :            // GVL_Hmi.stIdentity, lu à la connexion
+STRUCT
+    nInterfaceVersion : UINT;    // disposition de GVL_Hmi ; lu en premier, à une adresse fixe
+    nInstrSetVersion  : UINT;
+    nCatalogVersion   : UINT;
+    sLibVersion       : STRING(20);   // version de StdMachineLib, par exemple « 1.4.0 »
+    aPoolSize         : ARRAY[1..150] OF UINT;   // par n° de type, 0 = type absent du PLC
+    nRetainId         : ULINT;   // identifiant de la mémoire rémanente (02 § 7.4)
+END_STRUCT END_TYPE
+```
+
 ## 3. Arguments par opération
 
 | Opération | `nObject`, `nAction` | `aParam` | `aBind` | `aArg` |
@@ -382,7 +401,8 @@ Toute commande HMI → PLC suit le même schéma :
 | `GVL_Hmi.stPartCmd` | `ST_PartRequest` | Confirmer le retrait des pièces d'un mover à vider |
 | `GVL_Hmi.stAlarmAck` | `ST_AlarmAckRequest` | Acquitter un avertissement (objet, code ; 0 = tous) |
 | `GVL_Hmi.stStaging` | `ST_Staging` | Zone d'attente du déploiement : `stMachine`, `aStation[1..16]`, `aPressRecipe[1..64]` |
-| `GVL_Hmi.stDeploy` | `ST_DeployRequest` | Vérifier, activer ou annuler la zone d'attente ; CRC de chaque bloc ; utilisateur |
+| `GVL_Hmi.stDeploy` | `ST_DeployRequest` | Vérifier, activer ou annuler la zone d'attente ; CRC de chaque bloc ; versions du jeu d'instructions et du catalogue demandées par le projet ; utilisateur |
+| `GVL_Hmi.stRestore` | `ST_RestoreRequest` | Restaurer les valeurs rémanentes sauvegardées par la HMI, rangées par identifiant (`05` § 10, étape 6) ; machine Stopped ; utilisateur |
 | `GVL_Hmi.stForceCmd` | `ST_ForceCommand` | Poser ou lever un forçage : état déclaré et démarrage bloqué, station hors production, mover hors service (`12-forcages-et-etats-declares.md` § 7) |
 | `GVL_Hmi.stQualityCmd` | `ST_QualityCommand` | Libérer ou remettre à zéro une portée de la surveillance des rebuts (portée, index, motif, utilisateur) |
 | `GVL_Hmi.stSimForce` | `ST_SimForceRequest` | Forcer une entrée d'un objet simulé (Maintenance) |
@@ -391,6 +411,8 @@ Toute commande HMI → PLC suit le même schéma :
 
 | Symbole | Type | Fréquence de lecture HMI |
 | --- | --- | --- |
+| `GVL_Hmi.stIdentity` | `ST_PlcIdentity` : versions, tailles des pools, identifiant de la mémoire rémanente | à la connexion, puis toutes les 10 s |
+| `GVL_Hmi.stRetained` | valeurs rémanentes rangées par identifiant (variables persistantes et date de calibration, variables de mover, compteurs de maintenance, compteurs de production et de temps) | à la demande (`02` § 7.4) |
 | `GVL_Hmi.stMachineStatus` | état, mode, override effectif, balise, défauts, OF actif et table des OF (`aOrder[1..8]` : état, quantité, compteurs, en cours), horloge PLC, battement PLC, empreinte du projet actif | 10 Hz |
 | `GVL_Hmi.aStationStatus[1..16]` | état, mode, override effectif, balise, opération en cours, 8 contextes (statut, table, PC, carte, carte suivante, objet, action, essai, attente) | 10 Hz |
 | `GVL_Hmi.aObjStatus[0..16, 1..64]` | `ST_ObjStatus` | 10 Hz pour la station affichée, 1 Hz pour les autres |
@@ -436,6 +458,9 @@ public interface IPlcClient : IAsyncDisposable
 
     Task<DeployResult> DeployAsync(CompiledProject project, IProgress<DeployProgress>? progress, CancellationToken ct);
     Task<DeployedInfo> GetDeployedInfoAsync(CancellationToken ct);
+    PlcIdentity? Identity { get; }                                   // lue à la connexion ; ConnectionState = Incompatible si l'interface diffère
+    Task<RetainedValues> ReadRetainedValuesAsync(CancellationToken ct);              // 02 § 7.4
+    Task<RestoreResult> RestoreRetainedValuesAsync(RetainedValues values, CancellationToken ct);
 
     Task<CommandResult> ActivateOrderAsync(OrderActivation order, CancellationToken ct); // lancer ou reprendre : numéro, quantité, compteurs faits, 16 paramètres (05 § 5.6)
     Task<CommandResult> OrderCommandAsync(string orderNumber, OrderCommand command, CancellationToken ct); // Suspend, Cancel
