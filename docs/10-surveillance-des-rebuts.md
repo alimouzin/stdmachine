@@ -145,7 +145,7 @@ STRUCT
 END_STRUCT END_TYPE
 ```
 
-Instances : 16 stations × 2 (constatés, imputés), 16 fonctions, 32 movers, 1 machine, 1 OF.
+Instances : 16 stations × 2 (constatés, imputés), 16 fonctions, 32 movers, 1 machine, 8 OF (un budget par OF de la table des OF, `05` § 5.6).
 
 **À chaque résultat** `Record(eScope, nIndex, bBad)` :
 

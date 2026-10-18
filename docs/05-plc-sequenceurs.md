@@ -370,9 +370,12 @@ Paramètres de l'instruction : fonction `aArg[1]`, opération `aArg[2]`, emplace
 
 ### 5.6 OF
 
-- Le séquenceur général connaît la quantité de l'OF en cours et ses compteurs.
-- Quand bonnes + en cours ≥ quantité : une instruction `Route` vers une fonction de rôle Entrée n'est plus lancée ; le mover attend en tampon (`Buffered`, avec le motif « fin d'OF »).
-- Quand plus aucune pièce n'est en cours et que l'OF est complet : commande Stop automatique, balise bleu clignotant, événement « OF terminé » pour la HMI.
+- Le séquenceur général tient une **table d'OF** `aOrder[1..8]` (`ST_OrderState` : n° interne, état Active / Suspended / Done, quantité, bonnes, mauvaises, en cours, 16 paramètres `aParam`) et `nActiveOrder` (0 = aucun). Chaque pièce porte le n° interne de son OF (`ST_Part.nOrder`).
+- **Création de pièce** (§ 5.5, étape 2) : rattachée à `nActiveOrder` ; sans OF actif, l'instruction `Route` vers une fonction de rôle Entrée n'est pas lancée (motif « aucun OF »).
+- **Paramètres** : une source `OrderParam` (`nIndex` = rang du paramètre d'OF) se résout dans le séquenceur général, à l'émission de `Route`, depuis l'OF de la première pièce présente du mover, sinon de l'OF actif (opération d'entrée) ; la valeur est recopiée dans `aParam` de la demande d'opération.
+- **Compteurs** : bonnes et mauvaises sont mises à jour à la clôture de chaque pièce dans l'OF de la pièce ; « en cours » à la création et à la clôture.
+- **Fin d'OF** : quand bonnes + en cours ≥ quantité pour l'OF actif, une instruction `Route` vers une fonction de rôle Entrée n'est plus lancée ; le mover attend en tampon (`Buffered`, motif « fin d'OF »). Un OF complet dont plus aucune pièce n'est en cours passe `Done` (actif ou suspendu). Quand l'OF actif est `Done` et qu'aucune pièce d'aucun OF n'est en cours : commande Stop automatique, balise bleu clignotant, événement « OF terminé ».
+- **Commandes** (`GVL_Hmi.stOrder`) : `Activate` (numéro d'OF et ses données : quantité, compteurs déjà faits, paramètres) accepté tant que la machine n'est pas Aborted, Clearing, Resetting ou Stopping : l'OF actif devient `Suspended`, l'OF visé prend sa place dans la table (ajouté si absent, refusé si la table est pleine de 8 OF encore actifs ou avec des pièces en cours) et devient `nActiveOrder` ; `Suspend` (sans OF actif ensuite) ; `Cancel` refusé tant que l'OF a des pièces en cours. Un OF suspendu sans pièce en cours peut quitter la table (la HMI garde ses compteurs et les renvoie à la reprise).
 
 ### 5.7 Fin des pièces en cours (`Drain`)
 
@@ -498,7 +501,7 @@ END_STRUCT END_TYPE
 TYPE ST_Part : STRUCT
     bPresent   : BOOL;
     sPartId    : STRING(40);
-    nOrder     : UDINT;               // n° interne de l'OF
+    nOrder     : UDINT;               // n° interne de l'OF auquel la pièce est rattachée (reste, même si l'OF est suspendu)
     eStatus    : (None, InProcess, Good, Bad, Exited, Rejected, Removed) USINT;
     bBadHandled: BOOL;
     nOps       : USINT;

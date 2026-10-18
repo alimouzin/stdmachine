@@ -405,11 +405,15 @@ Décision : Abort est accepté aussi depuis Stopped et Clearing (un arrêt d'urg
 | Quantité demandée | Nombre de pièces bonnes à produire |
 | Paramètres | Valeurs passées aux opérations (par exemple recette de presse, recette de vision), facultatif |
 | Compteurs | Bonnes, mauvaises, en cours |
-| État | Créé, En cours, Suspendu, Terminé, Annulé |
+| État | Créé, En cours (actif : celui dont les pièces sont chargées, un seul), Suspendu (commencé puis mis de côté, reprenable), Terminé, Annulé |
 | Dates | Création, début, fin |
 
-- Un seul OF en cours à la fois. Le lancer exige la machine en Stopped ou Idle.
-- Les pièces créées sont rattachées à l'OF en cours ; les compteurs sont mis à jour à la clôture des pièces.
+- **Plusieurs OF commencés à la fois, un seul actif.** Un seul OF est « En cours » (celui dont l'entrée charge les pièces) ; d'autres peuvent être « Suspendu » avec des compteurs déjà entamés, et être repris plus tard. La machine garde au plus 8 OF à la fois en mémoire (l'actif, les suspendus, et ceux qui ont encore des pièces sur les movers) ; les OF « Créé » ne sont que dans la HMI.
+- **Changer d'OF à chaud** : la commande « Passer à cet OF » (droit `order.run`, niveau 0) est permise dans tous les états de la machine sauf Aborted, Clearing, Resetting et Stopping, y compris en Execute sans arrêter la production. L'OF actif devient Suspendu, l'OF choisi (Créé ou Suspendu) devient En cours. Les pièces déjà engagées pour l'ancien OF continuent leur process, restent rattachées à l'ancien OF et comptent dans ses compteurs ; les pièces chargées ensuite sont rattachées au nouvel OF. Un tiroir de confirmation résume l'effet (« OF 24-117 : 6 pièces en cours seront finies, puis comptées pour lui »).
+- **Paramètres** : les paramètres d'un OF (recette de presse, recette de vision…) suivent ses pièces : une opération reçoit les paramètres de l'OF de la pièce portée par le mover (source `OrderParam`), ou de l'OF actif pour une opération d'entrée qui crée la pièce. Deux OF de recettes différentes peuvent donc coexister sur la machine.
+- **Quantité** : un OF est complet quand bonnes + en cours ≥ quantité ; l'entrée ne charge plus pour lui. Un OF complet sans pièce en cours passe Terminé, qu'il soit actif ou suspendu. Quand l'OF actif est terminé et qu'aucune pièce d'aucun OF n'est en cours, la machine exécute Arrêter automatiquement (« OF terminé »). Pas d'enchaînement automatique sur l'OF suivant : l'opérateur choisit.
+- **Annuler** un OF est refusé tant qu'il a des pièces en cours sur la machine.
+- Les pièces créées sont rattachées à l'OF actif ; les compteurs de chaque OF sont mis à jour à la clôture de ses pièces. La surveillance des rebuts tient un budget par OF (`10` § 4.3) ; les historiques par portée machine, station, fonction et mover restent communs et ne se remettent à zéro que selon `10` § 4.2.
 - Quand le nombre de pièces bonnes plus les pièces en cours atteint la quantité, l'entrée ne charge plus de nouvelles pièces. Quand la dernière pièce est sortie, la machine exécute Arrêter automatiquement, la balise passe en bleu clignotant et la HMI affiche « OF terminé ».
 - Source des OF : interface `IOrderSource` ; implémentation locale (saisie dans la HMI, base locale), et implémentation usine (`PlantOrderSource`, OF reçus en MQTT, désactivée par défaut, `11-interface-usine.md` § 4.5).
 

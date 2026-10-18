@@ -33,6 +33,11 @@ Les étapes 1 à 4 ont leur spécification complète : B peut commencer tout de 
 
 Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 `WaitMover`, 18 `Prompt`, 19 `SavePos`, 21 `CalibStation`, 22 `ResetMoverVars`, 23 `SetOut`. Règles ajoutées : V021 à V029, V116 à V119, V121. Décisions : D77 à D81. Tout le travail de code des documents ci-dessus (fin des pièces, préparation, calibrations, variables de mover, sorties de blocs, droits) reste pour l'agent B ; l'ordre conseillé : fin des pièces, préparation, variables de mover, sorties de blocs, calibrations, droits.
 
+## Ajouts ultérieurs (agent A)
+
+- D82 : « Finir les pièces » aussi depuis Idle.
+- D83 : plusieurs OF commencés, un actif, changement à chaud (`docs/02` § 16, `docs/05` § 5.6) ; source `OrderParam` := 11 ; table d'OF `aOrder[1..8]`. Chantier de code à placer après la préparation et avant les calibrations.
+
 ## Écarts constatés par le code
 
 (B ajoute ici, en ajout seulement : document, section, problème, solution retenue.)

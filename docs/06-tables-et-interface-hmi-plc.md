@@ -19,7 +19,7 @@ Toutes en `{attribute 'pack_mode' := '1'}`. Côté C# : `[StructLayout(LayoutKin
 
 ```iecst
 TYPE E_ValueSource : (None := 0, Const := 1, Var := 2, PartData := 3, OpParam := 4, NamedPos := 5,
-                      Speed := 6, Text := 7, ObjValue := 8, System := 9, MoverData := 10) USINT; END_TYPE
+                      Speed := 6, Text := 7, ObjValue := 8, System := 9, MoverData := 10, OrderParam := 11) USINT; END_TYPE
 
 TYPE ST_Value :                  // 11 octets
 STRUCT
@@ -374,7 +374,7 @@ Toute commande HMI → PLC suit le même schéma :
 | `GVL_Hmi.nJogAlive` | UDINT | Garde du jog, incrémentée toutes les 100 ms bouton tenu |
 | `GVL_Hmi.aStep[1..16]` | `ST_StepControl` | Pas à pas par station |
 | `GVL_Hmi.stLaunch` | `ST_LaunchRequest` | Maintenance : lancer une table d'une station (station, table, mover ou 0, paramètres d'opération) |
-| `GVL_Hmi.stOrder` | `ST_OrderRequest` | OF : lancer (numéro interne, quantité, paramètres), suspendre, reprendre, annuler |
+| `GVL_Hmi.stOrder` | `ST_OrderRequest` | OF : activer (numéro interne, quantité, compteurs déjà faits, 16 paramètres ; c'est aussi « lancer » et « reprendre »), suspendre, annuler (`05` § 5.6) |
 | `GVL_Hmi.stMoverVar` | `ST_MoverVarRequest` | Maintenance : écrire la valeur d'une variable d'un mover (mover, rang, valeur ou position) ou la remettre à sa valeur initiale ; utilisateur |
 | `GVL_Hmi.stPrompt` | `ST_PromptAnswer` | Réponse de l'opérateur à une demande de calibration : confirmer, annuler, valeur saisie |
 | `GVL_Hmi.stPartCmd` | `ST_PartRequest` | Confirmer le retrait des pièces d'un mover à vider |
@@ -389,7 +389,7 @@ Toute commande HMI → PLC suit le même schéma :
 
 | Symbole | Type | Fréquence de lecture HMI |
 | --- | --- | --- |
-| `GVL_Hmi.stMachineStatus` | état, mode, override effectif, balise, défauts, OF en cours et compteurs, horloge PLC, battement PLC, empreinte du projet actif | 10 Hz |
+| `GVL_Hmi.stMachineStatus` | état, mode, override effectif, balise, défauts, OF actif et table des OF (`aOrder[1..8]` : état, quantité, compteurs, en cours), horloge PLC, battement PLC, empreinte du projet actif | 10 Hz |
 | `GVL_Hmi.aStationStatus[1..16]` | état, mode, override effectif, balise, opération en cours, 8 contextes (statut, table, PC, carte, carte suivante, objet, action, essai, attente) | 10 Hz |
 | `GVL_Hmi.aObjStatus[0..16, 1..64]` | `ST_ObjStatus` | 10 Hz pour la station affichée, 1 Hz pour les autres |
 | `GVL_Hmi.aMoverStatus[1..32]` | état, X, Y, C, station, destination, table, PC, carte, emplacements (présence, identifiant, état, verdict), variables de mover (valeur ou position, avec leur identifiant) | 10 Hz |

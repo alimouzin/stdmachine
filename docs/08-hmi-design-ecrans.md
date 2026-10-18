@@ -180,7 +180,7 @@ Réglage « Réduire les animations » (page Système) : supprime pulsations, fl
 └──────┴───────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **Barre du haut** (toujours visible) : nom de la machine ; badge d'état machine (M) ; mode ; OF en cours avec barre de progression (bonnes en vert, mauvaises en rouge, en cours en bleu) ; contrôle d'override machine ; cloche d'alarmes avec compteur ; état de la connexion PLC (vert connecté, orange simulateur, rouge déconnecté) ; état des communications (icône `lan` : verte si tous les canaux activés sont connectés, orange si un canal est dégradé, rouge si un canal est en erreur ; toucher → page Communications) ; puce « Forçages : n » (couleur `Maint`, icône `engineering`) tant qu'un forçage est actif ; utilisateur (toucher → connexion) ; heure.
+- **Barre du haut** (toujours visible) : nom de la machine ; badge d'état machine (M) ; mode ; OF actif avec barre de progression (une pastille « +n » indique les OF suspendus) (bonnes en vert, mauvaises en rouge, en cours en bleu) ; contrôle d'override machine ; cloche d'alarmes avec compteur ; état de la connexion PLC (vert connecté, orange simulateur, rouge déconnecté) ; état des communications (icône `lan` : verte si tous les canaux activés sont connectés, orange si un canal est dégradé, rouge si un canal est en erreur ; toucher → page Communications) ; puce « Forçages : n » (couleur `Maint`, icône `engineering`) tant qu'un forçage est actif ; utilisateur (toucher → connexion) ; heure.
 - **Rail de navigation** (icônes Material Symbols 28 px, libellé 12 px) : groupe Exploitation (Machine, Stations, Manuel, Alarmes, Qualité, Forçages, Pièces, OF), groupe Studio (Machine, Station, Process), groupe Administration (Utilisateurs, Statistiques, Communications, Système). Badges sur les icônes : nombre d'alarmes actives, point rouge si le projet a des erreurs de validation, point bleu si le projet n'est pas déployé.
 - **Pages du studio** : sous la barre du haut, une barre d'outils de page de 56 px (titre, annuler, refaire, résumé de validation, Déployer) et, en bas, la barre de validation de 44 px.
 
@@ -360,9 +360,9 @@ Règles :
 
 ### 6.6 OF
 
-- Carte de l'OF en cours (numéro, référence, compteurs, barre, fin estimée, Suspendre / Reprendre).
-- Liste des OF (état en pastille, quantités, dates) ; « Nouvel OF » ouvre un tiroir (numéro, référence, quantité, paramètres d'opération proposés d'après les opérations du process général).
-- Lancer : disponible machine Stopped ou Idle ; Annuler : appui maintenu.
+- Carte de l'OF actif (numéro, référence, compteurs, barre, fin estimée, Suspendre) et, sous elle, une carte réduite par OF suspendu (compteurs, pièces encore en cours sur la machine, bouton « Passer à cet OF »).
+- Liste des OF (état en pastille : Créé gris, En cours vert, Suspendu orange, Terminé, Annulé ; quantités, dates) ; « Nouvel OF » ouvre un tiroir (numéro, référence, quantité, paramètres d'opération proposés d'après les opérations du process général).
+- **Passer à cet OF** : disponible pour un OF Créé ou Suspendu dans tous les états de la machine sauf Aborted, Clearing, Resetting et Stopping, y compris en production. Un tiroir de confirmation (appui maintenu) dit quel OF est suspendu et combien de ses pièces seront finies avant d'être comptées. Si la machine garde déjà 8 OF, le bouton explique lequel finir ou annuler. Annuler : appui maintenu, refusé tant que l'OF a des pièces en cours.
 
 ### 6.7 Studio : machine
 
