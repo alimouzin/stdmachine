@@ -1,6 +1,6 @@
 // Gestionnaire de movers (docs/05 § 6) : occupation et réservation des positions planaires, envoi des
 // déplacements au pilote planaire, détection des arrivées (fenêtre de position et à l'arrêt 50 ms), timeout.
-FUNCTION_BLOCK FB_MoverManager
+FUNCTION_BLOCK FB_MoverManager IMPLEMENTS I_MoverMotion
 VAR
     _refMachine : REFERENCE TO ST_MachineData;
     ipDriver : I_PlanarDriver;
@@ -160,7 +160,56 @@ METHOD Moving : BOOL
 VAR_INPUT
     nMover : USINT;
 END_VAR
-Moving := nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS AND_THEN _aDest[nMover] <> 0;
+Moving := nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS AND_THEN (_aDest[nMover] <> 0 OR (ipDriver <> 0 AND_THEN ipDriver.MoverMoving(nMover)));
+END_METHOD
+
+// Mode manuel (docs/05 § 6.5) : le mover quitte ses positions ; arrivé sur une position planaire libre, il la tient
+METHOD MoveFree : BOOL
+VAR_INPUT
+    nMover : USINT;
+    stPos : ST_Position;
+    fSpeedPct : LREAL;
+END_VAR
+VAR
+    k : INT;
+END_VAR
+MoveFree := FALSE;
+IF ipDriver = 0 OR nMover < 1 OR nMover > GVL_Const.MAX_MOVERS THEN RETURN; END_IF
+// Une position planaire tenue par un autre mover ne peut pas être visée
+FOR k := 1 TO _refMachine.nPlanarPos DO
+    IF _Near(stPos, _refMachine.aPlanarPos[k].stPos) AND aOwner[k] <> 0 AND aOwner[k] <> nMover THEN RETURN; END_IF
+END_FOR
+IF NOT ipDriver.MoveTo(nMover, stPos, _fVelocity * LIMIT(1.0, fSpeedPct, 100.0) / 100.0, _fAcceleration) THEN RETURN; END_IF
+FreeAll(nMover, 0);
+_aDest[nMover] := 0;
+_aTimedOut[nMover] := FALSE;
+FOR k := 1 TO _refMachine.nPlanarPos DO
+    IF _Near(stPos, _refMachine.aPlanarPos[k].stPos) THEN aOwner[k] := nMover; END_IF
+END_FOR
+MoveFree := TRUE;
+END_METHOD
+
+METHOD StopMover
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+IF ipDriver <> 0 THEN ipDriver.StopMover(nMover); END_IF
+IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN _aDest[nMover] := 0; END_IF
+END_METHOD
+
+METHOD Position : ST_Position
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+IF ipDriver <> 0 THEN Position := ipDriver.MoverPosition(nMover); END_IF
+END_METHOD
+
+METHOD PRIVATE _Near : BOOL
+VAR_INPUT
+    a : ST_Position;
+    b : ST_Position;
+END_VAR
+_Near := ABS(a.fX - b.fX) <= MAX(_fWindow, 0.5) AND ABS(a.fY - b.fY) <= MAX(_fWindow, 0.5);
 END_METHOD
 
 METHOD AnyMoving : BOOL
@@ -169,7 +218,7 @@ VAR
 END_VAR
 AnyMoving := FALSE;
 FOR i := 1 TO GVL_Const.MAX_MOVERS DO
-    IF _aDest[i] <> 0 THEN AnyMoving := TRUE; END_IF
+    IF Moving(i) THEN AnyMoving := TRUE; END_IF
 END_FOR
 END_METHOD
 

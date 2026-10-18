@@ -9,4 +9,7 @@ VAR_GLOBAL
     pAO : POINTER TO ARRAY[0..GVL_Const.MAX_AO - 1] OF INT;
     pAxis : POINTER TO ARRAY[1..GVL_Const.MAX_AXES] OF AXIS_REF;   // GVL_Hw.aAxis
     nAxes : INT;                     // nombre d'axes reliés dans GVL_Hw
+    // Rempli par FB_Machine au premier cycle, pour les objets Système planaire et Mover
+    ipPlanar : I_PlanarDriver;
+    ipMovers : I_MoverMotion;
 END_VAR

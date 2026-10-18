@@ -17,6 +17,11 @@ END_VAR
 END_METHOD
 METHOD StopAll
 END_METHOD
+METHOD StopMover                    // arrêt contrôlé d'un mover (mode manuel)
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+END_METHOD
 METHOD AckError
 END_METHOD
 METHOD Cycle

@@ -68,6 +68,13 @@ END_VAR
 FOR i := 1 TO GVL_Const.MAX_MOVERS DO _aMoving[i] := FALSE; END_FOR
 END_METHOD
 
+METHOD StopMover
+VAR_INPUT
+    nMover : USINT;
+END_VAR
+IF nMover >= 1 AND nMover <= GVL_Const.MAX_MOVERS THEN _aMoving[nMover] := FALSE; END_IF
+END_METHOD
+
 METHOD AckError
 _nError := 0;
 END_METHOD

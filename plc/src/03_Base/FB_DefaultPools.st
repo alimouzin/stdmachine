@@ -9,6 +9,8 @@ VAR CONSTANT
     N_AO : UINT := 32;
     N_CYLINDER : UINT := 64;
     N_AXIS : UINT := 64;
+    N_PLANAR : UINT := 1;
+    N_MOVER : UINT := GVL_Const.MAX_MOVERS;
     N_VACUUM : UINT := 32;
     N_GRIPPER : UINT := 16;
     N_BEACON : UINT := 17;
@@ -24,6 +26,8 @@ VAR
     aAnalogOutput : ARRAY[1..N_AO] OF FB_AnalogOutput;
     aCylinder : ARRAY[1..N_CYLINDER] OF FB_Cylinder;
     aAxis : ARRAY[1..N_AXIS] OF FB_Axis;
+    aPlanar : ARRAY[1..N_PLANAR] OF FB_PlanarSystem;
+    aMover : ARRAY[1..N_MOVER] OF FB_PlanarMover;
     aVacuum : ARRAY[1..N_VACUUM] OF FB_VacuumBlow;
     aGripper : ARRAY[1..N_GRIPPER] OF FB_Gripper;
     aBeacon : ARRAY[1..N_BEACON] OF FB_Beacon;
@@ -57,6 +61,8 @@ CASE PoolId(nType) OF
     GVL_Catalog.Type_AnalogOutput: PoolSize := N_AO;
     GVL_Catalog.Type_Cylinder: PoolSize := N_CYLINDER;
     GVL_Catalog.Type_LinearAxis: PoolSize := N_AXIS;
+    GVL_Catalog.Type_PlanarSystem: PoolSize := N_PLANAR;
+    GVL_Catalog.Type_PlanarMover: PoolSize := N_MOVER;
     GVL_Catalog.Type_VacuumBlow: PoolSize := N_VACUUM;
     GVL_Catalog.Type_Gripper: PoolSize := N_GRIPPER;
     GVL_Catalog.Type_Beacon: PoolSize := N_BEACON;
@@ -83,6 +89,8 @@ CASE PoolId(nType) OF
     GVL_Catalog.Type_AnalogOutput: Element := aAnalogOutput[nIndex];
     GVL_Catalog.Type_Cylinder: Element := aCylinder[nIndex];
     GVL_Catalog.Type_LinearAxis: Element := aAxis[nIndex];
+    GVL_Catalog.Type_PlanarSystem: Element := aPlanar[nIndex];
+    GVL_Catalog.Type_PlanarMover: Element := aMover[nIndex];
     GVL_Catalog.Type_VacuumBlow: Element := aVacuum[nIndex];
     GVL_Catalog.Type_Gripper: Element := aGripper[nIndex];
     GVL_Catalog.Type_Beacon: Element := aBeacon[nIndex];
