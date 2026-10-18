@@ -17,6 +17,8 @@ Lire dans cet ordre. Chaque document fait foi dans son domaine ; en cas de contr
 | `10-surveillance-des-rebuts.md` | Rebuts successifs et taux par mover, station, fonction, machine, OF : seuils, réactions, libération, imputation, algorithme PLC, écrans | Tous |
 | `11-interface-usine.md` | Remontée vers le système de l'usine : données, OPC UA (PackTags), MQTT et outbox, OF entrants, sécurité ; première version limitée aux interfaces et aux réglages | Tous |
 | `12-forcages-et-etats-declares.md` | États déclarés (dont démarrage bloqué), station hors production, mover hors service, forçages d'essai en simulation, page Forçages | Tous |
+| `13-proposition-couloirs-et-sorties.md` | Proposition sur les couloirs de l'éditeur, les sorties et les variables (historique ; les parties décidées sont reportées dans les autres documents) | Tous |
+| `14-alarmes.md` | Gestion des alarmes et numérotation : sources, plages de codes, identité, gravité, cycle de vie, textes, historique, usine | Tous |
 | `ui-reference/` | Maquette Machine Studio (Claude Design) : référence du langage visuel et de l'usage de l'éditeur de process | HMI |
 
 État : spécification complète pour le premier aperçu (HMI + simulateur). Le code PLC réel (bibliothèque `StdMachineLib`, client ADS) vient ensuite, sur la base des documents 04 à 06.

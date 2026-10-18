@@ -164,7 +164,7 @@ END_FOR
 | `Return` | Dépiler et reprendre ; pile vide → traiter comme `End`. |
 | `SetOut` | Écrire la sortie n° `I.aArg[1]` de l'opération (table d'opération : `aOut` / `stOutPos` de la réponse, bit dans `nOutMask`) ; dans un sous-process : l'emplacement interne de la sortie. Une valeur de type position copie `stPos` (le décalage est ajouté à la composante utilisée). Avancer. |
 | `SetVar` | Cible `aBind[1]` (variable de station, ou de process qui est allouée comme une variable de station, donnée de pièce, ou variable de mover) := / += / −= valeur de `aParam[1]` selon `I.aArg[1]` (0, 1, 2). Avancer. |
-| `Alarm` | Lever l'alarme de process (code `900 + I.aArg[3]`, texte n° `I.aArg[1]`, gravité `I.aArg[2]`). Avertissement → avancer. Défaut de station → la station passe Aborted. Défaut machine → la machine passe Aborted. |
+| `Alarm` | Lever l'alarme de code `I.aArg[3]` (carte « Signaler défaut » : 1001 à 1099 ; codes 9xx générés par le compilateur, `14` § 3), texte n° `I.aArg[1]`, gravité `I.aArg[2]`. Avertissement → avancer. Défaut de station → la station passe Aborted. Défaut machine → la machine passe Aborted. |
 | `End` | `I.aArg[1] = 1` (cycle de fond) → `nPC := début de la table`. Sinon → `Done`. |
 | `WaitMover` | Voir § 4.2 bis : avancer si le mover est en position de travail, sinon attendre. |
 | `ResetMoverVars` | Voir § 5.8 : variable `I.aArg[1]` du mover attribué remise à sa valeur initiale (0 = toutes sauf règle `Never`). Avancer. |
@@ -265,7 +265,7 @@ Le séquenceur général ne pose une demande que si la station est en Execute et
 
 ### 4.2 bis Instruction WaitMover
 
-`WaitMover` : si `bMoverAtStation` de la demande est vrai, attacher le mover et l'emplacement au contexte et avancer ; sinon rester en `WaitCond` (statut publié « attend le mover »). Hold : une préparation continue jusqu'à `WaitMover` et y attend (`Holding`) ; au Start elle reprend. Stop : le contexte 1 en préparation est tué (la table Arrêt est lancée ensuite), la demande est rendue `Aborted` avec le code « préparation annulée », et le séquenceur général remet le mover à `Ready` à son PC (il sera re-routé au prochain Start, la préparation recommence). Abort : § 4.4.
+`WaitMover` : si `bMoverAtStation` de la demande est vrai, attacher le mover et l'emplacement au contexte et avancer ; sinon rester en `WaitCond` (statut publié « attend le mover »). Hold : une préparation continue jusqu'à `WaitMover` et y attend (`Holding`) ; au Start elle reprend. Stop : le contexte 1 en préparation est tué (la table Arrêt est lancée ensuite), la demande est rendue `Aborted` avec le code 907 « Préparation annulée », et le séquenceur général remet le mover à `Ready` à son PC (il sera re-routé au prochain Start, la préparation recommence). Abort : § 4.4.
 
 ### 4.3 Hold et Stop : finir l'opération en cours
 
@@ -307,7 +307,7 @@ Une station réintégrée (Clear, Reset, Start donnés à la station seule penda
 - **Raison d'arrêt** : à chaque passage en Aborted, Held ou Stopping, le séquenceur général mémorise la première alarme cause (code, station) ou la cause système (commande opérateur, fin d'OF, qualité) ; elle est publiée dans `GVL_Plant` et dans les événements d'arrêt.
 - **Stopping → Stopped** quand toutes les stations sont Stopped ou Aborted et tous les movers immobiles.
 - **Clearing → Stopped** quand toutes les stations sont sorties de Clearing et les défauts machine acquittés.
-- **Défaut machine** (`bFault` machine) : circuit de sécurité machine ouvert, erreur du système planaire, mover en défaut, fonction utilisée sans aucune station disponible pendant que la machine est en Execute (une station est disponible si elle est en Execute, Held, Resetting, Idle ou Clearing — c'est-à-dire pas Aborted ni Stopped ; une station **volontairement** retirée — hors production ou en arrêt qualité — ne déclenche jamais ce défaut, même Stopped : les movers qui ont besoin de la fonction attendent en tampon et la balise passe en bleu clignotant), alarme de process de gravité défaut machine.
+- **Défaut machine** (`bFault` machine) : circuit de sécurité machine ouvert, erreur du système planaire, mover en défaut, fonction utilisée sans aucune station disponible pendant que la machine est en Execute (alarme 913) (une station est disponible si elle est en Execute, Held, Resetting, Idle ou Clearing — c'est-à-dire pas Aborted ni Stopped ; une station **volontairement** retirée — hors production ou en arrêt qualité — ne déclenche jamais ce défaut, même Stopped : les movers qui ont besoin de la fonction attendent en tampon et la balise passe en bleu clignotant), alarme de process de gravité défaut machine.
 
 ### 5.3 Exécution du process général par mover
 
@@ -430,7 +430,7 @@ Toutes en frame 0, déployées avec la configuration machine :
 - Chaque position a un propriétaire (n° de mover) ou est libre. Un mover réserve sa destination avant de partir ; personne d'autre ne peut la prendre.
 - Les trajets et l'évitement de collision sont délégués au système planaire (Tc3 Planar : mouvement vers une position cible avec gestion des autres movers).
 - Arrivée : le mover est dans la fenêtre de position du système et à l'arrêt pendant 50 ms.
-- Un déplacement qui dépasse son timeout met le mover en `Error` (défaut machine).
+- Un déplacement qui dépasse son timeout met le mover en `Error` (défaut machine, alarme 914 « Déplacement de mover trop long »).
 
 ### 6.3 Démarrage et reprise
 
@@ -540,7 +540,7 @@ END_STRUCT END_TYPE
 1. Refus si la machine n'est pas Stopped.
 2. La HMI écrit la configuration et les tables dans une **zone d'attente** (`GVL_Hmi.stStaging`), puis demande la vérification avec la somme de contrôle CRC-32 de chaque bloc.
 3. Le chargeur vérifie : version du jeu d'instructions et version du catalogue demandées par le projet (`ST_DeployRequest`) inférieures ou égales aux siennes (sinon refus « bibliothèque PLC trop ancienne », avec les deux versions) ; sommes de contrôle ; types connus ; n° locaux uniques et parents valides (parents avant enfants) ; pools suffisants ; signaux et éléments matériels valides et sans double écriture ; tables : opérations connues, cibles de saut dans la table, n° d'objet et d'action valides pour le type, conditions, textes et positions référencés existants, Fork/Join appariés, profondeur d'appel ≤ 4.
-4. Tout est bon : copie atomique de la zone d'attente vers la zone active, appel de `FB_ObjectFactory`, réinitialisation des contextes, des variables de station (valeurs initiales) ; les movers et leurs pièces sont conservés si la structure du process général n'a pas changé de taille, sinon ils sont remis à l'étape 1 avec une alarme d'information. **Variables de mover** : pour chaque mover et chaque variable de la nouvelle liste, la valeur est reprise de l'ancienne variable de même identifiant (`aVarId`) et de même type, sauf si sa règle est `OnDeploy` (valeur initiale) ; une variable nouvelle ou dont le type a changé prend sa valeur initiale ; une variable supprimée disparaît.
+4. Tout est bon : copie atomique de la zone d'attente vers la zone active, appel de `FB_ObjectFactory`, réinitialisation des contextes, des variables de station (valeurs initiales) ; les movers et leurs pièces sont conservés si la structure du process général n'a pas changé de taille, sinon ils sont remis à l'étape 1 avec l'alarme d'information 916. **Variables de mover** : pour chaque mover et chaque variable de la nouvelle liste, la valeur est reprise de l'ancienne variable de même identifiant (`aVarId`) et de même type, sauf si sa règle est `OnDeploy` (valeur initiale) ; une variable nouvelle ou dont le type a changé prend sa valeur initiale ; une variable supprimée disparaît.
 5. Réponse à la HMI : succès, ou refus avec la liste des erreurs (code, station, table, instruction) ; en cas de refus, la zone active n'a pas changé.
 6. **Restauration des valeurs** (facultative, `02` § 7.4) : après une activation réussie, ou seule si la machine est Stopped, la HMI peut écrire `GVL_Hmi.stRestore` (valeurs rangées par identifiant : variables persistantes avec date et auteur de calibration, variables de mover par mover, compteurs de maintenance par objet, compteurs de production et de temps). Le chargeur les recopie dans la mémoire rémanente en retrouvant chaque élément par son identifiant ; un élément inconnu est ignoré et renvoyé dans la réponse.
 
@@ -550,7 +550,7 @@ END_STRUCT END_TYPE
 
 - Une calibration de station est une table de type `Calibration`, lancée comme une opération (contexte 1). Les valeurs qu'elle écrit (`SetVar` sur une variable persistante, `SavePos`) vont dans une copie de travail ; à `End(0)` réussi elles sont recopiées dans la mémoire rémanente et la position nommée est marquée apprise ; sur échec, Abort ou Stop, la copie est abandonnée.
 - Une **calibration machine** (table `MachineCalibration`) s'exécute sur un contexte unique du séquenceur général, seulement en Maintenance, machine en Idle. `CalibStation` lance la calibration de la station (comme un lancement HMI, la station passe Execute pour la durée) et attend `Done` ou `Failed` ; la politique d'échec de la carte s'applique. `Route` n'y vise que le mover choisi au lancement.
-- `Prompt` publie une demande (`GVL_Plant`/statut : texte, mode confirmation ou saisie) et attend la réponse de la HMI (`GVL_Hmi.stPrompt`) ; Abort ou perte de la HMI plus de 5 s l'annule (échec).
+- `Prompt` publie une demande (`GVL_Plant`/statut : texte, mode confirmation ou saisie) et attend la réponse de la HMI (`GVL_Hmi.stPrompt`) ; Abort ou perte de la HMI plus de 5 s l'annule (échec, code 908).
 - Chaque calibration publie `ST_CalibStatus` : état (Never, Valid, Expired, Failed, Running), date, utilisateur, durée de validité en jours. L'état Expired ou Never lève l'avertissement 912 une fois par Reset et par jour, sans effet sur les états.
 
 ## 11. Limites

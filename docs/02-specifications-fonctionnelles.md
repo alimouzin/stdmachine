@@ -411,6 +411,8 @@ Décision : Abort est accepté aussi depuis Stopped et Clearing (un arrêt d'urg
 
 ## 14. Alarmes
 
+La gestion complète des alarmes et leur numérotation sont dans `14-alarmes.md` (plages de codes, identité, gravité, cycle de vie, textes, historique). Résumé :
+
 | Gravité | Effet | Acquittement |
 | --- | --- | --- |
 | Information | Aucun, enregistrée dans l'historique | Aucun |

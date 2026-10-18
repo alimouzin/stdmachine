@@ -15,6 +15,7 @@ Lire `docs/README.md`, puis les documents dans l'ordre. Ils font foi :
 - `docs/10-surveillance-des-rebuts.md` : surveillance des rebuts (règles, réactions, algorithme PLC, écrans).
 - `docs/11-interface-usine.md` : interface avec le système de l'usine (première version : contrats, messages, journal de messages, page Communications).
 - `docs/12-forcages-et-etats-declares.md` : forçages et états déclarés, page Forçages.
+- `docs/14-alarmes.md` : gestion des alarmes et numérotation des codes.
 - `docs/ui-reference/Machine_Studio.dc.html` : maquette (référence du langage visuel et de l'usage de l'éditeur de process).
 
 Ne pas modifier les documents 00 à 08 et 10 à 12 sans accord. Si un document est contradictoire, incomplet ou impossible à suivre : le signaler, proposer la correction, et en attendant prendre la décision la plus simple et l'inscrire dans `docs/09-journal-des-decisions.md`.

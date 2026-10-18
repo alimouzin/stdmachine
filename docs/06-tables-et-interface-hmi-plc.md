@@ -119,7 +119,7 @@ END_STRUCT END_TYPE
 | `Call` | — | — | — | [1] n° de table |
 | `Return` | — | — | — | — |
 | `SetVar` | — | [1] valeur | [1] cible | [1] 0 affecter, 1 ajouter, 2 soustraire |
-| `Alarm` | — | — | — | [1] n° de texte, [2] gravité (1 avertissement, 2 défaut station, 3 défaut machine), [3] n° d'alarme de process (0..99, code 900 + n) |
+| `Alarm` | — | — | — | [1] n° de texte, [2] gravité (1 avertissement, 2 défaut station, 3 défaut machine), [3] code complet de l'alarme (carte « Signaler défaut » : 1000 + n, n de 1 à 99 ; codes 9xx réservés aux alarmes générées par le compilateur ; `14` § 3) |
 | `End` | — | — | — | [1] 0 fin, 1 reprendre au début |
 | `SetOut` | — | [1] valeur | — | [1] rang de la sortie (opération : sortie de la réponse ; sous-process : emplacement interne). Valeur de type position : copie de la position |
 | `ResetMoverVars` | — | — | — | [1] rang de la variable de mover, 0 = toutes celles dont la règle n'est pas `Never` (refusée dans le cycle de fond, l'initialisation, l'arrêt et le vidage) |
@@ -286,7 +286,7 @@ L:      … corps …
 L:      JumpIfFalse(c, FIN)
         … corps …
         LoopNext(t, L)
-        Alarm(« Nombre maximal de répétitions atteint », défaut station, n° 5)
+        Alarm(« Nombre maximal de répétitions atteint », défaut station, code 906)
 FIN:
 ```
 
@@ -388,7 +388,7 @@ Toute commande HMI → PLC suit le même schéma :
 
 | Symbole | Type | Rôle |
 | --- | --- | --- |
-| `GVL_Hmi.nHmiHeartbeat` | UDINT | Incrémenté toutes les 500 ms. Perte > 5 s : événement « HMI déconnectée » ; la production continue ; un jog en cours s'arrête |
+| `GVL_Hmi.nHmiHeartbeat` | UDINT | Incrémenté toutes les 500 ms. Perte > 5 s : événement « HMI déconnectée » (alarme d'information 917) ; la production continue ; un jog en cours s'arrête |
 | `GVL_Hmi.stCmd` | `ST_CmdRequest` | Commande d'état : cible (machine ou station n), commande (Reset, Start, Stop, Hold, Abort, Clear, ainsi que `DrainStart` et `DrainCancel` pour la machine seulement, `05` § 5.7), changement de mode, utilisateur |
 | `GVL_Hmi.stOverride` | `ST_OverrideRequest` | Nœud (machine, station n, objet n de station m), valeur, override manuel ou non |
 | `GVL_Hmi.aManual[0..16]` | `ST_ManualRequest` | Canal manuel de la machine (0) et de chaque station |

@@ -234,6 +234,7 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V030 | Erreur | Fonction de bibliothèque appelée sur un module d'un autre type que le sien |
 | V031 | Erreur | Corps d'une fonction de bibliothèque qui désigne un objet par instance, ou emploie une variable ou une position nommée de station, ou un rôle absent du type de module |
 | V032 | Erreur | Projet incompatible avec le PLC connecté : jeu d'instructions ou catalogue plus récent que celui du PLC, ou plus d'objets d'un type que la taille de son pool (le message donne les versions et les tailles) |
+| V033 | Erreur | Deux cartes « Signaler défaut » d'une même station (ou du process général) ont le même n° avec un texte ou une gravité différents, ou un n° hors de 1 à 99 (`14` § 3.4) |
 | V101 | Avertissement | Objet en simulation |
 | V102 | Avertissement | Recette de presse non vérifiée sur la presse |
 | V103 | Avertissement | Aucun chemin ne traite le verdict mauvais et aucune fonction de rebut n'existe |
@@ -255,6 +256,7 @@ Chaque problème a un code, une gravité, un message, et un **lien** vers l'él�
 | V119 | Avertissement | Variable de mover déclarée mais jamais utilisée |
 | V121 | Avertissement | Sortie d'un bloc composé non définie sur tous les chemins (elle garde la valeur du passage précédent) |
 | V122 | Avertissement | Position de frame ≠ 0 utilisée par un objet qui n'est pas un robot Stäubli (le frame est ignoré : aucune transformation dans la HMI ni le PLC, D86) |
+| V123 | Avertissement | Fichier de sous-alarmes absent pour un type utilisé, ou code d'erreur du catalogue sans texte (`14` § 6) |
 | V201 | Information | Le PLC n'a pas le projet courant (déploiement nécessaire) |
 | V202 | Information | PLC non connecté : compatibilité de versions non vérifiée |
 
@@ -300,7 +302,7 @@ Une purge tourne chaque nuit selon la rétention.
 | `ValidationService` | Résultat de la dernière validation, filtré par page et par élément |
 | `DeployService` | Déroulé du déploiement (§ 7.2 de `02-specifications-fonctionnelles.md`), contrôle de compatibilité (§ 7.3), proposition de restauration (§ 7.4) |
 | `PlcValuesService` | Copie des valeurs rémanentes du PLC (`02` § 7.4) : relectures, détection d'un PLC neuf, restauration |
-| `AlarmService` | Flux d'alarmes du PLC → historique, textes (catalogue + fichiers XML de sous-alarmes `SubAlarms_*.xml`), alarmes actives, liens vers l'objet en cause |
+| `AlarmService` | Flux d'alarmes du PLC → historique, textes (catalogue + fichiers XML de sous-alarmes `catalog/subalarms/<type>.xml`), alarmes de la HMI (9000 à 9099), alarmes actives, identité stable des sources, liens vers l'objet en cause (`14-alarmes.md`) |
 | `TraceService` | Flux de traces → base, courbes, recherche de pièces |
 | `OrderService` | OF via `IOrderSource` (`LocalOrderSource` en base) ; lancement vers le PLC |
 | `SessionService` | Utilisateur connecté, niveau, déconnexion automatique |
@@ -421,6 +423,7 @@ StdMachine.Hmi.exe --screenshot-all <dossier> [--scenario <nom>]
 | Simulation.Tests (calibrations) | Calibration réussie : positions et variables persistantes écrites seulement à la fin ; échec, Abort ou Stop : anciennes valeurs conservées ; demande à l'opérateur (confirmation, saisie, annulation, perte de la HMI) ; calibration machine qui enchaîne deux stations ; variable persistante conservée au redéploiement ; avertissement 912 si périmée, sans bloquer le Démarrer ; V023 à V025 |
 | Simulation.Tests (routage, compléments) | File d'une station partagée servie par priorité de fonction (Sertissage avant Pressage pignon) ; mover à vider après 60 s sans station de rebut ; mover hors service absent du plan : le Reset se termine ; trace et courbe de presse lues sans perte ni doublon (`nSeq` continu) |
 | Simulation.Tests (compatibilité et sauvegarde) | Interface différente : connexion en lecture seule, commandes refusées ; projet qui demande le jeu d'instructions 2 sur un PLC en version 1 : V032 puis refus du chargeur avec les deux versions ; pool trop petit : V032 ; copie des valeurs après une calibration ; PLC à mémoire effacée (nouvel `nRetainId`) : la copie n'est pas écrasée, restauration proposée puis faite, élément supprimé ignoré et listé |
+| Simulation.Tests (alarmes) | Tous les tests de `14-alarmes.md` § 9 |
 | Simulation.Tests (qualité) | Tous les tests de `10-surveillance-des-rebuts.md` § 12 |
 | Plant.Tests | Tests de première version de `11-interface-usine.md` § 8 (canal Journal de messages, schémas, `seq`, réglages) |
 | Simulation.Tests (forçages) | Tous les tests de `12-forcages-et-etats-declares.md` § 9 |

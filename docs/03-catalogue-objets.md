@@ -56,7 +56,7 @@ Un paramètre d'action peut toujours recevoir une constante, une variable de sta
 | 10 | Matériel non raccordé | — |
 | 11 | Action réservée au mode manuel | N° d'action |
 
-Les codes propres à un type commencent à 100.
+Les codes propres à un type commencent à 100 (jusqu'à 899). Les codes 900 et suivants appartiennent aux séquenceurs, à la qualité, aux alarmes de process et à la HMI (`14-alarmes.md` § 3). Chaque erreur peut porter dans `catalog.json` une gravité par défaut (`severity`), une cause probable (`cause`) et un remède (`remedy`), facultatifs. Les textes de sous-codes d'appareil sont dans `catalog/subalarms/<code du type>.xml`.
 
 ## 2. Liste des types
 
