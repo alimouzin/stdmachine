@@ -89,7 +89,7 @@ La tâche PLC doit avoir un temps de cycle de 1 à 10 ms. La zone active (`GVL_A
 | Vision Keyence IV et palpeur GT2 (mode signaux), pesage (analogique), éclairage, presse avec courbe, magasin | Écrit |
 | Asyril Eye+, chargeur vibrant (image process ou interface à préciser), mode réseau Keyence et pesage | À écrire |
 | Robot Stäubli, lecteur de code, visseuse, distributeur, marquage | Protocoles à définir |
-| Tests TcUnit | Écrits : PackML, CRC-32 et fonctions de base, alarmes, objets en simulation (temporisation, vérin, éclairage, magasin), scénario de bout en bout (déploiement, OF de 3 pièces, arrêt « OF terminé ») ; à compléter type par type (`docs/04` § 13) |
+| Tests TcUnit | Écrits : PackML, CRC-32 et fonctions de base, alarmes, objets en simulation (temporisation, vérin, éclairage, magasin), scénario de bout en bout (déploiement, OF de 3 pièces, arrêt « OF terminé ») ; à compléter type par type (`docs/04` § 14) |
 
 ## Hypothèses à confirmer
 
