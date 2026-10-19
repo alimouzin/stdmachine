@@ -131,6 +131,19 @@ Conséquences, toutes naturelles :
 
 Le studio affiche pour le process général un **déroulé sur la table** : pour une pièce bonne, la suite des positions d'index traversées avec, à chaque arrêt, l'opération faite ou « passe ». On voit tout de suite qu'un ordre de process coûte un tour de plus.
 
+### 5.4 Désactiver une étape du process général (planaire et table)
+
+On peut désactiver une étape du process machine : les porteurs **passent à travers sans rien faire** et vont à l'étape suivante. Exemple : désactiver « Contrôler » pendant que le palpeur est en réparation, sans redéployer le process.
+
+- **Ce qu'on peut désactiver** : une étape d'opération d'une fonction de rôle **Travail**, et une étape « Attendre condition ». Pas les opérations d'Entrée, de Sortie ni de Rebut : sans elles, les pièces ne seraient plus créées ni clôturées. Pas les blocs (Si / Sinon, Répéter) : on désactive les étapes qu'ils contiennent.
+- **C'est un forçage, pas une modification du process** : il se pose et se lève machine en marche, sans compilation ni déploiement. Il est persistant (redémarrages, déploiements) tant que l'étape existe ; si un déploiement supprime l'étape, le forçage est levé avec une alarme d'information.
+- **Effet à l'exécution** : quand un porteur arrive sur l'instruction `Route` (ou `WaitCond`) d'une étape désactivée, le séquenceur général avance son PC sans rien demander. Un porteur déjà engagé (opération en cours, ou déjà réservé et en route sur le planaire) termine cette étape normalement ; le forçage vaut pour les porteurs suivants. Sur une table, un porteur en attente de cette étape est réévalué à chaque arrêt de table et la saute aussitôt.
+- **Traçabilité** : la pièce reçoit dans son historique une ligne « Étape sautée : Contrôler (désactivée par …, motif …) » ; une trace est émise comme pour une opération, avec le statut « sautée ». Le système de l'usine la reçoit. On sait ainsi quelles pièces n'ont pas été contrôlées.
+- **Données de pièce** : l'opération sautée n'écrit rien. Avant de confirmer, la HMI liste les étapes suivantes qui lisent ces données (un Si sur la hauteur mesurée, par exemple) et ce qu'elles verront (valeur non définie). Le verdict n'est pas changé.
+- **Droit et visibilité** : droit `process.skipStep` (niveau 2, ingénieur process), motif obligatoire. Dans l'éditeur de process machine et dans le mini-process de la page Pièces, la carte est grisée et barrée avec le macaron « Désactivée » ; l'étape apparaît dans la page Forçages (section « Étapes ») et dans la puce Forçages de la barre du haut.
+- **PLC** : `ST_MachineForce.aSkippedStep[1..16]` (identifiants de carte `nStepId` du process général). Le compilateur met déjà `nStepId` sur chaque `Route` ; il le met aussi sur les `WaitCond` du process général. Le séquenceur teste l'appartenance avant d'exécuter l'instruction.
+- Les étapes des **process de station** ne sont pas concernées : on ne peut pas sauter une action au milieu d'une opération sans risque pour la mécanique.
+
 ## 6. Le séquenceur général sur une table (remplace `05` § 5.3, § 5.4 et § 6 pour ce transfert)
 
 ### 6.1 Architecture PLC
@@ -332,10 +345,10 @@ Les types `PlanarSystem` et `PlanarMover` restent ; une machine a soit les uns, 
 | Machine (`08` § 6.1, § 7.4) | Le plan planaire est remplacé par une **vue de table** : disque avec ses N posages (n° et pièces), stations en tuiles autour de leur position d'index, stations déportées à l'extérieur avec leurs places. Animation du pas (rotation par `Storyboard`, durée du pas réel). Sous la vue : **barre de cycle** avec le temps d'arrêt de chaque station sur le dernier cycle ; la station qui a fait attendre la table est mise en avant (station limitante). |
 | Studio machine (`08` § 6.7) | « Plan et stations » devient, pour une table, un disque : glisser « Nouvelle station » sur une position d'index ou à l'extérieur (déportée), régler N, les posages et les emplacements. Choix du transfert dans « Objets machine ». |
 | Studio station | Section Places (liste, repère sur la vue de dessus) ; condition Table dégagée (éditeur de condition existant). |
-| Éditeur de process (machine) | Inchangé ; panneau « Déroulé sur la table » (§ 5.3). |
+| Éditeur de process (machine) | Panneau « Déroulé sur la table » (§ 5.3) ; carte d'une étape désactivée grisée et barrée, macaron « Désactivée », commande « Désactiver l'étape » dans le panneau Étape (§ 5.4). |
 | Éditeur de process (station) | Nouvelles étapes de suivi (§ 7.2), paramètre « Suivi de pièce » sur Prendre / Poser. |
 | Pièces | « Posages » à la place de « Movers » ; pièces dans les places des stations ; posages à vider ; **fiche du posage** avec ses commandes d'état (§ 6.7 : déclarer vide, déclarer une pièce, verdict, reprendre à une étape). |
-| Forçages, Qualité | Section « Posages » : désactiver ou réactiver un posage, avec motif et choix « après sa pièce / immédiatement » (pour le planaire comme pour la table) ; la portée qualité « posage ». |
+| Forçages, Qualité | Section « Étapes désactivées » (§ 5.4) ; section « Posages » : désactiver ou réactiver un posage, avec motif et choix « après sa pièce / immédiatement » (pour le planaire comme pour la table) ; la portée qualité « posage ». |
 | Manuel | Commande de la table (Indexer d'un pas, Terminer le pas, Acquitter défaut) dans le canal machine, seulement si toutes les stations sont dégagées ; la condition qui bloque est affichée comme pour un verrouillage. |
 
 Les libellés « mover » / « posage » viennent du transfert configuré : une ressource par transfert, aucune condition dans les vues.
@@ -359,7 +372,7 @@ Les libellés « mover » / « posage » viennent du transfert configuré : une 
 
 Process général : Charger → Presser pignon → Si bon Contrôler → Si bon Échanger (rodage) → Sertir → Si bon Décharger sinon Évacuer. Sertir est fait par Pressage 01 ou 02 **au tour suivant**. Le déroulé affiche donc 2 tours par pièce : c'est voulu, cela montre la règle. Le pressage montre l'aller-retour (§ 7.3 a), le rodage le dépôt et la reprise (b), le marquage la station déportée (c).
 
-- Tests à ajouter : changements d'état d'un posage (acceptés, refusés pendant une opération ou un pas de table), posage désactivé après sa pièce et immédiatement, sur un mover et sur la table ; cycle de table (pas seulement quand tout est servi et dégagé), opérations consécutives à la même station, redondance (première station disponible), tour supplémentaire, porteur vide, tour à vide, station Aborted qui bloque puis débloque, Hold et Stop pendant un pas, fin d'OF, transferts de places (succès et échecs), échange au rodage, persistance de la position de table, 100 pièces sur MX-4T.
+- Tests à ajouter : étape désactivée (sautée par les porteurs suivants, terminée par le porteur engagé, trace « sautée », refus sur Entrée, Sortie, Rebut) ; changements d'état d'un posage (acceptés, refusés pendant une opération ou un pas de table), posage désactivé après sa pièce et immédiatement, sur un mover et sur la table ; cycle de table (pas seulement quand tout est servi et dégagé), opérations consécutives à la même station, redondance (première station disponible), tour supplémentaire, porteur vide, tour à vide, station Aborted qui bloque puis débloque, Hold et Stop pendant un pas, fin d'OF, transferts de places (succès et échecs), échange au rodage, persistance de la position de table, 100 pièces sur MX-4T.
 
 ## 11. Impact sur les documents et le code actuel
 
@@ -367,13 +380,13 @@ Process général : Charger → Presser pignon → Si bon Contrôler → Si bon 
 | --- | --- | --- |
 | 00 Glossaire | Termes du § 3 ; « mover » devient un cas de « porteur » ; « emplacement » devient « posage » | Moyenne |
 | 01 Définition | Description de la machine : deux transferts ; machine d'exemple MX-4T | Moyenne |
-| 02 Spécifications | § 3 configuration, § 6.2 exécution, § 9 Aborted, § 10 routage (une section par transfert) ; places de station dans § 5.3 | Forte |
+| 02 Spécifications | § 3 configuration, § 6.2 exécution (étape désactivée), § 9 Aborted, § 10 routage (une section par transfert) ; places de station dans § 5.3 | Forte |
 | 03 Catalogue | Type Table tournante ; paramètre « suivi de pièce » des fonctions Prendre / Poser | Faible |
 | 04 Architecture objets | Pool matériel `ST_WeissEf2Hw` (4 octets d'état, 4 octets de commande), relié une fois dans TwinCAT | Faible |
-| 05 Séquenceurs | § 5 scindé : commun + `I_Transfer` ; nouveau § « Cycle de table » ; `PartMove` et `PartSelect` dans l'interpréteur ; § 6 réservé au planaire | Forte |
-| 06 Tables | `eTransfer`, positions d'index, places, condition Table dégagée, nouvelles instructions, statut des porteurs et des places | Moyenne |
+| 05 Séquenceurs | § 5 scindé : commun + `I_Transfer` ; saut des étapes désactivées ; nouveau § « Cycle de table » ; `PartMove` et `PartSelect` dans l'interpréteur ; § 6 réservé au planaire | Forte |
+| 06 Tables | `nStepId` sur les `WaitCond` du process général ; `aSkippedStep` ; `eTransfer`, positions d'index, places, condition Table dégagée, nouvelles instructions, statut des porteurs et des places | Moyenne |
 | 07 Architecture HMI | Modèle (`Transfer`, `StationPlace`), règles de validation du § 5.3, simulateur | Moyenne |
-| 08 Écrans | Vue de table, barre de cycle, studio en disque, places | Moyenne |
+| 08 Écrans | Vue de table, barre de cycle, studio en disque, places, fiche du posage, carte d'étape désactivée | Moyenne |
 | 10 Qualité | Portée mover → posage ; réaction « posage désactivé » | Faible |
 | 11 Usine | Données des porteurs, cadence de table (temps de cycle, station limitante) | Faible |
 | 12 Forçages | Désactivation d'un posage (planaire et table) ; changement d'état d'un posage ; tour à vide ; droits `fixture.edit`, `fixture.goodVerdict`, `force.fixture` | Moyenne |
@@ -403,6 +416,7 @@ Code du PoC actuel (`src/`) : les endroits liés au planaire sont peu nombreux. 
 | P17 | « Posage » désigne le support d'une pièce sur un mover comme sur la table ; il remplace « emplacement » | Demande du 19 octobre 2026 : un même mot et les mêmes commandes pour les deux transferts |
 | P18 | L'état d'un posage (vide, pièce présente, verdict, étape du porteur) se change depuis la HMI, porteur à l'arrêt et hors opération, table en position et machine Stopped ou Held ; chaque changement est journalisé et tracé dans l'historique de la pièce | Demande du 19 octobre 2026 : reprendre la main après une intervention manuelle |
 | P19 | Un posage se désactive par un forçage persistant, « après sa pièce » ou « immédiatement » ; un posage désactivé n'est plus chargé ni servi ; la portée qualité « mover » devient « posage » | Demande du 19 octobre 2026 : un posage abîmé ne doit pas arrêter la machine |
+| P20 | Une étape du process général (opération de fonction Travail, Attendre condition) se désactive par un forçage persistant, machine en marche, sans déploiement ; les porteurs la sautent et la pièce garde la trace « étape sautée » ; droit `process.skipStep` (2) | Demande du 19 octobre 2026 : continuer à produire sans une opération (station en réparation) en sachant quelles pièces ne l'ont pas eue |
 
 ## 13. Réponses et questions restantes
 
