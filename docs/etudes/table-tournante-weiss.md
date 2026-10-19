@@ -68,8 +68,8 @@ END_STRUCT END_TYPE
 | Transfert | `Transfer` | Ce qui porte les pièces d'une station à l'autre : système planaire **ou** table tournante. Paramètre de la machine. |
 | Table tournante | `RotaryTable` | Plateau à indexage (Weiss) au centre de la machine. Objet de niveau machine. Il porte des posages et avance d'un pas à la fois. |
 | Position d'index | `IndexPosition` | Une des N positions angulaires où la table s'arrête (1 à N, numérotées dans le sens de rotation). Une station de table est attachée à une position d'index. |
-| Posage | `Fixture` | Support de pièce fixé sur la table. Il porte **une seule pièce** (un emplacement). Il ne quitte jamais la table. |
-| Porteur | `Carrier` | Terme commun pour mover et posage : ce qui porte des pièces (1 à 4 emplacements pour un mover, 1 pour un posage) et exécute sa propre instance du process général. |
+| Posage | `Fixture` | Support d'**une** pièce sur un porteur : un mover a 1 à 4 posages (le mot remplace « emplacement »), la table a un posage par position d'index. Un posage a un état (§ 6.7) et peut être désactivé. Un posage de table ne quitte jamais la table. |
+| Porteur | `Carrier` | Ce qui exécute sa propre instance du process général : un mover (avec ses 1 à 4 posages) ou, sur une table, chaque posage (porteur d'une seule pièce). |
 | Pas de table | `Index` | Rotation de la table d'une position d'index à la suivante. |
 | Cycle de table | `IndexCycle` | Temps d'arrêt de la table (les stations travaillent) suivi d'un pas de table. |
 | Station de table | `TableStation` | Station attachée à une position d'index : elle travaille sur le posage présenté. |
@@ -212,17 +212,49 @@ Sur le planaire, une station Aborted sort du routage et les autres continuent. S
 
 La règle « la machine passe Aborted si une fonction n'a plus de station disponible » (`02` § 9) est remplacée par le tour à vide. Une station en défaut ne doit pas faire tomber la machine entière. L'opérateur voit pourquoi elle attend.
 
-### 6.5 Posage à vider, hors service
+### 6.5 Posage à vider, désactivé
 
-- Pas de parcage : un posage « à vider » ou « hors service » **reste sur la table** et toutes les stations le laissent passer.
-- « À vider » : l'opérateur retire les pièces machine arrêtée (on ne met pas les mains sur une table en production) et confirme dans la page Pièces, comme aujourd'hui.
-- Mover hors service (`10` § 5, `12` § 4) devient posage hors service : même mécanisme ; un posage abîmé fait un trou dans la cadence mais n'arrête rien.
+- Pas de parcage : un posage « à vider » ou désactivé (§ 6.7) **reste sur la table** et toutes les stations le laissent passer.
+- « À vider » : l'opérateur retire la pièce machine arrêtée (on ne met pas les mains sur une table en production) et déclare le posage vide (§ 6.7).
+- Mover hors service (`10` § 5, `12` § 4) a pour équivalent sur la table le posage désactivé : un posage abîmé fait un trou dans la cadence mais n'arrête rien.
 
 ### 6.6 Démarrage et reprise
 
 - Au Reset machine : action « Vérifier position » de la table (commande prête, communication Profinet établie, table en position). La position courante `nTableIndex` est persistante. Si la table est sur le capteur de référence, elle est recalée à 1 ; sinon elle est reprise de la mémoire persistante et vérifiée au prochain passage sur la référence (un écart est le défaut « Position perdue »).
 - Table hors position au Reset (arrêt pendant un pas) : le Reset est refusé avec le motif ; l'opérateur fait « Terminer le pas » en manuel, puis réarme.
 - Contextes des posages et pièces persistants : reprise au même PC, comme les movers.
+
+### 6.7 État d'un posage et désactivation (planaire et table)
+
+Cette section vaut pour les deux transferts : un posage de mover et un posage de table se gèrent de la même façon.
+
+**État d'un posage**, publié par le PLC dans le statut des porteurs :
+
+| Dimension | Valeurs |
+| --- | --- |
+| Service | Actif, Désactivé (avec motif, auteur, date) |
+| Contenu | Vide, Pièce (avec l'état de la pièce : en cours, bonne, mauvaise), Inconnu (suivi perdu, par exemple après une intervention non déclarée ; le posage n'est plus servi tant qu'on ne l'a pas déclaré) |
+
+**Changer l'état d'un posage** (page Pièces, fiche du posage ; aussi depuis le tiroir d'un posage sur la page Machine) :
+
+| Changement | Effet | Droit |
+| --- | --- | --- |
+| Déclarer vide | La pièce présente est clôturée « retirée » avec un motif ; le posage devient vide. Remplace et généralise « Confirmer le retrait » des movers à vider | `part.remove` (0) |
+| Déclarer une pièce présente | Crée une pièce : identifiant saisi au clavier intégré (ou lu par un lecteur de code de la machine), sinon généré ; OF en cours ; verdict non défini ; données de pièce vides | `fixture.edit` (1) |
+| Changer le verdict | Bon → mauvais : la pièce part au rebut par le routage habituel. Mauvais → bon : seulement avec un motif | mauvais : `fixture.edit` (1) ; bon : `fixture.goodVerdict` (2) |
+| Reprendre à une étape | Le PC du porteur est placé au début d'une étape d'opération choisie dans la liste des étapes du process général (par exemple une pièce posée à la main qui doit commencer au contrôle) | `fixture.edit` (1) |
+
+- **Quand** : le porteur doit être à l'arrêt et sans opération en cours (pas `AtStation`, pas en déplacement). Sur une table, en plus, la machine doit être Stopped ou Held et la table en position : personne ne met les mains sur une table qui tourne. Sinon, la commande est refusée avec le motif, comme une commande PackML refusée.
+- **Suivi** : chaque changement est journalisé (utilisateur, posage, avant, après, motif), ajouté à l'historique de la pièce comme « intervention manuelle » et publié à l'usine (`events/force` ou `events/part`). Une pièce retirée à la main compte comme « retrait manuel » pour la qualité (`10` § 2).
+- **PLC** : une commande à handshake `GVL_Hmi.stFixtureCmd` (`ST_FixtureCommand` : porteur, posage, type de changement, identifiant, verdict, étape, motif). Elle remplace `stPartCmd`. Le séquenceur général l'applique en début de cycle si les conditions sont remplies, sinon il la refuse avec le motif.
+
+**Désactiver un posage** (forçage, page Forçages et fiche du posage, droit `force.fixture` (1)) :
+
+- Le posage n'est plus chargé : aucune opération d'une fonction d'Entrée ne le vise. S'il porte une pièce, deux choix comme pour le mover hors service (`12` § 4) : **après sa pièce** (défaut : la pièce suit son process jusqu'à sa sortie ou son rebut, puis le posage reste vide) ou **immédiatement** (le posage passe « à vider »).
+- Sur une table : le posage passe devant toutes les stations sans être servi.
+- Sur un mover : les opérations qui visent « tous les posages » ne visent que les posages actifs (le séquenceur de station reçoit le masque des posages actifs dans la demande d'opération, variable système en lecture). Un mover dont tous les posages sont désactivés est traité comme un mover hors service (parcage).
+- Désactivation **persistante** : elle survit aux redémarrages et aux déploiements, jusqu'à ce qu'on la lève. Elle est visible partout comme les autres forçages (puce Forçages, posage gris avec une icône sur la page Machine, publication à l'usine).
+- **Qualité** : la réaction « mover hors service » devient, sur une table, « posage désactivé » avec le motif « qualité ». Je propose aussi que la portée « mover » de la surveillance des rebuts devienne la portée « posage » (c'est le posage qui s'abîme) : 24 suivis au plus sur une table, 128 sur un planaire (32 movers × 4), à vérifier en mémoire PLC.
 
 ## 7. Sortir une pièce de la table
 
@@ -302,8 +334,8 @@ Les types `PlanarSystem` et `PlanarMover` restent ; une machine a soit les uns, 
 | Studio station | Section Places (liste, repère sur la vue de dessus) ; condition Table dégagée (éditeur de condition existant). |
 | Éditeur de process (machine) | Inchangé ; panneau « Déroulé sur la table » (§ 5.3). |
 | Éditeur de process (station) | Nouvelles étapes de suivi (§ 7.2), paramètre « Suivi de pièce » sur Prendre / Poser. |
-| Pièces | « Posages » à la place de « Movers » ; pièces dans les places des stations ; posages à vider. |
-| Forçages, Qualité | « Posage hors service » à la place de « Mover hors service ». |
+| Pièces | « Posages » à la place de « Movers » ; pièces dans les places des stations ; posages à vider ; **fiche du posage** avec ses commandes d'état (§ 6.7 : déclarer vide, déclarer une pièce, verdict, reprendre à une étape). |
+| Forçages, Qualité | Section « Posages » : désactiver ou réactiver un posage, avec motif et choix « après sa pièce / immédiatement » (pour le planaire comme pour la table) ; la portée qualité « posage ». |
 | Manuel | Commande de la table (Indexer d'un pas, Terminer le pas, Acquitter défaut) dans le canal machine, seulement si toutes les stations sont dégagées ; la condition qui bloque est affichée comme pour un verrouillage. |
 
 Les libellés « mover » / « posage » viennent du transfert configuré : une ressource par transfert, aucune condition dans les vues.
@@ -327,13 +359,13 @@ Les libellés « mover » / « posage » viennent du transfert configuré : une 
 
 Process général : Charger → Presser pignon → Si bon Contrôler → Si bon Échanger (rodage) → Sertir → Si bon Décharger sinon Évacuer. Sertir est fait par Pressage 01 ou 02 **au tour suivant**. Le déroulé affiche donc 2 tours par pièce : c'est voulu, cela montre la règle. Le pressage montre l'aller-retour (§ 7.3 a), le rodage le dépôt et la reprise (b), le marquage la station déportée (c).
 
-- Tests à ajouter : cycle de table (pas seulement quand tout est servi et dégagé), opérations consécutives à la même station, redondance (première station disponible), tour supplémentaire, porteur vide, tour à vide, station Aborted qui bloque puis débloque, Hold et Stop pendant un pas, fin d'OF, transferts de places (succès et échecs), échange au rodage, persistance de la position de table, 100 pièces sur MX-4T.
+- Tests à ajouter : changements d'état d'un posage (acceptés, refusés pendant une opération ou un pas de table), posage désactivé après sa pièce et immédiatement, sur un mover et sur la table ; cycle de table (pas seulement quand tout est servi et dégagé), opérations consécutives à la même station, redondance (première station disponible), tour supplémentaire, porteur vide, tour à vide, station Aborted qui bloque puis débloque, Hold et Stop pendant un pas, fin d'OF, transferts de places (succès et échecs), échange au rodage, persistance de la position de table, 100 pièces sur MX-4T.
 
 ## 11. Impact sur les documents et le code actuel
 
 | Document | Nature du changement | Ampleur |
 | --- | --- | --- |
-| 00 Glossaire | Termes du § 3 ; « mover » devient un cas de « porteur » | Moyenne |
+| 00 Glossaire | Termes du § 3 ; « mover » devient un cas de « porteur » ; « emplacement » devient « posage » | Moyenne |
 | 01 Définition | Description de la machine : deux transferts ; machine d'exemple MX-4T | Moyenne |
 | 02 Spécifications | § 3 configuration, § 6.2 exécution, § 9 Aborted, § 10 routage (une section par transfert) ; places de station dans § 5.3 | Forte |
 | 03 Catalogue | Type Table tournante ; paramètre « suivi de pièce » des fonctions Prendre / Poser | Faible |
@@ -342,9 +374,9 @@ Process général : Charger → Presser pignon → Si bon Contrôler → Si bon 
 | 06 Tables | `eTransfer`, positions d'index, places, condition Table dégagée, nouvelles instructions, statut des porteurs et des places | Moyenne |
 | 07 Architecture HMI | Modèle (`Transfer`, `StationPlace`), règles de validation du § 5.3, simulateur | Moyenne |
 | 08 Écrans | Vue de table, barre de cycle, studio en disque, places | Moyenne |
-| 10 Qualité | Portée mover → porteur | Faible |
+| 10 Qualité | Portée mover → posage ; réaction « posage désactivé » | Faible |
 | 11 Usine | Données des porteurs, cadence de table (temps de cycle, station limitante) | Faible |
-| 12 Forçages | Mover hors service → porteur hors service ; tour à vide | Faible |
+| 12 Forçages | Désactivation d'un posage (planaire et table) ; changement d'état d'un posage ; tour à vide ; droits `fixture.edit`, `fixture.goodVerdict`, `force.fixture` | Moyenne |
 
 Code du PoC actuel (`src/`) : les endroits liés au planaire sont peu nombreux. On trouve `MachineViewModel` (plan, tuiles, movers), `StudioViewModels` (éditeur du plan), `OperationsViewModels` (pièces, forçages des movers), `DemoSchedule` (segments de trajet de mover) et les vues associées. L'éditeur de process, les composants, le thème et le glisser-déposer ne sont pas touchés. La vue de table serait un deuxième modèle de vue, choisi selon le transfert.
 
@@ -368,6 +400,9 @@ Code du PoC actuel (`src/`) : les endroits liés au planaire sont peu nombreux. 
 | P14 | Position de table comptée par le PLC (persistante) et vérifiée par le détecteur de référence ; table hors position = Reset refusé, « Terminer le pas » en manuel | Une came ne donne pas de position absolue |
 | P15 | 5 à 24 positions d'index ; production dans un seul sens (paramètre), sens inverse en manuel seulement | Réponses du 19 octobre 2026 ; la commande fait CW et CCW |
 | P16 | La priorité de fonction est masquée dans l'interface quand le transfert est une table | Réponse du 19 octobre 2026 ; sans file, elle ne sert pas |
+| P17 | « Posage » désigne le support d'une pièce sur un mover comme sur la table ; il remplace « emplacement » | Demande du 19 octobre 2026 : un même mot et les mêmes commandes pour les deux transferts |
+| P18 | L'état d'un posage (vide, pièce présente, verdict, étape du porteur) se change depuis la HMI, porteur à l'arrêt et hors opération, table en position et machine Stopped ou Held ; chaque changement est journalisé et tracé dans l'historique de la pièce | Demande du 19 octobre 2026 : reprendre la main après une intervention manuelle |
+| P19 | Un posage se désactive par un forçage persistant, « après sa pièce » ou « immédiatement » ; un posage désactivé n'est plus chargé ni servi ; la portée qualité « mover » devient « posage » | Demande du 19 octobre 2026 : un posage abîmé ne doit pas arrêter la machine |
 
 ## 13. Réponses et questions restantes
 
