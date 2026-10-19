@@ -20,3 +20,9 @@ Lire dans cet ordre. Chaque document fait foi dans son domaine ; en cas de contr
 | `ui-reference/` | Maquette Machine Studio (Claude Design) : référence du langage visuel et de l'usage de l'éditeur de process | HMI |
 
 État : spécification complète pour le premier aperçu (HMI + simulateur). Le code PLC réel (bibliothèque `StdMachineLib`, client ADS) vient ensuite, sur la base des documents 04 à 06.
+
+Études en cours (sans valeur de référence tant qu'elles ne sont pas validées et reportées dans les documents) :
+
+| Document | Contenu |
+| --- | --- |
+| `etudes/table-tournante-weiss.md` | Adapter le standard à une table tournante à indexage (Weiss) à la place du système planaire, avec sorties de pièces hors de la table |
