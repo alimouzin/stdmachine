@@ -15,28 +15,48 @@ Contraintes données :
 4. **Sortir une pièce de la table** demande une notion nouvelle, utile aussi au planaire : les **places de station**, c'est-à-dire des endroits suivis où une pièce peut se trouver hors d'un posage, et des étapes qui **transfèrent** une pièce entre un emplacement et une place. Une station peut alors déposer une pièce sur un banc, la laisser travailler pendant plusieurs tours de table et la reprendre plus tard sur un autre posage.
 5. Je recommande **un seul standard avec deux types de transfert** (planaire, table tournante), choisis dans la configuration machine, plutôt qu'une copie du projet. Le PLC reste générique : les deux transferts sont dans la bibliothèque et le déploiement choisit le bon.
 
-## 2. La table retenue : Weiss à came, signaux en Profinet
+## 2. La table retenue : Weiss à came, commande Weiss EF2 en Profinet
 
-La table est un plateau Weiss **à came** (indexage mécanique, moteur et commande Weiss). Elle avance d'un pas à la fois, toujours dans le même sens, et le nombre de positions est fixé par la came. Le PLC la pilote **par des signaux** échangés en **Profinet** avec la commande de la table.
+La table est un plateau Weiss **à came** (indexage mécanique), pilotée par une **commande Weiss EF2**. Tout ce paragraphe et le § 8 sont écrits pour l'EF2 ; une autre commande demanderait un autre type d'objet. Elle avance d'un pas à la fois et le nombre de positions est fixé par la came (de 5 à 24 selon la machine). La commande sait tourner dans les deux sens (cycle horaire ou antihoraire). Le PLC la pilote **par des signaux** échangés en **Profinet** avec la commande de la table.
 
 Pour le standard, cela donne :
-- **Raccordement par l'image E/S.** Le PLC Beckhoff est contrôleur Profinet (borne ou fonction TwinCAT, choix matériel), et la commande Weiss est un appareil Profinet. Ses octets d'entrées et de sorties sont reliés une fois pour toutes à l'image E/S générique (`04`), comme des bornes. L'objet Table tournante lit et écrit ses signaux par références de signal : aucun code Profinet dans l'objet, et la même table câblée en E/S tout-ou-rien marcherait sans changement.
-- **Signaux supposés** (à confirmer avec la documentation du modèle exact, § 13) :
+- **Raccordement par un élément matériel, comme Asyril.** La commande EF2 échange 4 octets d'état et 4 octets de commande en Profinet. Plutôt que de relier chaque bit à l'image E/S (il en faudrait près de 20, et un objet n'a que 8 références de signal S1 à S8, `04` § 3), je propose un **pool matériel `ST_WeissEf2Hw`** dans `GVL_Hw`, relié une fois dans TwinCAT, exactement comme les PDO Asyril : l'objet reçoit le n° de l'élément (`D`). Le capteur de référence reste un signal ordinaire de l'image E/S (S1).
 
-| Sens | Signal | Rôle |
+```iecst
+TYPE ST_WeissEf2Hw : STRUCT
+    aStatus AT %I* : ARRAY[1..4] OF BYTE;   // octets d'état 1 à 4 de la commande Weiss
+    aCmd    AT %Q* : ARRAY[1..4] OF BYTE;   // octets de commande 1 à 4
+END_STRUCT END_TYPE
+```
+
+- **Signaux de la commande EF2** (mapping actuellement utilisé) :
+
+| Octet.bit | Signal | Utilisation par l'objet |
 | --- | --- | --- |
-| PLC → table | Marche (autorisation) | Commande prête à tourner |
-| PLC → table | Démarrer le pas | Front ou maintien selon la commande Weiss : lance un pas |
-| PLC → table | Acquitter défaut | Remet la commande en état après un défaut |
-| Table → PLC | Prête | Commande sous tension, sans défaut |
-| Table → PLC | En position | Came au repos, plateau verrouillé : les stations peuvent travailler |
-| Table → PLC | En mouvement | Un pas est en cours |
-| Table → PLC | Défaut | Défaut de la commande (et code s'il est transmis) |
-| Capteur machine → PLC | Référence | Le posage n° 1 est devant la position d'index 1 (capteur ajouté sur la table, recommandé) |
-| Profinet → PLC | État de l'appareil | Communication établie ; sa perte est un défaut machine |
+| Commande 1.0 | Enable | Activer ; retiré par Désactiver |
+| Commande 1.1 | Stop (actif à 0) | Maintenu à 1 en marche ; mis à 0 sur Abort et Stop |
+| Commande 1.2 / 1.3 | Cycle CW / Cycle CCW (impulsion) | Un pas dans le sens horaire / antihoraire : c'est la commande utilisée pour Indexer |
+| Commande 1.4 / 1.5 | Cycle CW / CCW level (niveau) | Rotation continue tant que le niveau est tenu : **non utilisé** par le standard |
+| Commande 1.6, 1.7, 2.0 | Parameter set 1, 2, 3 | Choix du jeu de paramètres (profil de mouvement) de la commande, paramètre de l'objet |
+| Commande 2.1 | Open brake | Desserrer le frein : manuel seulement, machine Stopped, droit élevé |
+| Commande 2.2 | Reset error | Acquitter défaut |
+| État 1.0 | Enable active | Fin de Activer |
+| État 1.1 | Ready to start | Condition de démarrage d'un pas |
+| État 1.2 | Indexer in position | **Table en position** : condition des stations, fin d'un pas |
+| État 1.3 | Stop addressed | Stop pris en compte |
+| État 1.4 / 1.5 / 1.6 | Alarm timeout / position runover / safety | Erreurs de l'objet (défauts machine), sous-code = bit |
+| État 1.7 | Sum error | Défaut de la commande |
+| État 2.0 | Sum warning | Avertissement |
+| État 2.1 | Forced dynamic sampling | Test de dynamisation demandé : avertissement |
+| État 2.2 / 2.3 | STO selected / STO active | Couple coupé par la sécurité : la table ne peut pas tourner, motif affiché |
+| État 2.4 / 2.5 | Ready to switch on / In operation | État du variateur, affiché ; « In operation » sans « in position » = pas en cours |
+| État 3, 4 / Commande 3, 4 | — | Réservés (non utilisés aujourd'hui) |
+| Image E/S S1 | Détecteur de référence | Le posage n° 1 est devant la position d'index 1 |
 
+- **Indexer un pas** : conditions Enable active, Ready to start, Indexer in position, Stop à 1, aucune alarme ; impulsion Cycle CW (ou CCW) jusqu'à la chute de « in position » ; fin quand « in position » revient ; le compteur de position avance (ou recule pour CCW).
 - **Pas de position absolue.** La came ne dit pas où est le plateau : le PLC compte les pas (`nTableIndex`, persistant) et le vérifie à chaque passage sur le capteur de référence.
-- **Arrêt hors position.** Si un arrêt d'urgence coupe la table au milieu d'un pas, le plateau n'est plus en position : ni production ni manuel des stations tant que l'opérateur n'a pas fait « Terminer le pas » (§ 8). Le comportement exact de la commande Weiss à l'arrêt d'urgence (arrêt immédiat ou fin de pas) est à confirmer.
+- **Arrêt hors position.** Si un arrêt d'urgence (STO) ou un Stop coupe la table au milieu d'un pas, « Indexer in position » reste faux : ni production ni manuel des stations tant que l'opérateur n'a pas fait « Terminer le pas » (§ 8), qui relance un cycle dans le même sens jusqu'à la position suivante.
+- **Sens de production** : un paramètre (horaire ou antihoraire). Le séquenceur ne tourne que dans ce sens ; le sens inverse n'existe qu'en manuel (ramener un posage devant une station), et le compteur de position le suit.
 - **Aucune opération pendant la rotation.** Toutes les opérations se font table en position ; la condition « En position » fait partie du verrouillage de chaque station de table (§ 4).
 
 ## 3. Vocabulaire proposé (à ajouter au glossaire après accord)
@@ -64,7 +84,7 @@ Dans l'interface d'une machine à table, on dit « posage » là où une machine
 | Élément | Planaire (aujourd'hui) | Table tournante |
 | --- | --- | --- |
 | Transfert | — | Type : Planaire ou Table tournante |
-| Géométrie | Tuiles, movers, emplacements, vitesses | Nombre de positions d'index N (fixé par la came, par exemple 6, 8, 12), un posage par position d'index (N posages), une pièce par posage (pas de réglage d'emplacements), sens et diamètre (affichage seulement) |
+| Géométrie | Tuiles, movers, emplacements, vitesses | Nombre de positions d'index N (fixé par la came, de 5 à 24), un posage par position d'index (N posages), une pièce par posage (pas de réglage d'emplacements), sens et diamètre (affichage seulement) |
 | Positions du transfert | Travail, file, tampon, parcage | Aucune : la position d'index **est** la position de travail. Pas de file, pas de tampon, pas de parcage |
 | Stations | Emplacement sur le plan | Position d'index (une station au plus par position) **ou** déportée (aucune position) |
 | Fonctions, rôles, priorités | Inchangés | Inchangés ; la priorité ne sert plus (pas de file), elle est ignorée |
@@ -247,28 +267,29 @@ C'est le point le plus important de la demande, et il sert aussi au planaire. Au
 
 ## 8. Catalogue (`03`)
 
-Nouveau type de niveau machine **Table tournante à came** (n° à attribuer dans `catalog.json`). Raccordement : les signaux du § 2 par références de signal (image E/S reliée à l'appareil Profinet).
+Nouveau type de niveau machine **Table tournante Weiss EF2** (code `RotaryTableWeissEf2`) (n° à attribuer dans `catalog.json`). Matériel : `D` élément du pool `ST_WeissEf2Hw` (obligatoire). Signal : S1 détecteur de référence (DI).
 
 | Paramètre | Type | Défaut |
 | --- | --- | --- |
-| Nombre de positions d'index | Int | 8 |
-| Sens (affichage) | Énum : horaire, antihoraire | horaire |
-| Durée nominale d'un pas (simulation, timeout) | Real (ms) | 800 |
-| Mode du signal Démarrer | Énum : impulsion, maintien jusqu'à En mouvement | impulsion |
-| Capteur de référence | Bool | oui |
+| P1 Nombre de positions d'index | Int, 5 à 24 | 8 |
+| P2 Sens de production | Énum : horaire (CW), antihoraire (CCW) | horaire |
+| P3 Jeu de paramètres de la commande | Int, 1 à 3 | 1 |
+| P4 Durée nominale d'un pas (simulation, timeout) | Real (ms) | 800 |
+| P5 Position d'index du détecteur de référence | Int | 1 |
 
 | N° | Action | Paramètres | Résultats | Mouvement | Timeout défaut |
 | --- | --- | --- | --- | --- | --- |
-| 1 | Activer (Marche, attend Prête) | — | — | non | 5 000 ms |
-| 2 | Vérifier position | — | r1 Position d'index | non | 2 000 ms |
-| 3 | Indexer d'un pas | — | r1 Position d'index | oui | 3 × durée nominale |
-| 4 | Terminer le pas (table hors position, manuel seulement) | — | r1 Position d'index | oui | 3 × durée nominale |
-| 5 | Acquitter défaut | — | — | non | 3 000 ms |
+| 1 | Activer (Enable, Stop à 1, attend Enable active) | — | — | non | 5 000 ms |
+| 2 | Vérifier position (in position, recalage sur la référence) | — | r1 Position d'index | non | 2 000 ms |
+| 3 | Indexer d'un pas | a1 Sens (défaut : P2 ; l'autre sens en manuel seulement) | r1 Position d'index | oui | 3 × P4 |
+| 4 | Terminer le pas (table hors position, manuel seulement) | — | r1 Position d'index | oui | 3 × P4 |
+| 5 | Acquitter défaut (Reset error) | — | — | non | 3 000 ms |
 | 6 | Désactiver | — | — | non | 3 000 ms |
+| 7 | Desserrer le frein / Serrer le frein (manuel, machine Stopped) | a1 Desserré (Bool) | — | non | immédiate |
 
-État affiché : `E1` position d'index, `E2` en position (0/1), `E3` en mouvement (0/1), `E4` pas effectués (compteur de maintenance). Erreurs : Table non en position, Timeout de pas, Défaut de la commande table (sous-code si la commande le transmet), Position perdue (écart au capteur de référence), Communication Profinet perdue. Ce sont des défauts machine. État sûr sur Abort : Démarrer et Marche retirés ; la came finit ou non son pas selon la commande Weiss (à confirmer). Override : la came n'a pas de vitesse pilotée ; comme pour un vérin (`02` § 13), l'override rallonge seulement le timeout, et à 0 % aucun nouveau pas ne démarre.
+État affiché : `E1` position d'index, `E2` en position (0/1), `E3` en mouvement (0/1), `E4` pas effectués (compteur de maintenance). Erreurs (défauts machine) : Table non en position, Timeout de pas (PLC), Alarme timeout de la commande, Dépassement de position (runover), Alarme sécurité, Erreur cumulée de la commande, Position perdue (écart au détecteur de référence), Communication Profinet perdue. Avertissements : Sum warning, Test de dynamisation demandé. STO actif n'est pas une erreur de l'objet : c'est l'effet du circuit de sécurité, déjà signalé par lui ; l'objet est simplement « non prêt » avec ce motif. État sûr sur Abort : Stop à 0, plus aucune impulsion de cycle. Override : la came n'a pas de vitesse pilotée ; comme pour un vérin (`02` § 13), l'override rallonge seulement le timeout, et à 0 % aucun nouveau pas ne démarre.
 
-Simulation : un pas dure la durée nominale ; En mouvement pendant le pas, En position à la fin ; le capteur de référence suit `nTableIndex` ; forçages d'essai possibles : défaut commande, perte Profinet, arrêt au milieu d'un pas.
+Simulation : les 4 octets d'état sont simulés (in position tombe pendant le pas, qui dure P4) ; le détecteur de référence suit `nTableIndex` ; forçages d'essai possibles : chacune des alarmes de la commande, STO actif, perte Profinet, arrêt au milieu d'un pas.
 
 Les types `PlanarSystem` et `PlanarMover` restent ; une machine a soit les uns, soit l'autre.
 
@@ -316,7 +337,7 @@ Process général : Charger → Presser pignon → Si bon Contrôler → Si bon 
 | 01 Définition | Description de la machine : deux transferts ; machine d'exemple MX-4T | Moyenne |
 | 02 Spécifications | § 3 configuration, § 6.2 exécution, § 9 Aborted, § 10 routage (une section par transfert) ; places de station dans § 5.3 | Forte |
 | 03 Catalogue | Type Table tournante ; paramètre « suivi de pièce » des fonctions Prendre / Poser | Faible |
-| 04 Architecture objets | Rien de nouveau côté matériel : la table passe par l'image E/S (appareil Profinet relié dans TwinCAT) | Faible |
+| 04 Architecture objets | Pool matériel `ST_WeissEf2Hw` (4 octets d'état, 4 octets de commande), relié une fois dans TwinCAT | Faible |
 | 05 Séquenceurs | § 5 scindé : commun + `I_Transfer` ; nouveau § « Cycle de table » ; `PartMove` et `PartSelect` dans l'interpréteur ; § 6 réservé au planaire | Forte |
 | 06 Tables | `eTransfer`, positions d'index, places, condition Table dégagée, nouvelles instructions, statut des porteurs et des places | Moyenne |
 | 07 Architecture HMI | Modèle (`Transfer`, `StationPlace`), règles de validation du § 5.3, simulateur | Moyenne |
@@ -340,11 +361,13 @@ Code du PoC actuel (`src/`) : les endroits liés au planaire sont peu nombreux. 
 | P7 | Stations déportées : stations sans position d'index, alimentées par les places | Actions hors table sans casser le principe « deux stations ne s'attendent jamais » |
 | P8 | Une étape d'opération (hors Entrée) sur un porteur vide est sautée, sauf opération marquée « accepte un porteur vide » | Échanges avec un banc, démarrage à vide |
 | P9 | Une station au plus par position d'index en première version | Simplicité |
-| P10 | Table Weiss à came, pilotée par signaux en Profinet, reliés à l'image E/S ; un seul type d'objet « Table tournante à came » ; pas d'axe NC | Réponse du 19 octobre 2026 ; garde l'objet indépendant du bus |
+| P10 | Table Weiss à came, pilotée en Profinet par 4 octets d'état et 4 octets de commande, reliés à un pool matériel `ST_WeissEf2Hw` ; détecteur de référence dans l'image E/S ; un type d'objet « Table tournante Weiss EF2 » ; pas d'axe NC | Réponses du 19 octobre 2026 ; même schéma que l'Asyril, l'objet n'a que 8 références de signal |
 | P11 | Le support de pièce sur la table s'appelle « posage » (`Fixture`) ; un posage porte une seule pièce ; un posage par position d'index | Réponse du 19 octobre 2026 |
 | P12 | Aucune opération pendant la rotation ; condition « table en position » générée sur toutes les actions de mouvement des stations de table | Réponse du 19 octobre 2026 ; sécurité |
 | P13 | Pas de machine mixte (table et planaire ou convoyeur pilotés ensemble), pas de type « poste opérateur » en première version | Réponse du 19 octobre 2026 |
-| P14 | Position de table comptée par le PLC (persistante) et vérifiée par un capteur de référence ; table hors position = Reset refusé, « Terminer le pas » en manuel | Une came ne donne pas de position absolue |
+| P14 | Position de table comptée par le PLC (persistante) et vérifiée par le détecteur de référence ; table hors position = Reset refusé, « Terminer le pas » en manuel | Une came ne donne pas de position absolue |
+| P15 | 5 à 24 positions d'index ; production dans un seul sens (paramètre), sens inverse en manuel seulement | Réponses du 19 octobre 2026 ; la commande fait CW et CCW |
+| P16 | La priorité de fonction est masquée dans l'interface quand le transfert est une table | Réponse du 19 octobre 2026 ; sans file, elle ne sert pas |
 
 ## 13. Réponses et questions restantes
 
@@ -358,15 +381,16 @@ Réponses du 19 octobre 2026 :
 | Machine mixte | Non |
 | Poste opérateur | Non |
 
-Questions restantes :
-1. **Référence exacte de la table et de sa commande** : liste réelle des signaux Profinet (le § 2 est une hypothèse), mode du signal Démarrer, transmission d'un code de défaut, comportement à l'arrêt d'urgence (fin de pas ou arrêt immédiat).
-2. **Capteur de référence** : existe-t-il, ou faut-il l'ajouter sur la table ? Sans lui, la position n'est que comptée.
-3. **Nombre de positions** de la came (pour l'exemple MX-4T, je prends 8).
-4. **Priorité de fonction** : elle ne sert plus sur une table ; je propose de la masquer dans l'interface quand le transfert est une table.
+| Commande | Weiss EF2 ; mapping actuel en 4 + 4 octets (§ 2) |
+| Détecteur de référence | Oui (`IxRefPosTableRotative`) |
+| Nombre de positions | Variable, de 5 à 24 |
+| Priorité de fonction | Masquée pour une table |
+
+Points à vérifier sur la machine (sans effet sur la conception) : effet exact de « Stop addressed » (arrêt immédiat ou en fin de pas), signification de « Parameter set 3 ign. », contenu des octets 3 et 4, impulsion minimale de « Cycle CW ».
 
 ## 14. Proposition de suite
 
-1. Valider ce document (et répondre aux questions restantes du § 13), inscrire les décisions retenues dans le journal.
+1. Valider ce document, inscrire les décisions retenues dans le journal.
 2. Reporter les changements dans 00 à 12 (une passe par document, revue à chaque fois).
 3. Modèle et validation : `Transfer`, positions d'index, places, règles du § 5.3 ; projet d'exemple `MX-4T.stdm.json`.
 4. Maquette : vue de table et studio en disque dans le PoC, données de démonstration rejouées, captures regardées.
