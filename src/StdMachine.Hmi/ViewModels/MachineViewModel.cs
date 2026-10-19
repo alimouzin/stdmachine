@@ -49,6 +49,8 @@ public sealed partial class StationTileViewModel : ObservableObject
     [ObservableProperty] private bool _hasOperation;
     [ObservableProperty] private string _reintegrateLabel = string.Empty;
     [ObservableProperty] private bool _canReintegrate;
+    /// <summary>Station d'entrée pendant « Finir les pièces » : son chargement est arrêté.</summary>
+    [ObservableProperty] private bool _loadingStopped;
 
     public void Update(StationStatus s)
     {
@@ -168,6 +170,9 @@ public sealed partial class MachineViewModel : ViewModelBase
             Stations.Add(new StationTileViewModel(st, work.X, work.Y, _project.GroupsOf(st).Select(g => g.Name)));
         }
         for (int m = 1; m <= planar.Movers; m++) Movers.Add(new MoverViewModel(m));
+        // Stations des fonctions de rôle Entrée : leur chargement s'arrête pendant « Finir les pièces ».
+        _entryStations = _project.Machine.Groups.Where(g => g.Role == GroupRole.Entry)
+            .SelectMany(g => g.StationIds).Select(id => _project.StationById(id)?.Number ?? 0).Where(n => n > 0).ToHashSet();
 
         OnSnapshots(OnSnapshot);
         AppServices.Commands.PropertyChanged += (_, _) => RefreshBusy();
@@ -192,6 +197,17 @@ public sealed partial class MachineViewModel : ViewModelBase
     [ObservableProperty] private double _overridePercent = 80;
     [ObservableProperty] private bool _canReset, _canStart, _canHold, _canStop, _canClear;
     [ObservableProperty] private bool _resetBusy, _startBusy, _holdBusy, _stopBusy, _clearBusy;
+
+    // ---- fin des pièces en cours (docs/02 § 8, docs/08 § 6.1)
+    [ObservableProperty] private bool _draining, _canDrain, _drainBusy;
+    [ObservableProperty] private int _partsInProcess;
+    [ObservableProperty] private double _drainProgress;
+    [ObservableProperty] private string _drainText = string.Empty;
+    [ObservableProperty] private string? _drainBlockedText;
+    [ObservableProperty] private int _drainBlockingMover;
+    private int _drainInitial;
+    private bool _wasDraining;
+    private readonly HashSet<int> _entryStations;
 
     // ---- OF
     [ObservableProperty] private string _orderTitle = string.Empty;
@@ -227,6 +243,8 @@ public sealed partial class MachineViewModel : ViewModelBase
         foreach (var mv in s.Movers)
             Movers.FirstOrDefault(v => v.Number == mv.Number)?.Update(mv);
 
+        UpdateDrain(m);
+
         var o = s.Orders.Current;
         HasOrder = o != null;
         if (o == null) OrderTitle = "Aucun OF en cours";
@@ -247,8 +265,26 @@ public sealed partial class MachineViewModel : ViewModelBase
         RefreshBusy();
     }
 
+    /// <summary>Bandeau, bouton et libellés de « Finir les pièces » ; toast quand la machine s'est vidée d'elle-même.</summary>
+    private void UpdateDrain(MachineStatus m)
+    {
+        Draining = m.Draining;
+        CanDrain = !m.Draining && (m.State == PackMlState.Execute || m.State == PackMlState.Held);
+        PartsInProcess = m.PartsInProcess;
+        if (m.Draining) _drainInitial = Math.Max(m.Draining && !_wasDraining ? 1 : _drainInitial, m.PartsInProcess);
+        DrainProgress = m.Draining ? 1.0 - Math.Min(1.0, (double)m.PartsInProcess / Math.Max(1, _drainInitial)) : 0;
+        DrainText = Resources.Res.Get("Drain.Banner") + " — " + UiText.Plural(m.PartsInProcess, "pièce restante", "pièces restantes");
+        DrainBlockingMover = m.DrainBlockingMover;
+        DrainBlockedText = m.Draining && m.DrainBlockingMover > 0 ? "Le mover " + m.DrainBlockingMover + " est à vider : retirez ses pièces pour terminer." : null;
+        foreach (var st in Stations) st.LoadingStopped = m.Draining && _entryStations.Contains(st.Number);
+        if (_wasDraining && !m.Draining && m.StopCause == StopCauses.Drained && (m.State == PackMlState.Stopping || m.State == PackMlState.Stopped))
+            AppServices.Toast.Show(Resources.Res.Get("Drain.Done"), ToastKind.Success);
+        _wasDraining = m.Draining;
+    }
+
     private void RefreshBusy()
     {
+        DrainBusy = AppServices.Commands.Busy == "drain";
         var b = AppServices.Commands.Busy;
         ResetBusy = b == "cmd." + StateCommand.Reset;
         StartBusy = b == "cmd." + StateCommand.Start;
@@ -288,6 +324,20 @@ public sealed partial class MachineViewModel : ViewModelBase
     [RelayCommand] private Task Hold() => Run(StateCommand.Hold);
     [RelayCommand] private Task Stop() => Run(StateCommand.Stop);
     [RelayCommand] private Task Clear() => Run(StateCommand.Clear);
+
+    /// <summary>« Finir les pièces » : plus de chargement, les pièces engagées finissent, puis arrêt automatique. Confirmé par un appui maintenu.</summary>
+    [RelayCommand] private Task Drain() => AppServices.Commands.StartDrainAsync();
+
+    /// <summary>« Annuler la fin » : le chargement reprend, sans confirmation.</summary>
+    [RelayCommand] private Task CancelDrain() => AppServices.Commands.CancelDrainAsync();
+
+    /// <summary>Bouton « Voir la pièce » du bandeau : ouvre le tiroir du mover à vider qui retient la fin.</summary>
+    [RelayCommand]
+    private void ShowBlockingMover()
+    {
+        var mover = Movers.FirstOrDefault(x => x.Number == DrainBlockingMover);
+        if (mover != null) OpenMover(mover);
+    }
 
     /// <summary>Abort : toujours permis, sans confirmation (docs/08 § 3).</summary>
     [RelayCommand] private Task Abort() => Run(StateCommand.Abort);

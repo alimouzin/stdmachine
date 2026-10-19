@@ -173,7 +173,13 @@ public sealed record MachineStatus(
     bool LoadingLocked,
     int ActiveFaults,
     int ActiveWarnings,
-    string ProjectHash);
+    string ProjectHash,
+    /// <summary>Mode « fin des pièces » actif (docs/05 § 5.7).</summary>
+    bool Draining = false,
+    /// <summary>Pièces portées par les movers : ce qui reste à finir.</summary>
+    int PartsInProcess = 0,
+    /// <summary>Numéro du mover « à vider » qui retient la fin des pièces (0 : aucun).</summary>
+    int DrainBlockingMover = 0);
 
 /// <summary>Contexte d'exécution d'une station : une ligne par branche active (docs/08 § 6.2).</summary>
 public sealed record ContextStatus(int Index, string Label, Guid? StepId, string? StepTitle);

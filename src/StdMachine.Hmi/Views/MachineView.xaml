@@ -187,6 +187,11 @@
                                                     <Setter TargetName="Macaron" Property="Visibility" Value="Visible"/>
                                                     <Setter TargetName="MacaronText" Property="Text" Value="Arrêt qualité"/>
                                                 </DataTrigger>
+                                                <DataTrigger Binding="{Binding LoadingStopped}" Value="True">
+                                                    <Setter TargetName="Macaron" Property="Visibility" Value="Visible"/>
+                                                    <Setter TargetName="Macaron" Property="Background" Value="{StaticResource Busy.Dot}"/>
+                                                    <Setter TargetName="MacaronText" Property="Text" Value="{res:T Drain.EntryStopped}"/>
+                                                </DataTrigger>
                                                 <DataTrigger Binding="{Binding OutOfProduction}" Value="True">
                                                     <Setter TargetName="Macaron" Property="Visibility" Value="Visible"/>
                                                     <Setter TargetName="Macaron" Property="Background" Value="{StaticResource Maint.Dot}"/>
@@ -297,6 +302,21 @@
         <!-- ================= Colonne de droite ================= -->
         <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="8,16,24,16">
+                <!-- Fin des pièces en cours (docs/02 § 8, docs/08 § 6.1) -->
+                <Border Style="{StaticResource Card}" Background="{StaticResource Accent.Bg}" BorderBrush="{StaticResource Accent.Border}"
+                        Visibility="{Binding Draining, Converter={x:Static infra:Conv.BoolToVis}}">
+                    <StackPanel>
+                        <DockPanel>
+                            <c:ProgressRing DockPanel.Dock="Left" RingSize="36" Value="{Binding DrainProgress}" Margin="0,0,12,0"/>
+                            <TextBlock Text="{Binding DrainText}" FontWeight="SemiBold" FontSize="16" Foreground="{StaticResource Accent.Text}" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <DockPanel Margin="0,10,0,0" Visibility="{Binding DrainBlockedText, Converter={x:Static infra:Conv.NotEmptyToVis}}">
+                            <Button DockPanel.Dock="Right" Content="{res:T Drain.SeePart}" Command="{Binding ShowBlockingMoverCommand}" Margin="12,0,0,0"/>
+                            <TextBlock Text="{Binding DrainBlockedText}" TextWrapping="Wrap" Foreground="{StaticResource Accent.Text}" VerticalAlignment="Center"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
                 <!-- État et commandes -->
                 <Border Style="{StaticResource Card}">
                     <StackPanel>
@@ -338,6 +358,18 @@
                                 <Button Style="{StaticResource CommandButton}" Content="{res:T Cmd.Clear}" c:Ui.Icon="cleaning_services" c:Ui.Tone="Err" IsEnabled="{Binding CanClear}"
                                         c:Ui.IsBusy="{Binding ClearBusy}" Command="{Binding ClearCommand}" MinWidth="0" Padding="8,0"/>
                                 <Border Background="Transparent" Tag="Clear" Visibility="{Binding CanClear, Converter={x:Static infra:Conv.InvBoolToVis}}" MouseLeftButtonUp="Unavailable_Click"/>
+                            </Grid>
+                            <!-- Finir les pièces : appui maintenu pour lancer, simple toucher pour annuler (docs/08 § 6.1) -->
+                            <Grid Margin="6,0,0,0">
+                                <c:HoldButton c:Ui.Icon="hourglass_bottom" Command="{Binding DrainCommand}" IsEnabled="{Binding CanDrain}"
+                                              Height="64" MinWidth="0" Padding="2,0" Visibility="{Binding Draining, Converter={x:Static infra:Conv.InvBoolToVis}}">
+                                    <TextBlock Text="{res:T Cmd.Drain}" TextWrapping="Wrap" MaxWidth="82" LineHeight="16" LineStackingStrategy="BlockLineHeight"/>
+                                </c:HoldButton>
+                                <Button Style="{StaticResource CommandButton}" c:Ui.Icon="undo" c:Ui.Tone="Warn" Command="{Binding CancelDrainCommand}"
+                                        c:Ui.IsBusy="{Binding DrainBusy}" MinWidth="0" Padding="8,0" Visibility="{Binding Draining, Converter={x:Static infra:Conv.BoolToVis}}">
+                                    <!-- Deux lignes : « Annuler la fin » ne tient pas sur une ligne dans une case de la grille 3 × 2 -->
+                                    <TextBlock Text="{res:T Cmd.DrainCancel}" TextWrapping="Wrap" MaxWidth="78" LineHeight="17" LineStackingStrategy="BlockLineHeight"/>
+                                </Button>
                             </Grid>
                         </UniformGrid>
                         <Button Style="{StaticResource AbortButton}" Content="Abort" c:Ui.Icon="report" Command="{Binding AbortCommand}" Margin="0,8,0,16"/>

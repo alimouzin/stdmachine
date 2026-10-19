@@ -271,6 +271,66 @@ public sealed class MachineSim
         else if (command == Core.OrderCommand.Cancel) { Order.State = OrderState.Cancelled; OrderHistory.Add(Order); Order = null; }
     }
 
+    // ------------------------------------------------------------------ fin des pièces en cours (docs/05 § 5.7, D77)
+
+    /// <summary>Cause d'arrêt quand la machine s'est vidée d'elle-même (docs/02 § 8).</summary>
+    public const string DrainedStopCause = StopCauses.Drained;
+
+    /// <summary>Indicateur <c>bDrain</c> du séquenceur général : plus aucune pièce n'est chargée, les pièces engagées finissent.</summary>
+    public bool Drain { get; private set; }
+
+    private bool _drainStopSent;
+
+    /// <summary>Pièces portées par les movers (tous emplacements) : ce qui reste à finir.</summary>
+    public int PartsInProcess => _movers.Sum(m => m.Slots.Count(p => p.Present));
+
+    /// <summary>Mover « à vider » qui porte encore des pièces et retient la fin (0 s'il n'y en a pas) : l'opérateur doit confirmer leur retrait.</summary>
+    public int DrainBlockingMover => _movers.Where(m => m.State == MvState.ToEmpty && m.Slots.Any(p => p.Present)).Select(m => m.Number).FirstOrDefault();
+
+    /// <summary>Commande <c>DrainStart</c> : acceptée en Execute et Held seulement.</summary>
+    public CommandOutcome StartDrain()
+    {
+        if (Pack.State != PackMlState.Execute && Pack.State != PackMlState.Held)
+            return new CommandOutcome(false, "La fin des pièces demande l'état Execute ou Held : la machine est " + Pack.State + ".");
+        Drain = true;
+        _drainStopSent = false;
+        EventRaised?.Invoke("Fin des pièces en cours");
+        return new CommandOutcome(true, null);
+    }
+
+    /// <summary>Commande <c>DrainCancel</c> : lève le mode tant que la machine n'est pas arrêtée ; le chargement reprend.</summary>
+    public CommandOutcome CancelDrain()
+    {
+        if (!Drain) return new CommandOutcome(false, "Aucune fin des pièces en cours.");
+        Drain = false;
+        _drainStopSent = false;
+        EventRaised?.Invoke("Fin des pièces annulée");
+        return new CommandOutcome(true, null);
+    }
+
+    /// <summary>Une opération d'une fonction de rôle Entrée est demandée ou en cours : sa pièce naîtra à la fin, la machine n'est donc pas vide.</summary>
+    private bool EntryOperationInFlight()
+    {
+        for (int g = 1; g <= _c.Machine.Groups.Count; g++)
+        {
+            if (_c.Machine.Groups[g - 1].Role != GroupRole.Entry) continue;
+            if (StationsOfGroup(g).Any(i => _stations[i].OperationRunning)) return true;
+        }
+        return _movers.Any(m => m.TargetGroup > 0 && m.Station > 0 && _c.Machine.Groups[m.TargetGroup - 1].Role == GroupRole.Entry);
+    }
+
+    /// <summary>Quand le mode est actif et que plus rien n'est en cours : Arrêter automatique (cause « Machine vidée »).</summary>
+    private void CheckDrainCompletion()
+    {
+        if (!Drain || _drainStopSent) return;
+        if (Pack.State != PackMlState.Execute && Pack.State != PackMlState.Held) return;
+        if (PartsInProcess > 0 || EntryOperationInFlight()) return;
+        _drainStopSent = true;
+        StopCause = DrainedStopCause; // prime sur « Pause demandée » si la machine était en Held
+        EventRaised?.Invoke("Machine vidée : plus aucune pièce en cours");
+        Command(StateCommand.Stop);
+    }
+
     // ------------------------------------------------------------------ un cycle
 
     public void Step(double dtMs)
@@ -281,6 +341,7 @@ public sealed class MachineSim
         MoveMovers(dtMs);
         foreach (var s in _stations) s.Cycle(dtMs);
         PostStationCycle();
+        CheckDrainCompletion();
     }
 
     public void Run(double ms, double stepMs = 10)
@@ -420,6 +481,8 @@ public sealed class MachineSim
             foreach (var m in _movers) if (m.Moving) FreezeMover(m);
             foreach (var s in _stations) s.Command(StateCommand.Abort);
         }
+        // Le mode « fin des pièces » ne survit ni à un arrêt, ni à un Abort, ni à un défaut machine (docs/05 § 5.7).
+        if (to == PackMlState.Stopping || to == PackMlState.Stopped || to == PackMlState.Aborted) { Drain = false; _drainStopSent = false; }
         if (to == PackMlState.Execute) StopCause = null;
     }
 
@@ -612,6 +675,7 @@ public sealed class MachineSim
         if (LoadingLocked) { reason = LoadingLockedReason ?? "Chargement arrêté"; return true; }
         if (Order != null && (Order.State == OrderState.Suspended)) { reason = "OF suspendu"; return true; }
         if (Order != null && Order.Good + Order.InProcess >= Order.Quantity) { reason = "Fin d'OF"; return true; }
+        if (Drain) { reason = "Fin des pièces"; return true; }
         return false;
     }
 

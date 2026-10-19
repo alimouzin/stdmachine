@@ -56,6 +56,15 @@ Les trois points de l'agent A sont faits. Instructions ajoutées à `E_Op` : 17 
 
 (B ajoute ici, en ajout seulement : document, section, problème, solution retenue.)
 
+### Fin des pièces en cours (D100)
+- **`docs/11` § `events/stop`** : les causes d'arrêt publiées sont `alarm`, `quality`, `orderComplete` et `operator`. Rien pour « Machine vidée » : le code la range dans `operator` (valeur par défaut de `PlantGateway.KindOf`), avec la raison « Machine vidée ». Proposition : une cause `drained` (schéma et document à modifier par A).
+- **`docs/08` § 6.1** : « la puce d'état de la barre du haut porte « Execute · fin des pièces » ». Le badge d'état est un composant à texte fixe : le code ajoute une **puce séparée** « Fin des pièces · N » à côté du badge.
+- **`docs/05` § 5.7, publication** : la spécification donne `bDrain` et `nPartsInProcess`. Le code publie aussi `DrainBlockingMover` (numéro du mover à vider qui retient la fin), nécessaire au bouton « Voir la pièce » de `docs/08`.
+- **Held** : la spécification dit « valable en Execute et Held » sans préciser. Le code accepte la commande en Held ; les pièces ne progressent pas tant que la machine est en pause ; au Démarrer suivant la machine se vide et s'arrête avec la cause « Machine vidée ».
+- **Mover à vider** : le simulateur n'y arrive que si aucune station de rebut n'est disponible. Le test donne une pièce à un mover vide du tampon pour reproduire la condition ; le chemin réel n'est pas couvert par un scénario.
+- **Maquette sans `--simulator`** : le client de démonstration refuse la commande (« Indisponible sur la maquette »).
+- **Interface** : dans la grille 3 × 2 des commandes, le libellé de « Annuler la fin » tient sur deux lignes, et la légende « Maintenir 1 s » de « Finir les pièces » est légèrement rognée.
+
 ## Rappel des règles du dépôt
 
 Conventions de `CLAUDE.md` : petits commits en français (Conventional Commits), pas de `git push` sans demande explicite, captures regardées après toute modification d'interface, textes affichés dans `Resources/Strings.resx`, aucune valeur en dur dans les vues.

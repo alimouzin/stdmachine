@@ -195,4 +195,10 @@ public sealed class PlcCommands : ObservableObject
 
     public Task<bool> SendAsync(StateCommand c) => RunAsync("cmd." + c, () => _client.SendCommandAsync(c, CancellationToken.None));
     public Task<bool> SendStationAsync(int station, StateCommand c) => RunAsync("scmd." + station + "." + c, () => _client.SendStationCommandAsync(station, c, CancellationToken.None));
+
+    /// <summary>« Finir les pièces » (docs/05 § 5.7).</summary>
+    public Task<bool> StartDrainAsync() => RunAsync("drain", () => _client.StartDrainAsync(CancellationToken.None));
+
+    /// <summary>« Annuler la fin » : le chargement reprend.</summary>
+    public Task<bool> CancelDrainAsync() => RunAsync("drain", () => _client.CancelDrainAsync(CancellationToken.None));
 }
